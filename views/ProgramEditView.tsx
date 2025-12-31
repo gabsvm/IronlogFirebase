@@ -5,6 +5,7 @@ import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { MuscleGroup } from '../types';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
+import { getTranslated } from '../utils';
 
 interface ProgramEditViewProps {
     onBack: () => void;
@@ -39,14 +40,15 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
     const handleAddSlot = (dayId: string) => {
         setProgram(prev => prev.map(d => {
             if (d.id !== dayId) return d;
-            return { ...d, slots: [...d.slots, { muscle: 'CHEST', setTarget: 3 }] };
+            const currentSlots = d.slots || [];
+            return { ...d, slots: [...currentSlots, { muscle: 'CHEST', setTarget: 3 }] };
         }));
     };
 
     const handleRemoveSlot = (dayId: string, idx: number) => {
         setProgram(prev => prev.map(d => {
             if (d.id !== dayId) return d;
-            const newSlots = [...d.slots];
+            const newSlots = [...(d.slots || [])];
             newSlots.splice(idx, 1);
             return { ...d, slots: newSlots };
         }));
@@ -55,7 +57,8 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
     const handleUpdateSlot = (dayId: string, idx: number, field: string, val: any) => {
         setProgram(prev => prev.map(d => {
             if (d.id !== dayId) return d;
-            const newSlots = [...d.slots];
+            const newSlots = [...(d.slots || [])];
+            if (!newSlots[idx]) return d; // Safety check
             newSlots[idx] = { ...newSlots[idx], [field]: val };
             return { ...d, slots: newSlots };
         }));
@@ -86,7 +89,7 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
                         <div className="bg-zinc-50 dark:bg-white/5 p-4 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center">
                             <input 
                                 className="bg-transparent font-bold text-zinc-900 dark:text-white outline-none w-full"
-                                value={typeof day.dayName === 'object' ? day.dayName[lang] : day.dayName}
+                                value={getTranslated(day.dayName, lang)}
                                 onChange={e => handleUpdateDayName(day.id, e.target.value)}
                             />
                             <button onClick={() => handleDeleteDay(day.id)} className="text-zinc-400 hover:text-red-500 ml-2">
@@ -95,7 +98,7 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
                         </div>
                         
                         <div className="divide-y divide-zinc-100 dark:divide-white/5">
-                            {day.slots.map((slot, idx) => (
+                            {(day.slots || []).map((slot, idx) => (
                                 <div key={idx} className="p-3 flex items-center gap-3">
                                     <div className="flex-1 space-y-2">
                                         <div className="flex gap-2">
@@ -128,7 +131,7 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
                                             className={`text-sm font-medium w-full text-left truncate ${slot.exerciseId ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 italic'}`}
                                         >
                                             {slot.exerciseId 
-                                                ? (useApp().exercises.find(e => e.id === slot.exerciseId)?.name as any)?.[lang] || useApp().exercises.find(e => e.id === slot.exerciseId)?.name || slot.exerciseId 
+                                                ? getTranslated(useApp().exercises.find(e => e.id === slot.exerciseId)?.name, lang)
                                                 : t.selectExBtn
                                             }
                                         </button>

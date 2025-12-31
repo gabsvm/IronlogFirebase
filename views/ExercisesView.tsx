@@ -4,6 +4,7 @@ import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { MuscleGroup } from '../types';
+import { getTranslated } from '../utils';
 
 interface ExercisesViewProps {
     onBack: () => void;
@@ -52,14 +53,14 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
                 <div className="flex-1 overflow-y-auto p-4 scroll-container relative">
                     <div className="space-y-2 pb-24">
                         {exercises.sort((a,b) => {
-                             const na = typeof a.name === 'object' ? a.name[lang] : a.name;
-                             const nb = typeof b.name === 'object' ? b.name[lang] : b.name;
+                             const na = getTranslated(a.name, lang);
+                             const nb = getTranslated(b.name, lang);
                              return na.localeCompare(nb);
                         }).map(ex => (
                             <div key={ex.id} className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-white/5 flex justify-between items-center shadow-sm">
                                 <div>
                                     <div className="font-bold text-zinc-900 dark:text-white text-sm">
-                                        {typeof ex.name === 'object' ? ex.name[lang] : ex.name}
+                                        {getTranslated(ex.name, lang)}
                                     </div>
                                     <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400">
                                         {TRANSLATIONS[lang].muscle[ex.muscle]}

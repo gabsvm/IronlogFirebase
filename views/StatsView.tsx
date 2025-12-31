@@ -12,12 +12,14 @@ export const StatsView: React.FC = () => {
         const counts: Record<string, number> = {};
         Object.values(MUSCLE_GROUPS).forEach(m => counts[m] = 0);
 
-        logs.forEach(log => {
+        const safeLogs = Array.isArray(logs) ? logs : [];
+
+        safeLogs.forEach(log => {
             // If active meso exists, filter by it. Otherwise show all recent.
             if (activeMeso && log.mesoId !== activeMeso.id) return;
             
-            log.exercises.forEach(ex => {
-                const setsDone = ex.sets.filter(s => s.completed).length;
+            (log.exercises || []).forEach(ex => {
+                const setsDone = (ex.sets || []).filter(s => s.completed).length;
                 if (counts[ex.muscle] !== undefined) {
                     counts[ex.muscle] += setsDone;
                 }
@@ -58,13 +60,17 @@ export const StatsView: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-white/5">
                     <div className="text-3xl font-black text-zinc-900 dark:text-white mb-1">
-                        {logs.length}
+                        {(Array.isArray(logs) ? logs : []).length}
                     </div>
                     <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{t.totalWorkouts}</div>
                 </div>
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-white/5">
                     <div className="text-3xl font-black text-zinc-900 dark:text-white mb-1">
-                        {logs.reduce((acc, l) => acc + l.duration, 0) / 60 > 0 ? Math.round((logs.reduce((acc, l) => acc + l.duration, 0) / 60) / logs.length) : 0}m
+                        {
+                            (Array.isArray(logs) ? logs : []).length > 0
+                            ? Math.round(((Array.isArray(logs) ? logs : []).reduce((acc, l) => acc + l.duration, 0) / 60) / (Array.isArray(logs) ? logs : []).length)
+                            : 0
+                        }m
                     </div>
                     <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{t.avgDuration}</div>
                 </div>

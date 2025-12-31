@@ -6,7 +6,8 @@ import { Button } from '../components/ui/Button';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
-import { MuscleGroup } from '../types';
+import { MuscleGroup, ExerciseDef } from '../types';
+import { getTranslated } from '../utils';
 
 const MuscleTag = ({ label }: { label: string }) => (
     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400">
@@ -49,17 +50,21 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         return () => clearInterval(i);
     }, [activeSession?.startTime]);
 
+    if (!activeSession) return null;
+    
+    // Defensive access
+    const sessionExercises = Array.isArray(activeSession.exercises) ? activeSession.exercises.filter(Boolean) : [];
+
     const handleSetUpdate = (exInstanceId: number, setId: number, field: string, value: any) => {
-        if (!activeSession) return;
         setActiveSession(prev => {
             if (!prev) return null;
             return {
                 ...prev,
-                exercises: prev.exercises.map(ex => {
+                exercises: (prev.exercises || []).map(ex => {
                     if (ex.instanceId !== exInstanceId) return ex;
                     return {
                         ...ex,
-                        sets: ex.sets.map(s => s.id === setId ? { ...s, [field]: value } : s)
+                        sets: (ex.sets || []).map(s => s.id === setId ? { ...s, [field]: value } : s)
                     };
                 })
             };
@@ -67,20 +72,18 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     };
 
     const handleNoteUpdate = (exInstanceId: number, note: string) => {
-        if (!activeSession) return;
         setActiveSession(prev => {
             if (!prev) return null;
             return {
                 ...prev,
-                exercises: prev.exercises.map(ex => ex.instanceId === exInstanceId ? { ...ex, note } : ex)
+                exercises: (prev.exercises || []).map(ex => ex.instanceId === exInstanceId ? { ...ex, note } : ex)
             };
         });
     };
 
     const toggleSetComplete = (exInstanceId: number, setId: number) => {
-        if (!activeSession) return;
-        const ex = activeSession.exercises.find(e => e.instanceId === exInstanceId);
-        const set = ex?.sets.find(s => s.id === setId);
+        const ex = sessionExercises.find(e => e.instanceId === exInstanceId);
+        const set = ex?.sets?.find(s => s.id === setId);
         if (!set || set.skipped) return;
 
         const completing = !set.completed;
@@ -92,9 +95,9 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
             return {
                 ...prev,
                 startTime,
-                exercises: prev.exercises.map(e => e.instanceId === exInstanceId ? {
+                exercises: (prev.exercises || []).map(e => e.instanceId === exInstanceId ? {
                     ...e,
-                    sets: e.sets.map(s => s.id === setId ? { ...s, completed: completing } : s)
+                    sets: (e.sets || []).map(s => s.id === setId ? { ...s, completed: completing } : s)
                 } : e)
             }
         });
@@ -120,18 +123,16 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     };
 
     const handleSaveFeedback = (ratings: Record<string, number>) => {
-        if (activeSession) {
-            const { mesoId, week } = activeSession;
-            setRpFeedback(prev => {
-                const newFb = { ...prev };
-                if (!newFb[mesoId]) newFb[mesoId] = {};
-                if (!newFb[mesoId][week]) newFb[mesoId][week] = {};
-                Object.keys(ratings).forEach(m => {
-                    newFb[mesoId][week][m] = ratings[m];
-                });
-                return newFb;
+        const { mesoId, week } = activeSession;
+        setRpFeedback(prev => {
+            const newFb = { ...prev };
+            if (!newFb[mesoId]) newFb[mesoId] = {};
+            if (!newFb[mesoId][week]) newFb[mesoId][week] = {};
+            Object.keys(ratings).forEach(m => {
+                newFb[mesoId][week][m] = ratings[m];
             });
-        }
+            return newFb;
+        });
         setShowFeedbackModal(false);
         onFinish();
     };
@@ -140,20 +141,19 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         if (window.confirm(t.confirmRemoveEx)) {
             setActiveSession(prev => {
                 if(!prev) return null;
-                return { ...prev, exercises: prev.exercises.filter(e => e.instanceId !== exInstanceId) };
+                return { ...prev, exercises: (prev.exercises || []).filter(e => e.instanceId !== exInstanceId) };
             });
             setOpenMenuId(null);
         }
     };
 
     const handleReorder = (exInstanceId: number, direction: 'up' | 'down') => {
-        if (!activeSession) return;
-        const idx = activeSession.exercises.findIndex(e => e.instanceId === exInstanceId);
+        const idx = sessionExercises.findIndex(e => e.instanceId === exInstanceId);
         if (idx === -1) return;
         if (direction === 'up' && idx === 0) return;
-        if (direction === 'down' && idx === activeSession.exercises.length - 1) return;
+        if (direction === 'down' && idx === sessionExercises.length - 1) return;
 
-        const newExercises = [...activeSession.exercises];
+        const newExercises = [...sessionExercises];
         const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
         [newExercises[idx], newExercises[swapIdx]] = [newExercises[swapIdx], newExercises[idx]];
 
@@ -161,19 +161,18 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         setOpenMenuId(null);
     };
 
-    const handleReplaceExercise = (newExId: string) => {
-        if (!replacingExId || !activeSession) return;
-        const newDef = exercises.find(e => e.id === newExId);
+    const handleReplaceExercise = (newExId: string, customDef?: ExerciseDef) => {
+        if (!replacingExId) return;
+        const newDef = customDef || exercises.find(e => e.id === newExId);
         if (!newDef) return;
 
         setActiveSession(prev => {
             if (!prev) return null;
             return {
                 ...prev,
-                exercises: prev.exercises.map(ex => {
+                exercises: (prev.exercises || []).map(ex => {
                     if (ex.instanceId !== replacingExId) return ex;
-                    // Reset sets for new exercise
-                    const resetSets = ex.sets.map(s => ({
+                    const resetSets = (ex.sets || []).map(s => ({
                         ...s,
                         weight: '', reps: '', rpe: '', completed: false,
                         hintWeight: undefined, hintReps: undefined
@@ -186,9 +185,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         setOpenMenuId(null);
     };
 
-    const handleAddExercise = (newExId: string) => {
-        if (!activeSession) return;
-        const newDef = exercises.find(e => e.id === newExId);
+    const handleAddExercise = (newExId: string, customDef?: ExerciseDef) => {
+        const newDef = customDef || exercises.find(e => e.id === newExId);
         if (!newDef) return;
 
         const newInstanceId = Date.now();
@@ -201,7 +199,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
             if (!prev) return null;
             return {
                 ...prev,
-                exercises: [...prev.exercises, {
+                exercises: [...(prev.exercises || []), {
                     ...newDef,
                     instanceId: newInstanceId,
                     slotLabel: newDef.muscle,
@@ -213,28 +211,26 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     };
 
     const handleChangeMuscle = (muscle: MuscleGroup) => {
-        if (!editingMuscleId || !activeSession) return;
+        if (!editingMuscleId) return;
         setActiveSession(prev => {
             if (!prev) return null;
             return {
                 ...prev,
-                exercises: prev.exercises.map(ex => ex.instanceId === editingMuscleId ? { ...ex, slotLabel: muscle } : ex)
+                exercises: (prev.exercises || []).map(ex => ex.instanceId === editingMuscleId ? { ...ex, slotLabel: muscle } : ex)
             };
         });
         setEditingMuscleId(null);
         setOpenMenuId(null);
     };
 
-    // Link/Unlink Superset
     const handleToggleSupersetLink = (exInstanceId: number) => {
-        if (!activeSession) return;
-        const ex = activeSession.exercises.find(e => e.instanceId === exInstanceId);
+        const ex = sessionExercises.find(e => e.instanceId === exInstanceId);
         if (ex?.supersetId) {
             setActiveSession(prev => {
                 if (!prev) return null;
                 return {
                     ...prev,
-                    exercises: prev.exercises.map(e => e.instanceId === exInstanceId ? { ...e, supersetId: undefined } : e)
+                    exercises: (prev.exercises || []).map(e => e.instanceId === exInstanceId ? { ...e, supersetId: undefined } : e)
                 };
             });
         } else {
@@ -244,13 +240,13 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     };
 
     const handleLinkTo = (targetInstanceId: number) => {
-        if (!linkingId || !activeSession) return;
+        if (!linkingId) return;
         const ssid = `ss_${Date.now()}`;
         setActiveSession(prev => {
             if (!prev) return null;
             return {
                 ...prev,
-                exercises: prev.exercises.map(e => {
+                exercises: (prev.exercises || []).map(e => {
                     if (e.instanceId === linkingId || e.instanceId === targetInstanceId) {
                         return { ...e, supersetId: ssid };
                     }
@@ -261,9 +257,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         setLinkingId(null);
     };
 
-    if (!activeSession) return null;
-
-    const finishedSets = activeSession.exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
+    const finishedSets = sessionExercises.reduce((acc, ex) => acc + (ex.sets || []).filter(s => s.completed).length, 0);
     
     return (
         <div className="fixed inset-0 z-40 flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans" onClick={() => setOpenMenuId(null)}>
@@ -297,11 +291,14 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
-                {activeSession.exercises.map((ex, idx) => {
+                {sessionExercises.map((ex, idx) => {
+                    if (!ex) return null; // Defensive check for individual exercises
+
                     const isSuperset = !!ex.supersetId;
                     const isLinkingTarget = linkingId && linkingId !== ex.instanceId;
                     const isFirst = idx === 0;
-                    const isLast = idx === activeSession.exercises.length - 1;
+                    const isLast = idx === sessionExercises.length - 1;
+                    const sets = Array.isArray(ex.sets) ? ex.sets : [];
                     
                     return (
                         <div 
@@ -320,11 +317,11 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                             {isSuperset && <span className="bg-orange-100 text-orange-600 text-[9px] font-bold px-1.5 py-0.5 rounded">SS</span>}
-                                            <MuscleTag label={ex.slotLabel || ex.muscle} />
+                                            <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
                                             {ex.targetReps && <span className="text-[10px] font-bold text-zinc-400 tracking-wide">{t.target}: {ex.targetReps}</span>}
                                         </div>
                                         <h3 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight tracking-tight">
-                                            {typeof ex.name === 'object' ? ex.name[lang] : ex.name}
+                                            {getTranslated(ex.name, lang)}
                                         </h3>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -406,7 +403,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
                             {/* Sets Body */}
                             <div className="divide-y divide-zinc-100 dark:divide-white/5">
-                                {ex.sets.map((set, sIdx) => {
+                                {sets.map((set, sIdx) => {
                                     const isDone = set.completed;
                                     return (
                                         <div key={set.id} className={`grid grid-cols-12 gap-2 px-4 py-3 items-center transition-colors duration-300 relative group ${isDone ? 'bg-green-50/50 dark:bg-green-500/5' : ''}`}>
@@ -441,11 +438,11 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                             <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 grid grid-cols-2 divide-x divide-zinc-200 dark:divide-white/10">
                                 <button 
                                     onClick={() => {
-                                        if (ex.sets.length > 0) {
-                                            onDeleteSet(ex.instanceId, ex.sets[ex.sets.length - 1].id);
+                                        if (sets.length > 0) {
+                                            onDeleteSet(ex.instanceId, sets[sets.length - 1].id);
                                         }
                                     }}
-                                    disabled={ex.sets.length <= 1}
+                                    disabled={sets.length <= 1}
                                     className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors"
                                 >
                                     <Icon name="Minus" size={14} /> {t.removeSetBtn}
@@ -500,7 +497,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
             {/* RP Feedback */}
             {showFeedbackModal && activeSession && (
-                <FeedbackModal muscles={activeSession.exercises.map(e => e.muscle)} onCancel={() => setShowFeedbackModal(false)} onConfirm={handleSaveFeedback} />
+                <FeedbackModal muscles={sessionExercises.map(e => e?.muscle || 'CHEST')} onCancel={() => setShowFeedbackModal(false)} onConfirm={handleSaveFeedback} />
             )}
 
             {/* Replace Exercise Selector */}
@@ -532,12 +529,12 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
             {/* Warmup Modal */}
             {warmupExId && activeSession && (
                 <WarmupModal 
-                    targetWeight={Number(activeSession.exercises.find(e => e.instanceId === warmupExId)?.sets[0]?.hintWeight || activeSession.exercises.find(e => e.instanceId === warmupExId)?.sets[0]?.weight || 0)}
+                    targetWeight={Number(sessionExercises.find(e => e.instanceId === warmupExId)?.sets?.[0]?.hintWeight || sessionExercises.find(e => e.instanceId === warmupExId)?.sets?.[0]?.weight || 0)}
                     exerciseName={
                         (() => {
-                            const ex = activeSession.exercises.find(e => e.instanceId === warmupExId);
+                            const ex = sessionExercises.find(e => e.instanceId === warmupExId);
                             if (!ex) return '';
-                            return typeof ex.name === 'object' ? ex.name[lang] : ex.name;
+                            return getTranslated(ex.name, lang);
                         })()
                     }
                     onClose={() => setWarmupExId(null)}

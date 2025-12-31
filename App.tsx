@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
 import { HomeView } from './views/HomeView';
@@ -27,6 +27,51 @@ const AppContent = () => {
     // Extended view state
     const [view, setView] = useState<'home' | 'workout' | 'history' | 'exercises' | 'program' | 'stats'>('home');
     const [showSettings, setShowSettings] = useState(false);
+
+    // History management for Android Back Button
+    const isPopping = useRef(false);
+
+    useEffect(() => {
+        // Wrap in try-catch for environments where History API is restricted (e.g. some previews)
+        try {
+            if (typeof window !== 'undefined' && window.history) {
+                window.history.replaceState({ view: 'home', settings: false }, '', '#home');
+            }
+        } catch (e) {
+            // Ignore history errors
+        }
+
+        const handlePop = (e: PopStateEvent) => {
+            isPopping.current = true;
+            if (e.state) {
+                if (e.state.view) setView(e.state.view);
+                setShowSettings(!!e.state.settings);
+            } else {
+                setView('home');
+                setShowSettings(false);
+            }
+        };
+
+        window.addEventListener('popstate', handlePop);
+        return () => window.removeEventListener('popstate', handlePop);
+    }, []);
+
+    useEffect(() => {
+        if (isPopping.current) {
+            isPopping.current = false;
+            return;
+        }
+        const state = { view, settings: showSettings };
+        const hash = showSettings ? 'settings' : view;
+        
+        try {
+            if (typeof window !== 'undefined' && window.history) {
+                window.history.pushState(state, '', `#${hash}`);
+            }
+        } catch (e) {
+            // Ignore history errors
+        }
+    }, [view, showSettings]);
 
     // PWA Install Prompt State
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -98,35 +143,56 @@ const AppContent = () => {
             return;
         }
 
-        const dayPlan = activeMeso.plan[dayIdx];
-        const dayDef = program[dayIdx];
+        // Defensive checks for data integrity
+        const safeProgram = Array.isArray(program) ? program : [];
+        const dayDef = safeProgram[dayIdx];
+        if (!dayDef) return;
 
-        // Hydrate session exercises with history
-        const sessionExs = dayPlan.map((exId, idx) => {
-            const slotDef = dayDef.slots[idx];
+        const dayNameSafe = dayDef.dayName 
+            ? (typeof dayDef.dayName === 'object' ? dayDef.dayName[lang] : dayDef.dayName) 
+            : `Day ${dayIdx + 1}`;
+
+        // Safely access plan
+        const mesoPlan = Array.isArray(activeMeso.plan) ? activeMeso.plan : [];
+        const dayPlan = Array.isArray(mesoPlan[dayIdx]) ? mesoPlan[dayIdx] : [];
+
+        // Hydrate session exercises
+        const safeExercises = Array.isArray(exercises) ? exercises.filter(e => !!e) : [];
+        const safeLogs = Array.isArray(logs) ? logs : [];
+
+        const sessionExs = (dayDef.slots || []).map((slotDef, idx) => {
+            // Guard against null slots
+            if (!slotDef) return null;
+
+            const exId = dayPlan[idx];
             let exDef: ExerciseDef | undefined;
 
             // 1. Try to find the assigned exercise by ID
             if (exId) {
-                exDef = exercises.find(e => e.id === exId);
+                exDef = safeExercises.find(e => e.id === exId);
             }
 
             // 2. If no ID (new plan), find the first exercise matching the muscle group
             if (!exDef) {
-                exDef = exercises.find(e => e.muscle === slotDef.muscle);
+                exDef = safeExercises.find(e => e.muscle === slotDef.muscle);
             }
 
-            // 3. Fallback to just the first exercise in DB if nothing matches (should rarely happen)
+            // 3. Fallback to just the first exercise in DB
+            if (!exDef && safeExercises.length > 0) {
+                exDef = safeExercises[0];
+            }
+
+            // 4. Absolute fallback to prevent crash
             if (!exDef) {
-                exDef = exercises[0];
+                exDef = { id: 'unknown', name: 'Unknown Exercise', muscle: slotDef.muscle || 'CHEST' };
             }
 
-            // Look up history for "Ghost Text" (Hints)
-            const lastSets = exDef ? getLastLogForExercise(exDef.id, logs) : null;
+            // Look up history
+            const lastSets = getLastLogForExercise(exDef.id, safeLogs);
             
             const setTarget = slotDef.setTarget || 3;
             const initialSets = Array(setTarget).fill(null).map((_, i) => {
-                const historySet = lastSets ? lastSets[i] : null;
+                const historySet = lastSets && lastSets[i] ? lastSets[i] : null;
                 return {
                     id: Date.now() + Math.random() + i,
                     weight: '', 
@@ -146,13 +212,13 @@ const AppContent = () => {
                 targetReps: slotDef.reps,
                 sets: initialSets as any
             };
-        });
+        }).filter(Boolean); // Remove nulls from mapping
 
         setActiveSession({
             id: Date.now(),
             dayIdx,
-            name: `${activeMeso.week} • ${dayDef.dayName[lang]}`,
-            exercises: sessionExs,
+            name: `${activeMeso.week} • ${dayNameSafe}`,
+            exercises: sessionExs as any,
             startTime: Date.now(), 
             mesoId: activeMeso.id,
             week: activeMeso.week
@@ -168,9 +234,10 @@ const AppContent = () => {
             endTime: Date.now(),
             duration,
         };
-        setLogs([log as any, ...logs]);
+        const safeLogs = Array.isArray(logs) ? logs : [];
+        setLogs([log as any, ...safeLogs]);
         setActiveSession(null);
-        setRestTimer({ active: false, timeLeft: 0, duration: 0, endAt: 0 }); // Kill timer
+        setRestTimer({ active: false, timeLeft: 0, duration: 0, endAt: 0 }); 
         setView('home');
     };
 
@@ -178,11 +245,13 @@ const AppContent = () => {
         if (!activeSession) return;
         setActiveSession(prev => {
             if (!prev) return null;
+            const currentExercises = Array.isArray(prev.exercises) ? prev.exercises : [];
             return {
                 ...prev,
-                exercises: prev.exercises.map(ex => {
+                exercises: currentExercises.map(ex => {
                     if (ex.instanceId !== exInstanceId) return ex;
-                    const lastSet = ex.sets[ex.sets.length - 1];
+                    const sets = Array.isArray(ex.sets) ? ex.sets : [];
+                    const lastSet = sets[sets.length - 1];
                     const newSet = {
                         id: Date.now(),
                         weight: lastSet ? lastSet.weight : '',
@@ -193,7 +262,7 @@ const AppContent = () => {
                         hintWeight: lastSet ? lastSet.weight : undefined,
                         hintReps: lastSet ? lastSet.reps : undefined
                     };
-                    return { ...ex, sets: [...ex.sets, newSet as any] };
+                    return { ...ex, sets: [...sets, newSet as any] };
                 })
             };
         });
@@ -203,12 +272,14 @@ const AppContent = () => {
         if (!activeSession) return;
         setActiveSession(prev => {
             if (!prev) return null;
+            const currentExercises = Array.isArray(prev.exercises) ? prev.exercises : [];
             return {
                 ...prev,
-                exercises: prev.exercises.map(ex => {
+                exercises: currentExercises.map(ex => {
                     if (ex.instanceId !== exInstanceId) return ex;
-                    if (ex.sets.length <= 1) return ex; 
-                    return { ...ex, sets: ex.sets.filter(s => s.id !== setId) };
+                    const sets = Array.isArray(ex.sets) ? ex.sets : [];
+                    if (sets.length <= 1) return ex; 
+                    return { ...ex, sets: sets.filter(s => s.id !== setId) };
                 })
             };
         });
@@ -216,7 +287,6 @@ const AppContent = () => {
 
     return (
         <>
-            {/* View Routing */}
             {view === 'workout' && activeSession ? (
                 <WorkoutView 
                     onFinish={finishWorkout} 
@@ -236,10 +306,8 @@ const AppContent = () => {
                 </Layout>
             )}
 
-            {/* Global Overlays */}
             <RestTimerOverlay />
             
-            {/* Onboarding Modal */}
             {!hasSeenOnboarding && (
                 <OnboardingModal onClose={() => setHasSeenOnboarding(true)} />
             )}
@@ -251,7 +319,6 @@ const AppContent = () => {
                         <h2 className="font-bold text-2xl dark:text-white mb-6 tracking-tight">{t.settings}</h2>
                         
                         <div className="space-y-8 flex-1">
-                            {/* App Install Button (Only if prompt available) */}
                             {deferredPrompt && (
                                 <div>
                                     <button 
@@ -263,7 +330,6 @@ const AppContent = () => {
                                 </div>
                             )}
 
-                            {/* Workout Config */}
                             <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.workoutConfig}</label>
                                 <button 
@@ -306,7 +372,6 @@ const AppContent = () => {
                                 </div>
                             </div>
 
-                            {/* Appearance & Language */}
                             <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.appearance}</label>
                                 <div className="space-y-3">
@@ -342,7 +407,6 @@ const AppContent = () => {
                                 </div>
                             </div>
 
-                            {/* Database */}
                             <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.database}</label>
                                 <button 
@@ -365,7 +429,6 @@ const AppContent = () => {
                                 </div>
                             </div>
 
-                            {/* Danger Zone */}
                             <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.dangerZone}</label>
                                 <button 

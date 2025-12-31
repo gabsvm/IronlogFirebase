@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
-import { MuscleGroup } from '../types';
+import { getTranslated } from '../utils';
 
 interface HomeViewProps {
     startSession: (dayIdx: number) => void;
@@ -18,8 +18,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
     // Modal for completion
     const [showCompleteModal, setShowCompleteModal] = useState<'week' | 'meso' | null>(null);
 
+    // Defensive: Ensure program is an array
+    const safeProgram = Array.isArray(program) ? program : [];
+    const safeLogs = Array.isArray(logs) ? logs : [];
+
     const handleStartMeso = () => {
-        const initialPlan = program.map(day => day.slots.map(slot => slot.exerciseId || null)); 
+        const initialPlan = safeProgram.map(day => (day?.slots || []).map(slot => slot.exerciseId || null)); 
         setActiveMeso({ id: Date.now(), week: 1, plan: initialPlan });
     };
 
@@ -36,7 +40,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
         if (config.rpEnabled) {
             const currentFeedback = rpFeedback[activeMeso.id]?.[activeMeso.week];
             if (currentFeedback) {
-                // Map muscles to changes: 1 -> +1 set, 5 -> -1 set
                 const adjustments: Record<string, number> = {};
                 
                 Object.entries(currentFeedback).forEach(([muscle, rating]) => {
@@ -45,14 +48,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
                 });
 
                 if (Object.keys(adjustments).length > 0) {
-                    setProgram(prev => prev.map(day => ({
+                    setProgram(prev => (Array.isArray(prev) ? prev : []).map(day => ({
                         ...day,
-                        slots: day.slots.map(slot => {
+                        slots: (day.slots || []).map(slot => {
                             const adj = adjustments[slot.muscle];
                             if (adj) {
                                 const newTarget = Math.max(1, slot.setTarget + adj);
                                 if (newTarget !== slot.setTarget) {
-                                    // Only log unique changes for summary
                                     const msg = `${tm(slot.muscle)}: ${adj > 0 ? '+1' : '-1'} set`;
                                     if (!changesReport.includes(msg)) changesReport.push(msg);
                                     return { ...slot, setTarget: newTarget };
@@ -101,10 +103,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
     }
 
     // Check if current week is done
-    const logsForWeek = logs.filter(l => l.mesoId === activeMeso.id && l.week === activeMeso.week);
+    const logsForWeek = safeLogs.filter(l => l.mesoId === activeMeso.id && l.week === activeMeso.week);
     const uniqueDaysDone = new Set(logsForWeek.map(l => l.dayIdx)).size;
-    const totalDays = program.length;
-    const weekComplete = uniqueDaysDone >= totalDays;
+    const totalDays = safeProgram.length;
+    const weekComplete = uniqueDaysDone >= totalDays && totalDays > 0;
 
     return (
         <div className="p-4 space-y-6">
@@ -122,8 +124,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
             </div>
 
             <div className="space-y-4 pb-safe">
-                {program.map((day, idx) => {
-                    const logForToday = logs.find(l => l.mesoId === activeMeso.id && l.week === activeMeso.week && l.dayIdx === idx);
+                {safeProgram.map((day, idx) => {
+                    // CRITICAL FIX: Skip if day is null/undefined in array
+                    if (!day) return null;
+
+                    const logForToday = safeLogs.find(l => l.mesoId === activeMeso.id && l.week === activeMeso.week && l.dayIdx === idx);
                     const isCompleted = logForToday && !logForToday.skipped;
                     
                     return (
@@ -145,7 +150,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
                                     <div>
                                         <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{t.day} {idx + 1}</div>
                                         <h3 className={`text-xl font-bold tracking-tight ${isCompleted ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`}>
-                                            {typeof day.dayName === 'object' ? day.dayName[lang] : day.dayName}
+                                            {getTranslated(day.dayName, lang)}
                                         </h3>
                                     </div>
                                     {isCompleted ? (
@@ -160,7 +165,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
-                                    {day.slots.map((slot, sIdx) => (
+                                    {(day.slots || []).map((slot, sIdx) => (
                                         <span 
                                             key={sIdx} 
                                             className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 border border-transparent dark:border-white/5"

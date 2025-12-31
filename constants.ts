@@ -3,7 +3,7 @@ import { ExerciseDef, ProgramDay, MuscleGroup } from './types';
 export const MUSCLE_GROUPS: Record<string, MuscleGroup> = { 
     CHEST: 'CHEST', BACK: 'BACK', QUADS: 'QUADS', HAMS: 'HAMSTRINGS', 
     GLUTES: 'GLUTES', CALVES: 'CALVES', SHOULDERS: 'SHOULDERS', 
-    BICEPS: 'BICEPS', TRICEPS: 'TRICEPS', TRAPS: 'TRAPS',
+    BICEPS: 'BICEPS', TRICEPS: 'TRICEPS', TRAPS: 'TRAPS', 
     ABS: 'ABS', FOREARMS: 'FOREARMS'
 };
 
@@ -72,7 +72,8 @@ export const TRANSLATIONS = {
             s2_title: "Mesocycles", s2_desc: "Organize training into weeks. We auto-regulate volume based on your feedback.",
             s3_title: "Smart Tracking", s3_desc: "Track RIR, use our built-in rest timer, and get warmup sets calculated instantly.",
             s4_title: "Progress", s4_desc: "Visualize your volume landmarks (MEV/MRV) and ensure you are overloading progressively."
-        }
+        },
+        createAndSelect: "Create & Select"
     },
     es: { 
         startMeso: "Iniciar Mesociclo", finishWorkout: "Terminar Sesión", finishConfirm: "¿Terminar entrenamiento?", cancel: "Cancelar", delete: "Borrar", skip: "Saltar Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Reemplazar Ejercicio", changeMuscle: "Cambiar músculo", chooseMuscle: "Elegir músculo", addSetBelow: "Añadir Serie Debajo", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Serie", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Progreso", settings: "Ajustes", rp: "Progresión RP", rpEnabled: "Sugerencias RP", rpTargetRIR: "RIR objetivo", volume: "Volumen Semanal", workouts: "Sesiones Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Volver", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar el mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No encontrado", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Ciclo", totalWorkouts: "Entrenamientos", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona para unir...", superset: "SUPERSERIE", workoutComplete: "¡ENTRENAMIENTO TERMINADO!", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "Esto sobrescribirá los datos. ¿Continuar?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Eliminar Slot", offline: "Modo Local", mesoAvg: "Promedio Mesociclo", 
@@ -103,6 +104,7 @@ export const TRANSLATIONS = {
             s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. Auto-regulamos el volumen según tu feedback.",
             s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.",
             s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva."
-        }
+        },
+        createAndSelect: "Crear y Seleccionar"
     }
 };

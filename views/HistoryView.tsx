@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
-import { formatDate, formatHoursMinutes } from '../utils';
+import { formatDate, formatHoursMinutes, getTranslated } from '../utils';
 import { Icon } from '../components/ui/Icon';
 
 export const HistoryView: React.FC = () => {
@@ -9,24 +9,26 @@ export const HistoryView: React.FC = () => {
     const t = TRANSLATIONS[lang];
     const [expandedId, setExpandedId] = useState<number | null>(null);
 
+    const safeLogs = Array.isArray(logs) ? logs : [];
+
     return (
         <div className="p-4 space-y-6">
             <h2 className="text-2xl font-black text-zinc-900 dark:text-white px-2">History</h2>
             
-            {logs.length === 0 ? (
+            {safeLogs.length === 0 ? (
                 <div className="text-center py-20 opacity-50">
                     <Icon name="CloudOff" size={48} className="mx-auto mb-4 text-zinc-600" />
                     <p>No workouts logged yet.</p>
                 </div>
             ) : (
                 <div className="space-y-4 pb-safe">
-                    {logs.map((log) => {
+                    {safeLogs.map((log) => {
                         const isExpanded = expandedId === log.id;
-                        const bestSets = log.exercises.map(ex => {
-                            const validSets = ex.sets.filter(s => s.completed && s.weight && s.reps);
+                        const bestSets = (log.exercises || []).map(ex => {
+                            const validSets = (ex.sets || []).filter(s => s.completed && s.weight && s.reps);
                             if (validSets.length === 0) return null;
                             const best = validSets.reduce((prev, current) => (Number(prev.weight) > Number(current.weight)) ? prev : current);
-                            return { name: typeof ex.name === 'object' ? ex.name[lang] : ex.name, ...best };
+                            return { name: getTranslated(ex.name, lang), ...best };
                         }).filter(Boolean);
 
                         return (
@@ -72,13 +74,13 @@ export const HistoryView: React.FC = () => {
 
                                 {isExpanded && (
                                     <div className="bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 p-4 space-y-6 animate-slideUp">
-                                        {log.exercises.map((ex, i) => (
+                                        {(log.exercises || []).map((ex, i) => (
                                             <div key={i}>
                                                 <h4 className="font-bold text-sm text-zinc-900 dark:text-white mb-2">
-                                                    {typeof ex.name === 'object' ? ex.name[lang] : ex.name}
+                                                    {getTranslated(ex.name, lang)}
                                                 </h4>
                                                 <div className="space-y-1">
-                                                    {ex.sets.filter(s => s.completed).map((s, idx) => (
+                                                    {(ex.sets || []).filter(s => s.completed).map((s, idx) => (
                                                         <div key={idx} className="flex items-center text-xs">
                                                             <div className="w-6 h-6 rounded bg-zinc-200 dark:bg-white/10 flex items-center justify-center font-bold text-zinc-500 mr-3">
                                                                 {idx + 1}

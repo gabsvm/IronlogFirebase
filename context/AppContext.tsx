@@ -31,7 +31,11 @@ function useLS<T>(key: string, initial: T): [T, React.Dispatch<React.SetStateAct
     const [val, setVal] = useState<T>(() => {
         try {
             const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : initial;
+            if (item === null) return initial;
+            const parsed = JSON.parse(item);
+            // Defensive: if parsed is null but we expect an object/array (initial is not null), fallback to initial.
+            if (parsed === null && initial !== null) return initial;
+            return parsed;
         } catch {
             return initial;
         }
