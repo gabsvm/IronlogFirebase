@@ -427,8 +427,22 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                     );
                                 })}
                             </div>
-                            <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5">
-                                <button onClick={() => onAddSet(ex.instanceId)} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                            <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 grid grid-cols-2 divide-x divide-zinc-200 dark:divide-white/10">
+                                <button 
+                                    onClick={() => {
+                                        if (ex.sets.length > 0) {
+                                            onDeleteSet(ex.instanceId, ex.sets[ex.sets.length - 1].id);
+                                        }
+                                    }}
+                                    disabled={ex.sets.length <= 1}
+                                    className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors"
+                                >
+                                    <Icon name="Minus" size={14} /> {t.removeSetBtn}
+                                </button>
+                                <button 
+                                    onClick={() => onAddSet(ex.instanceId)} 
+                                    className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                                >
                                     <Icon name="Plus" size={14} /> {t.addSetBtn}
                                 </button>
                             </div>

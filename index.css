@@ -6,6 +6,14 @@
   color-scheme: light dark;
 }
 
+html, body, #root {
+  height: 100%;
+  height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent body scroll, handle inside Layout */
+}
+
 body {
   @apply bg-gray-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100;
   overscroll-behavior: none;

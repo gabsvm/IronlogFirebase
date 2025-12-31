@@ -11,6 +11,7 @@ import { RestTimerOverlay } from './components/ui/RestTimerOverlay';
 import { getLastLogForExercise } from './utils';
 import { Icon } from './components/ui/Icon';
 import { TRANSLATIONS } from './constants';
+import { ExerciseDef } from './types';
 
 const AppContent = () => {
     const { 
@@ -79,11 +80,26 @@ const AppContent = () => {
 
         // Hydrate session exercises with history
         const sessionExs = dayPlan.map((exId, idx) => {
-            const exDef = exercises.find(e => e.id === exId) || exercises[0];
             const slotDef = dayDef.slots[idx];
-            
+            let exDef: ExerciseDef | undefined;
+
+            // 1. Try to find the assigned exercise by ID
+            if (exId) {
+                exDef = exercises.find(e => e.id === exId);
+            }
+
+            // 2. If no ID (new plan), find the first exercise matching the muscle group
+            if (!exDef) {
+                exDef = exercises.find(e => e.muscle === slotDef.muscle);
+            }
+
+            // 3. Fallback to just the first exercise in DB if nothing matches (should rarely happen)
+            if (!exDef) {
+                exDef = exercises[0];
+            }
+
             // Look up history for "Ghost Text" (Hints)
-            const lastSets = exId ? getLastLogForExercise(exId, logs) : null;
+            const lastSets = exDef ? getLastLogForExercise(exDef.id, logs) : null;
             
             const setTarget = slotDef.setTarget || 3;
             const initialSets = Array(setTarget).fill(null).map((_, i) => {
@@ -210,6 +226,12 @@ const AppContent = () => {
                             {/* Workout Config */}
                             <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.workoutConfig}</label>
+                                <button 
+                                    onClick={() => { setShowSettings(false); setView('program'); }}
+                                    className="w-full py-3 mb-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="Edit" size={16} /> {t.editTemplate}
+                                </button>
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-white/5 rounded-xl">
                                         <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">{t.showRIR}</span>

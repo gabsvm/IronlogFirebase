@@ -52,7 +52,7 @@ export const TRANSLATIONS = {
         editTemplate: "Edit Program", resetTemplate: "Reset to Default", editDay: "Edit Day", addDay: "Add Day", addSlot: "Add Exercise Slot", save: "Save", swapTitle: "Swap Exercise", swapMsg: "How do you want to apply this change?", swapSession: "This Session Only", swapForever: "Update Plan (Forever)", programEditor: "Program Editor", selectExBtn: "Select Exercise", any: "Any",
         manageEx: "Manage Exercises", addEx: "Add New Exercise", exName: "Exercise Name", selectMuscle: "Select Muscle", deleteConfirm: "Delete this exercise?",
         setsCount: "Sets", notes: "Notes", addNote: "Add Note...", volumeStatus: { low: "Low", maintenance: "Maint.", optimal: "Optimal", high: "High" }, showRIR: "Show RIR Column", install: "Install App", unitToggle: "Weight Unit", addExercise: "Add Exercise", updateTemplate: "Update Routine Template", selectMuscleToAdd: "Select Muscle to Add",
-        appearance: "Appearance", database: "Database", dangerZone: "Danger Zone", factoryReset: "Factory Reset App", workoutConfig: "Workout Config",
+        appearance: "Appearance", database: "Base de Datos", dangerZone: "Danger Zone", factoryReset: "Factory Reset App", workoutConfig: "Workout Config",
         completeWeek: "Complete Week", completeWeekConfirm: "Advance to next week?", autoRegulate: "Auto-regulate volume?", autoRegulateDesc: "Based on your sore/pump feedback, we will adjust set counts for next week.", applyingChanges: "Applying Changes:", setsAdded: "sets added", setsRemoved: "sets removed", noChanges: "No volume changes needed.",
         finishMesoConfirm: "Finish this mesocycle? This will archive your current progress and let you start a fresh cycle.",
         deleteDataConfirm: "Delete ALL data? This cannot be undone.",
@@ -62,7 +62,7 @@ export const TRANSLATIONS = {
         replaceEx: "Replace Exercise", removeEx: "Remove Exercise", moveUp: "Move Up", moveDown: "Move Down",
         emptyWorkoutTitle: "Empty Workout?", emptyWorkoutMsg: "You haven't completed any sets yet. Are you sure?",
         completedSetsMsg: "You've completed {0} sets. Save progress?", confirmRemoveEx: "Remove this exercise from current session?",
-        volPerCycle: "Volume (Sets) / Cycle", avgDuration: "Avg Duration", addSetBtn: "ADD SET",
+        volPerCycle: "Volume (Sets) / Cycle", avgDuration: "Avg Duration", addSetBtn: "ADD SET", removeSetBtn: "REMOVE SET",
         prev: "Prev", target: "TARGET"
     },
     es: { 
@@ -84,7 +84,7 @@ export const TRANSLATIONS = {
         replaceEx: "Reemplazar Ejercicio", removeEx: "Eliminar Ejercicio", moveUp: "Mover Arriba", moveDown: "Mover Abajo",
         emptyWorkoutTitle: "¿Entreno vacío?", emptyWorkoutMsg: "No has completado ninguna serie. ¿Estás seguro?",
         completedSetsMsg: "Has completado {0} series. ¿Guardar progreso?", confirmRemoveEx: "¿Eliminar este ejercicio de la sesión actual?",
-        volPerCycle: "Volumen (Series) / Ciclo", avgDuration: "Duración Media", addSetBtn: "AÑADIR SERIE",
+        volPerCycle: "Volumen (Series) / Ciclo", avgDuration: "Duración Media", addSetBtn: "AÑADIR SERIE", removeSetBtn: "QUITAR SERIE",
         prev: "Prev", target: "OBJETIVO"
     }
 };
