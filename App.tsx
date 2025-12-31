@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
 import { HomeView } from './views/HomeView';
@@ -26,6 +26,28 @@ const AppContent = () => {
     // Extended view state
     const [view, setView] = useState<'home' | 'workout' | 'history' | 'exercises' | 'program' | 'stats'>('home');
     const [showSettings, setShowSettings] = useState(false);
+
+    // PWA Install Prompt State
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult: any) => {
+            if (choiceResult.outcome === 'accepted') {
+                setDeferredPrompt(null);
+            }
+        });
+    };
 
     // --- DATA MANAGEMENT ---
     const handleExport = () => {
@@ -223,6 +245,18 @@ const AppContent = () => {
                         <h2 className="font-bold text-2xl dark:text-white mb-6 tracking-tight">{t.settings}</h2>
                         
                         <div className="space-y-8 flex-1">
+                            {/* App Install Button (Only if prompt available) */}
+                            {deferredPrompt && (
+                                <div>
+                                    <button 
+                                        onClick={handleInstallClick}
+                                        className="w-full py-4 mb-2 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-red-600/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="DownloadCloud" size={20} /> {t.install}
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Workout Config */}
                             <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.workoutConfig}</label>
