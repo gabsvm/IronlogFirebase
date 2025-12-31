@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
@@ -134,6 +135,33 @@ const AppContent = () => {
 
     // --- WORKOUT LOGIC ---
 
+    // New: Handle Skip Day
+    const skipSession = (dayIdx: number) => {
+        if (!activeMeso) return;
+
+        // Create a skipped log entry
+        const safeProgram = Array.isArray(program) ? program : [];
+        const dayDef = safeProgram[dayIdx];
+        const name = dayDef 
+            ? (typeof dayDef.dayName === 'object' ? dayDef.dayName[lang] : dayDef.dayName) 
+            : `Day ${dayIdx + 1}`;
+
+        const skippedLog = {
+            id: Date.now(),
+            dayIdx,
+            name: `${activeMeso.week} • ${name}`,
+            startTime: Date.now(),
+            endTime: Date.now(),
+            duration: 0,
+            skipped: true,
+            mesoId: activeMeso.id,
+            week: activeMeso.week,
+            exercises: []
+        };
+        
+        setLogs([skippedLog as any, ...(Array.isArray(logs) ? logs : [])]);
+    };
+
     const startSession = (dayIdx: number) => {
         if (!activeMeso) return;
         
@@ -159,6 +187,9 @@ const AppContent = () => {
         // Hydrate session exercises
         const safeExercises = Array.isArray(exercises) ? exercises.filter(e => !!e) : [];
         const safeLogs = Array.isArray(logs) ? logs : [];
+
+        // Deload Logic: if isDeload is true, cut sets by half
+        const isDeload = !!activeMeso.isDeload;
 
         const sessionExs = (dayDef.slots || []).map((slotDef, idx) => {
             // Guard against null slots
@@ -190,7 +221,12 @@ const AppContent = () => {
             // Look up history
             const lastSets = getLastLogForExercise(exDef.id, safeLogs);
             
-            const setTarget = slotDef.setTarget || 3;
+            // DELOAD LOGIC: Reduce volume
+            let setTarget = slotDef.setTarget || 3;
+            if (isDeload) {
+                setTarget = Math.max(1, Math.ceil(setTarget / 2));
+            }
+
             const initialSets = Array(setTarget).fill(null).map((_, i) => {
                 const historySet = lastSets && lastSets[i] ? lastSets[i] : null;
                 return {
@@ -217,7 +253,7 @@ const AppContent = () => {
         setActiveSession({
             id: Date.now(),
             dayIdx,
-            name: `${activeMeso.week} • ${dayNameSafe}`,
+            name: `${activeMeso.week} • ${dayNameSafe} ${isDeload ? '(Deload)' : ''}`,
             exercises: sessionExs as any,
             startTime: Date.now(), 
             mesoId: activeMeso.id,
@@ -300,7 +336,7 @@ const AppContent = () => {
                 <ProgramEditView onBack={() => setView('home')} />
             ) : (
                 <Layout view={view as any} setView={setView as any} onOpenSettings={() => setShowSettings(true)}>
-                    {view === 'home' && <HomeView startSession={startSession} onEditProgram={() => setView('program')} />}
+                    {view === 'home' && <HomeView startSession={startSession} onEditProgram={() => setView('program')} onSkipSession={skipSession} />}
                     {view === 'history' && <HistoryView />}
                     {view === 'stats' && <StatsView />}
                 </Layout>

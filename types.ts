@@ -64,8 +64,11 @@ export interface ProgramDay {
 
 export interface MesoCycle {
   id: number;
+  name?: string; // User defined name
   week: number;
   plan: (string | null)[][]; // Array of Day Plans (Array of Exercise IDs)
+  targetWeeks?: number; // How many weeks intended
+  isDeload?: boolean; // Is current week a deload?
 }
 
 export interface Log {

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
@@ -8,15 +9,17 @@ import { getTranslated } from '../utils';
 interface HomeViewProps {
     startSession: (dayIdx: number) => void;
     onEditProgram: () => void;
+    onSkipSession?: (dayIdx: number) => void; // New prop
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram, onSkipSession }) => {
     const { activeMeso, program, setActiveMeso, lang, logs, config, rpFeedback, setProgram } = useApp();
     const t = TRANSLATIONS[lang];
     const tm = (key: string) => (TRANSLATIONS[lang].muscle as any)[key] || key;
     
     // Modal for completion
     const [showCompleteModal, setShowCompleteModal] = useState<'week' | 'meso' | null>(null);
+    const [showMesoSettings, setShowMesoSettings] = useState(false);
 
     // Defensive: Ensure program is an array
     const safeProgram = Array.isArray(program) ? program : [];
@@ -24,12 +27,19 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
 
     const handleStartMeso = () => {
         const initialPlan = safeProgram.map(day => (day?.slots || []).map(slot => slot.exerciseId || null)); 
-        setActiveMeso({ id: Date.now(), week: 1, plan: initialPlan });
+        setActiveMeso({ id: Date.now(), week: 1, plan: initialPlan, targetWeeks: 4, isDeload: false });
     };
 
     const handleFinishMeso = () => {
         setActiveMeso(null);
         setShowCompleteModal(null);
+    };
+
+    const handleSkip = (e: React.MouseEvent, dayIdx: number) => {
+        e.stopPropagation();
+        if (onSkipSession && window.confirm(t.skipDayConfirm)) {
+            onSkipSession(dayIdx);
+        }
     };
 
     const handleAdvanceWeek = () => {
@@ -73,8 +83,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
         
         if (msg) alert(msg);
 
+        // Check if next week should be auto-deload (if current week equals target weeks)
+        // Simple logic: if week == targetWeeks, maybe suggest deload? 
+        // For now just advance.
         setActiveMeso(prev => prev ? { ...prev, week: prev.week + 1 } : null);
         setShowCompleteModal(null);
+    };
+
+    const handleMesoSettingUpdate = (field: string, val: any) => {
+        if (!activeMeso) return;
+        setActiveMeso(prev => prev ? { ...prev, [field]: val } : null);
     };
 
     if (!activeMeso) {
@@ -107,19 +125,34 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
     const uniqueDaysDone = new Set(logsForWeek.map(l => l.dayIdx)).size;
     const totalDays = safeProgram.length;
     const weekComplete = uniqueDaysDone >= totalDays && totalDays > 0;
+    const isDeload = !!activeMeso.isDeload;
 
     return (
         <div className="p-4 space-y-6">
             {/* Status Header */}
-            <div className="flex flex-col items-center py-2">
+            <div className="flex flex-col items-center py-2 relative">
+                {activeMeso.name && (
+                    <h2 className="text-lg font-black text-zinc-900 dark:text-white mb-1">{activeMeso.name}</h2>
+                )}
                 <div className="flex items-center gap-2 mb-1">
-                     <span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">{t.massPhase}</span>
+                     <span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">
+                        {isDeload ? t.deloadMode : (!activeMeso.name ? t.massPhase : '')}
+                     </span>
                 </div>
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-zinc-900 dark:bg-white/5 border border-zinc-800 dark:border-white/10 text-sm font-bold text-white shadow-lg">
-                    <span className="text-red-500"><Icon name="Activity" size={16} /></span>
-                    <span>{t.active}</span>
-                    <span className="w-px h-3 bg-zinc-700"></span>
-                    <span className="text-zinc-400">{t.week} {activeMeso.week}</span>
+                
+                <div className="flex items-center gap-2">
+                    <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full border shadow-lg ${isDeload ? 'bg-blue-500/10 border-blue-500/30 text-blue-500' : 'bg-zinc-900 dark:bg-white/5 border-zinc-800 dark:border-white/10 text-white'}`}>
+                        <span className={isDeload ? 'text-blue-500' : 'text-red-500'}><Icon name="Activity" size={16} /></span>
+                        <span className="font-bold text-sm">{t.active}</span>
+                        <span className="w-px h-3 bg-zinc-700"></span>
+                        <span className="text-zinc-400 text-sm font-bold">{t.week} {activeMeso.week} <span className="opacity-50 text-[10px]">/ {activeMeso.targetWeeks || 4}</span></span>
+                    </div>
+                    <button 
+                        onClick={() => setShowMesoSettings(true)}
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                    >
+                        <Icon name="Settings" size={16} />
+                    </button>
                 </div>
             </div>
 
@@ -130,6 +163,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
 
                     const logForToday = safeLogs.find(l => l.mesoId === activeMeso.id && l.week === activeMeso.week && l.dayIdx === idx);
                     const isCompleted = logForToday && !logForToday.skipped;
+                    const isSkipped = logForToday && logForToday.skipped;
                     
                     return (
                         <div 
@@ -139,17 +173,19 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
                                 group relative overflow-hidden rounded-2xl border transition-all duration-300
                                 ${isCompleted 
                                     ? 'bg-zinc-50 dark:bg-zinc-900/50 border-green-500/30' 
-                                    : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/5 hover:border-red-500/50 dark:hover:border-red-500/50 shadow-sm hover:shadow-lg hover:shadow-red-900/10 cursor-pointer active:scale-[0.98]'
+                                    : isSkipped
+                                        ? 'bg-zinc-100 dark:bg-white/5 border-transparent opacity-60'
+                                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/5 hover:border-red-500/50 dark:hover:border-red-500/50 shadow-sm hover:shadow-lg hover:shadow-red-900/10 cursor-pointer active:scale-[0.98]'
                                 }
                             `}
                         >
-                            {!isCompleted && <div className="absolute -right-10 -top-10 w-32 h-32 bg-red-500/5 rounded-full blur-3xl group-hover:bg-red-500/10 transition-colors"></div>}
+                            {!isCompleted && !isSkipped && <div className="absolute -right-10 -top-10 w-32 h-32 bg-red-500/5 rounded-full blur-3xl group-hover:bg-red-500/10 transition-colors"></div>}
                             
                             <div className="relative p-5">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{t.day} {idx + 1}</div>
-                                        <h3 className={`text-xl font-bold tracking-tight ${isCompleted ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`}>
+                                        <h3 className={`text-xl font-bold tracking-tight ${isCompleted ? 'text-green-600 dark:text-green-400' : isSkipped ? 'text-zinc-400 line-through' : 'text-zinc-900 dark:text-white'}`}>
                                             {getTranslated(day.dayName, lang)}
                                         </h3>
                                     </div>
@@ -157,9 +193,22 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
                                         <div className="w-8 h-8 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
                                             <Icon name="Check" size={16} strokeWidth={3} />
                                         </div>
+                                    ) : isSkipped ? (
+                                        <div className="w-8 h-8 bg-zinc-200 dark:bg-white/10 text-zinc-500 rounded-full flex items-center justify-center">
+                                            <Icon name="SkipForward" size={14} />
+                                        </div>
                                     ) : (
-                                        <div className="w-8 h-8 bg-zinc-100 dark:bg-white/5 text-zinc-400 rounded-full flex items-center justify-center group-hover:bg-red-50 dark:group-hover:bg-red-900/20 group-hover:text-red-500 transition-colors">
-                                            <Icon name="Play" size={14} fill="currentColor" />
+                                        <div className="flex gap-2">
+                                             <button 
+                                                onClick={(e) => handleSkip(e, idx)}
+                                                className="w-8 h-8 bg-zinc-100 dark:bg-white/5 text-zinc-400 rounded-full flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                                                title={t.skipDay}
+                                            >
+                                                <Icon name="SkipForward" size={14} />
+                                            </button>
+                                            <div className="w-8 h-8 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center">
+                                                <Icon name="Play" size={14} fill="currentColor" />
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -177,7 +226,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
                             </div>
                             
                             <div className="h-1 w-full bg-zinc-100 dark:bg-white/5">
-                                <div className={`h-full ${isCompleted ? 'bg-green-500' : 'bg-red-500 w-0 group-hover:w-full transition-all duration-700 ease-out'}`}></div>
+                                <div className={`h-full ${isCompleted ? 'bg-green-500' : isSkipped ? 'bg-zinc-400' : 'bg-red-500 w-0 group-hover:w-full transition-all duration-700 ease-out'}`}></div>
                             </div>
                         </div>
                     );
@@ -234,6 +283,71 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram 
                     </div>
                 </div>
             )}
+
+             {/* Meso Settings Modal */}
+             {showMesoSettings && activeMeso && (
+                 <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setShowMesoSettings(false)}>
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6 border-b border-zinc-100 dark:border-white/5 pb-4">
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{t.mesoConfig}</h3>
+                            <button onClick={() => setShowMesoSettings(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><Icon name="X" size={20} /></button>
+                        </div>
+
+                        <div className="space-y-6">
+                            {/* Rename */}
+                            <div>
+                                <label className="text-xs font-bold uppercase text-zinc-400 tracking-wider block mb-2">{t.mesoName}</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl p-3 font-bold outline-none focus:ring-2 focus:ring-red-500"
+                                    value={activeMeso.name || ''}
+                                    placeholder={t.massPhase}
+                                    onChange={(e) => handleMesoSettingUpdate('name', e.target.value)}
+                                />
+                            </div>
+
+                            {/* Duration */}
+                            <div>
+                                <label className="text-xs font-bold uppercase text-zinc-400 tracking-wider block mb-2">{t.targetWeeks}</label>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => handleMesoSettingUpdate('targetWeeks', Math.max(1, (activeMeso.targetWeeks || 4) - 1))}
+                                        className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200"
+                                    >
+                                        <Icon name="Minus" size={16} />
+                                    </button>
+                                    <span className="font-mono text-2xl font-bold w-12 text-center text-zinc-900 dark:text-white">{activeMeso.targetWeeks || 4}</span>
+                                    <button 
+                                        onClick={() => handleMesoSettingUpdate('targetWeeks', (activeMeso.targetWeeks || 4) + 1)}
+                                        className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200"
+                                    >
+                                        <Icon name="Plus" size={16} />
+                                    </button>
+                                    <span className="text-sm font-bold text-zinc-500">{t.weeks}</span>
+                                </div>
+                            </div>
+
+                            {/* Deload Toggle */}
+                            <div className="bg-zinc-50 dark:bg-white/5 p-4 rounded-xl flex items-center justify-between">
+                                <div>
+                                    <div className="font-bold text-zinc-900 dark:text-white text-sm mb-1">{t.deloadMode}</div>
+                                    <div className="text-xs text-zinc-500 max-w-[180px] leading-tight">{t.deloadDesc}</div>
+                                </div>
+                                <button 
+                                    onClick={() => handleMesoSettingUpdate('isDeload', !activeMeso.isDeload)}
+                                    className={`w-12 h-7 rounded-full transition-colors relative ${activeMeso.isDeload ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                                >
+                                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-transform shadow-sm ${activeMeso.isDeload ? 'left-6' : 'left-1'}`} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="mt-8">
+                            <Button fullWidth onClick={() => setShowMesoSettings(false)}>{t.save}</Button>
+                        </div>
+                    </div>
+                 </div>
+             )}
         </div>
     );
 };
