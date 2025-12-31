@@ -58,12 +58,21 @@ export const TRANSLATIONS = {
         deleteDataConfirm: "Delete ALL data? This cannot be undone.",
         importSuccess: "Import successful!", invalidFile: "Invalid file format",
         day: "Day",
-        // New translations
         replaceEx: "Replace Exercise", removeEx: "Remove Exercise", moveUp: "Move Up", moveDown: "Move Down",
         emptyWorkoutTitle: "Empty Workout?", emptyWorkoutMsg: "You haven't completed any sets yet. Are you sure?",
         completedSetsMsg: "You've completed {0} sets. Save progress?", confirmRemoveEx: "Remove this exercise from current session?",
         volPerCycle: "Volume (Sets) / Cycle", avgDuration: "Avg Duration", addSetBtn: "ADD SET", removeSetBtn: "REMOVE SET",
-        prev: "Prev", target: "TARGET"
+        prev: "Prev", target: "TARGET",
+        warmup: "Smart Warmup", warmupTitle: "Warmup Protocol", potentiation: "Potentiation", workingWeight: "Working Weight",
+        warmupSets: { light: "Light", moderate: "Moderate", potentiation: "Potentiation" },
+        // Onboarding
+        onb: {
+            skip: "Skip", next: "Next", start: "Start",
+            s1_title: "Welcome to IronLog", s1_desc: "The ultimate tool for hypertrophy training, designed with RP principles.",
+            s2_title: "Mesocycles", s2_desc: "Organize training into weeks. We auto-regulate volume based on your feedback.",
+            s3_title: "Smart Tracking", s3_desc: "Track RIR, use our built-in rest timer, and get warmup sets calculated instantly.",
+            s4_title: "Progress", s4_desc: "Visualize your volume landmarks (MEV/MRV) and ensure you are overloading progressively."
+        }
     },
     es: { 
         startMeso: "Iniciar Mesociclo", finishWorkout: "Terminar Sesión", finishConfirm: "¿Terminar entrenamiento?", cancel: "Cancelar", delete: "Borrar", skip: "Saltar Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Reemplazar Ejercicio", changeMuscle: "Cambiar músculo", chooseMuscle: "Elegir músculo", addSetBelow: "Añadir Serie Debajo", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Serie", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Progreso", settings: "Ajustes", rp: "Progresión RP", rpEnabled: "Sugerencias RP", rpTargetRIR: "RIR objetivo", volume: "Volumen Semanal", workouts: "Sesiones Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Volver", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar el mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No encontrado", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Ciclo", totalWorkouts: "Entrenamientos", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona para unir...", superset: "SUPERSERIE", workoutComplete: "¡ENTRENAMIENTO TERMINADO!", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "Esto sobrescribirá los datos. ¿Continuar?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Eliminar Slot", offline: "Modo Local", mesoAvg: "Promedio Mesociclo", 
@@ -80,11 +89,20 @@ export const TRANSLATIONS = {
         deleteDataConfirm: "¿Borrar TODOS los datos? No se puede deshacer.",
         importSuccess: "¡Importación exitosa!", invalidFile: "Formato inválido",
         day: "Día",
-        // New translations
         replaceEx: "Reemplazar Ejercicio", removeEx: "Eliminar Ejercicio", moveUp: "Mover Arriba", moveDown: "Mover Abajo",
         emptyWorkoutTitle: "¿Entreno vacío?", emptyWorkoutMsg: "No has completado ninguna serie. ¿Estás seguro?",
         completedSetsMsg: "Has completado {0} series. ¿Guardar progreso?", confirmRemoveEx: "¿Eliminar este ejercicio de la sesión actual?",
         volPerCycle: "Volumen (Series) / Ciclo", avgDuration: "Duración Media", addSetBtn: "AÑADIR SERIE", removeSetBtn: "QUITAR SERIE",
-        prev: "Prev", target: "OBJETIVO"
+        prev: "Prev", target: "OBJETIVO",
+        warmup: "Calentamiento", warmupTitle: "Protocolo Calentamiento", potentiation: "Potenciación", workingWeight: "Peso de Trabajo",
+        warmupSets: { light: "Ligero", moderate: "Moderado", potentiation: "Potenciación" },
+        // Onboarding
+        onb: {
+            skip: "Omitir", next: "Siguiente", start: "Empezar",
+            s1_title: "Bienvenido a IronLog", s1_desc: "La herramienta definitiva para hipertrofia, diseñada con principios RP.",
+            s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. Auto-regulamos el volumen según tu feedback.",
+            s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.",
+            s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva."
+        }
     }
 };

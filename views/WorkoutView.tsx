@@ -5,6 +5,7 @@ import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
+import { WarmupModal } from '../components/ui/WarmupModal';
 import { MuscleGroup } from '../types';
 
 const MuscleTag = ({ label }: { label: string }) => (
@@ -34,6 +35,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     const [addingExercise, setAddingExercise] = useState(false);
     const [linkingId, setLinkingId] = useState<number | null>(null);
     const [editingMuscleId, setEditingMuscleId] = useState<number | null>(null);
+    const [warmupExId, setWarmupExId] = useState<number | null>(null);
 
     useEffect(() => {
         let i: any;
@@ -325,53 +327,62 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                             {typeof ex.name === 'object' ? ex.name[lang] : ex.name}
                                         </h3>
                                     </div>
-                                    <div className="relative">
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === ex.instanceId ? null : ex.instanceId); }}
-                                            className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setWarmupExId(ex.instanceId); }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-orange-500 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                                            title={t.warmup}
                                         >
-                                            <Icon name="MoreVertical" size={20} />
+                                            <Icon name="Zap" size={16} fill="currentColor" />
                                         </button>
-                                        
-                                        {/* Dropdown */}
-                                        {openMenuId === ex.instanceId && (
-                                            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                                {/* Reorder Buttons */}
-                                                <div className="flex border-b border-zinc-100 dark:border-white/5">
-                                                    <button 
-                                                        disabled={isFirst}
-                                                        onClick={(e) => { e.stopPropagation(); handleReorder(ex.instanceId, 'up'); }}
-                                                        className="flex-1 py-3 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center text-zinc-600 dark:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                                                        title={t.moveUp}
-                                                    >
-                                                        <Icon name="TrendingUp" size={16} />
+                                        <div className="relative">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === ex.instanceId ? null : ex.instanceId); }}
+                                                className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                            >
+                                                <Icon name="MoreVertical" size={20} />
+                                            </button>
+                                            
+                                            {/* Dropdown */}
+                                            {openMenuId === ex.instanceId && (
+                                                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                                    {/* Reorder Buttons */}
+                                                    <div className="flex border-b border-zinc-100 dark:border-white/5">
+                                                        <button 
+                                                            disabled={isFirst}
+                                                            onClick={(e) => { e.stopPropagation(); handleReorder(ex.instanceId, 'up'); }}
+                                                            className="flex-1 py-3 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center text-zinc-600 dark:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                            title={t.moveUp}
+                                                        >
+                                                            <Icon name="TrendingUp" size={16} />
+                                                        </button>
+                                                        <div className="w-px bg-zinc-100 dark:bg-white/5"></div>
+                                                        <button 
+                                                            disabled={isLast}
+                                                            onClick={(e) => { e.stopPropagation(); handleReorder(ex.instanceId, 'down'); }}
+                                                            className="flex-1 py-3 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center text-zinc-600 dark:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transform rotate-180"
+                                                            title={t.moveDown}
+                                                        >
+                                                            <Icon name="TrendingUp" size={16} />
+                                                        </button>
+                                                    </div>
+
+                                                    <button onClick={(e) => { e.stopPropagation(); setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                                        <Icon name="RefreshCw" size={16} /> {t.replaceEx}
                                                     </button>
-                                                    <div className="w-px bg-zinc-100 dark:bg-white/5"></div>
-                                                    <button 
-                                                        disabled={isLast}
-                                                        onClick={(e) => { e.stopPropagation(); handleReorder(ex.instanceId, 'down'); }}
-                                                        className="flex-1 py-3 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center text-zinc-600 dark:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transform rotate-180"
-                                                        title={t.moveDown}
-                                                    >
-                                                        <Icon name="TrendingUp" size={16} />
+                                                    <button onClick={(e) => { e.stopPropagation(); setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                                        <Icon name="Dumbbell" size={16} /> {t.changeMuscle}
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleToggleSupersetLink(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center gap-2">
+                                                        <Icon name={isSuperset ? "Unlink" : "Link"} size={16} /> {isSuperset ? t.unlinkSuperset : t.linkSuperset}
+                                                    </button>
+                                                    <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleRemoveExercise(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                                        <Icon name="Trash2" size={16} /> {t.removeEx}
                                                     </button>
                                                 </div>
-
-                                                <button onClick={(e) => { e.stopPropagation(); setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
-                                                    <Icon name="RefreshCw" size={16} /> {t.replaceEx}
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
-                                                    <Icon name="Dumbbell" size={16} /> {t.changeMuscle}
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleToggleSupersetLink(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center gap-2">
-                                                    <Icon name={isSuperset ? "Unlink" : "Link"} size={16} /> {isSuperset ? t.unlinkSuperset : t.linkSuperset}
-                                                </button>
-                                                <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
-                                                <button onClick={(e) => { e.stopPropagation(); handleRemoveExercise(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                                                    <Icon name="Trash2" size={16} /> {t.removeEx}
-                                                </button>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 {/* Notes Field */}
@@ -516,6 +527,21 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                         </div>
                      </div>
                  </div>
+            )}
+
+            {/* Warmup Modal */}
+            {warmupExId && activeSession && (
+                <WarmupModal 
+                    targetWeight={Number(activeSession.exercises.find(e => e.instanceId === warmupExId)?.sets[0]?.hintWeight || activeSession.exercises.find(e => e.instanceId === warmupExId)?.sets[0]?.weight || 0)}
+                    exerciseName={
+                        (() => {
+                            const ex = activeSession.exercises.find(e => e.instanceId === warmupExId);
+                            if (!ex) return '';
+                            return typeof ex.name === 'object' ? ex.name[lang] : ex.name;
+                        })()
+                    }
+                    onClose={() => setWarmupExId(null)}
+                />
             )}
         </div>
     );

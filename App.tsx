@@ -8,6 +8,7 @@ import { ExercisesView } from './views/ExercisesView';
 import { ProgramEditView } from './views/ProgramEditView';
 import { StatsView } from './views/StatsView';
 import { RestTimerOverlay } from './components/ui/RestTimerOverlay';
+import { OnboardingModal } from './components/ui/OnboardingModal';
 import { getLastLogForExercise } from './utils';
 import { Icon } from './components/ui/Icon';
 import { TRANSLATIONS } from './constants';
@@ -18,7 +19,7 @@ const AppContent = () => {
         activeSession, activeMeso, setActiveSession, 
         program, exercises, lang, setLang, logs, setLogs,
         theme, setTheme, setRestTimer, setExercises, setProgram, setActiveMeso,
-        config, setConfig
+        config, setConfig, hasSeenOnboarding, setHasSeenOnboarding
     } = useApp();
     
     const t = TRANSLATIONS[lang];
@@ -237,6 +238,11 @@ const AppContent = () => {
 
             {/* Global Overlays */}
             <RestTimerOverlay />
+            
+            {/* Onboarding Modal */}
+            {!hasSeenOnboarding && (
+                <OnboardingModal onClose={() => setHasSeenOnboarding(true)} />
+            )}
 
             {/* Settings Overlay */}
             {showSettings && view !== 'exercises' && (
@@ -283,6 +289,18 @@ const AppContent = () => {
                                             className={`w-12 h-6 rounded-full transition-colors relative ${config.rpEnabled ? 'bg-red-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
                                         >
                                             <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${config.rpEnabled ? 'left-7' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-white/5 rounded-xl">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">{t.keepScreen}</span>
+                                            <span className="text-[10px] text-zinc-400">May drain battery</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => setConfig({ ...config, keepScreenOn: !config.keepScreenOn })}
+                                            className={`w-12 h-6 rounded-full transition-colors relative ${config.keepScreenOn ? 'bg-orange-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                                        >
+                                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${config.keepScreenOn ? 'left-7' : 'left-1'}`} />
                                         </button>
                                     </div>
                                 </div>

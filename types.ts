@@ -1,3 +1,4 @@
+
 export type Lang = 'en' | 'es';
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -90,6 +91,8 @@ export interface AppState {
         showRIR: boolean;
         rpEnabled: boolean;
         rpTargetRIR: number;
+        keepScreenOn: boolean;
     };
     rpFeedback: Record<string, Record<string, Record<string, number>>>; // mesoId -> week -> muscle -> rating
+    hasSeenOnboarding: boolean;
 }

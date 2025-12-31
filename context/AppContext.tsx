@@ -17,6 +17,7 @@ interface AppContextType extends AppState {
     setLogs: React.Dispatch<React.SetStateAction<Log[]>>;
     setConfig: React.Dispatch<React.SetStateAction<AppState['config']>>;
     setRpFeedback: React.Dispatch<React.SetStateAction<AppState['rpFeedback']>>;
+    setHasSeenOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
     
     // Timer
     restTimer: { active: boolean; timeLeft: number; duration: number; endAt: number };
@@ -61,11 +62,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [showRIR, setShowRIR] = useLS('il_cfg_rir', true);
     const [rpEnabled, setRpEnabled] = useLS('il_cfg_rp', true);
     const [rpTargetRIR, setRpTargetRIR] = useLS('il_cfg_rp_rir', 2);
+    const [keepScreenOn, setKeepScreenOn] = useLS('il_cfg_screen', false);
     
     const [rpFeedback, setRpFeedback] = useLS<AppState['rpFeedback']>('il_rp_fb_v1', {});
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useLS<boolean>('il_onboarded', false);
 
     const [restTimer, setRestTimer] = useState({ active: false, timeLeft: 0, duration: 120, endAt: 0 });
     const workerRef = useRef<Worker | null>(null);
+    const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
     // Sync theme class
     useEffect(() => {
@@ -78,6 +82,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             root.classList.add(theme);
         }
     }, [theme]);
+
+    // Wake Lock Logic
+    useEffect(() => {
+        const requestWakeLock = async () => {
+            if (keepScreenOn && 'wakeLock' in navigator) {
+                try {
+                    wakeLockRef.current = await navigator.wakeLock.request('screen');
+                    // console.log('Wake Lock active');
+                } catch (err) {
+                    console.error('Wake Lock failed:', err);
+                }
+            } else if (!keepScreenOn && wakeLockRef.current) {
+                wakeLockRef.current.release()
+                    .then(() => { wakeLockRef.current = null; })
+                    .catch(e => console.error(e));
+            }
+        };
+
+        requestWakeLock();
+
+        // Re-acquire lock when visibility changes (e.g. tab switch)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && keepScreenOn) {
+                requestWakeLock();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (wakeLockRef.current) wakeLockRef.current.release();
+        };
+    }, [keepScreenOn]);
 
     // Initialize Web Worker for Background Timer
     useEffect(() => {
@@ -170,10 +208,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             if (newConfig.showRIR !== undefined) setShowRIR(newConfig.showRIR);
             if (newConfig.rpEnabled !== undefined) setRpEnabled(newConfig.rpEnabled);
             if (newConfig.rpTargetRIR !== undefined) setRpTargetRIR(newConfig.rpTargetRIR);
+            if (newConfig.keepScreenOn !== undefined) setKeepScreenOn(newConfig.keepScreenOn);
         }
     };
 
-    const config = { showRIR, rpEnabled, rpTargetRIR };
+    const config = { showRIR, rpEnabled, rpTargetRIR, keepScreenOn };
 
     return (
         <AppContext.Provider value={{
@@ -185,7 +224,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             logs, setLogs,
             config, setConfig,
             rpFeedback, setRpFeedback,
-            restTimer, setRestTimer
+            restTimer, setRestTimer,
+            hasSeenOnboarding, setHasSeenOnboarding
         }}>
             {children}
         </AppContext.Provider>
