@@ -4,16 +4,16 @@ import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
-import { getTranslated } from '../utils';
+import { getTranslated, formatDate } from '../utils';
 
 interface HomeViewProps {
     startSession: (dayIdx: number) => void;
     onEditProgram: () => void;
-    onSkipSession?: (dayIdx: number) => void; // New prop
+    onSkipSession?: (dayIdx: number) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram, onSkipSession }) => {
-    const { activeMeso, program, setActiveMeso, lang, logs, config, rpFeedback, setProgram } = useApp();
+    const { activeMeso, program, setActiveMeso, lang, logs, config, rpFeedback, setProgram, exercises } = useApp();
     const t = TRANSLATIONS[lang];
     const tm = (key: string) => (TRANSLATIONS[lang].muscle as any)[key] || key;
     
@@ -30,7 +30,80 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
         setActiveMeso({ id: Date.now(), week: 1, plan: initialPlan, targetWeeks: 4, isDeload: false });
     };
 
-    const handleFinishMeso = () => {
+    const generateMesoReport = () => {
+        if (!activeMeso) return null;
+        
+        const mesoLogs = safeLogs.filter(l => l.mesoId === activeMeso.id).sort((a,b) => a.endTime - b.endTime);
+        if (mesoLogs.length === 0) return null;
+
+        const startTime = mesoLogs[0].endTime;
+        const endTime = mesoLogs[mesoLogs.length - 1].endTime;
+        
+        // 1. Volume Calculation
+        const volumeByWeek: Record<number, Record<string, number>> = {};
+        
+        mesoLogs.forEach(log => {
+            if (log.skipped) return;
+            if (!volumeByWeek[log.week]) volumeByWeek[log.week] = {};
+            (log.exercises || []).forEach(ex => {
+                const sets = (ex.sets || []).filter(s => s.completed).length;
+                if (!volumeByWeek[log.week][ex.muscle]) volumeByWeek[log.week][ex.muscle] = 0;
+                volumeByWeek[log.week][ex.muscle] += sets;
+            });
+        });
+
+        // 2. Progression (Start vs End)
+        const exerciseProgress: Record<string, any> = {};
+        
+        mesoLogs.forEach(log => {
+            if (log.skipped) return;
+            (log.exercises || []).forEach(ex => {
+                const bestSet = (ex.sets || []).filter(s => s.completed).reduce((prev: any, curr: any) => {
+                     return (Number(curr.weight) > Number(prev?.weight || 0)) ? curr : prev;
+                }, null);
+
+                if (bestSet) {
+                    const exName = getTranslated(ex.name, 'en'); // Use English for key or export consistency
+                    if (!exerciseProgress[exName]) {
+                        exerciseProgress[exName] = { start: null, end: null, id: ex.id, muscle: ex.muscle };
+                    }
+                    
+                    const setStr = `${bestSet.weight}kg x ${bestSet.reps}`;
+                    
+                    if (!exerciseProgress[exName].start) {
+                        exerciseProgress[exName].start = setStr;
+                    }
+                    exerciseProgress[exName].end = setStr; // Always update end to capture latest
+                }
+            });
+        });
+
+        const report = {
+            mesoName: activeMeso.name || "Unnamed Cycle",
+            dateStart: formatDate(startTime, lang),
+            dateEnd: formatDate(endTime, lang),
+            durationWeeks: activeMeso.week,
+            totalWorkouts: mesoLogs.length,
+            volumeSummary: volumeByWeek,
+            progression: exerciseProgress,
+            feedback: rpFeedback[activeMeso.id] || {}
+        };
+
+        return report;
+    };
+
+    const handleFinishMeso = (exportReport: boolean) => {
+        if (exportReport) {
+            const report = generateMesoReport();
+            if (report) {
+                const blob = new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ironlog_meso_report_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            }
+        }
         setActiveMeso(null);
         setShowCompleteModal(null);
     };
@@ -82,10 +155,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
             : null;
         
         if (msg) alert(msg);
-
-        // Check if next week should be auto-deload (if current week equals target weeks)
-        // Simple logic: if week == targetWeeks, maybe suggest deload? 
-        // For now just advance.
+        
         setActiveMeso(prev => prev ? { ...prev, week: prev.week + 1 } : null);
         setShowCompleteModal(null);
     };
@@ -158,7 +228,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
 
             <div className="space-y-4 pb-safe">
                 {safeProgram.map((day, idx) => {
-                    // CRITICAL FIX: Skip if day is null/undefined in array
                     if (!day) return null;
 
                     const logForToday = safeLogs.find(l => l.mesoId === activeMeso.id && l.week === activeMeso.week && l.dayIdx === idx);
@@ -274,11 +343,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                                 </p>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button variant="secondary" onClick={() => setShowCompleteModal(null)}>{t.cancel}</Button>
-                            <Button onClick={showCompleteModal === 'week' ? handleAdvanceWeek : handleFinishMeso}>
-                                {t.completed}
-                            </Button>
+                        <div className={`grid ${showCompleteModal === 'meso' ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-3'}`}>
+                             {showCompleteModal === 'week' ? (
+                                <>
+                                    <Button variant="secondary" onClick={() => setShowCompleteModal(null)}>{t.cancel}</Button>
+                                    <Button onClick={handleAdvanceWeek}>{t.completed}</Button>
+                                </>
+                             ) : (
+                                 <div className="flex flex-col gap-3">
+                                     <Button onClick={() => handleFinishMeso(true)} className="bg-green-600 hover:bg-green-500 shadow-green-600/20">
+                                        <Icon name="DownloadCloud" size={18} /> {t.exportReport}
+                                     </Button>
+                                     <Button variant="secondary" onClick={() => handleFinishMeso(false)}>
+                                        {t.justFinish}
+                                     </Button>
+                                     <button onClick={() => setShowCompleteModal(null)} className="text-xs text-zinc-400 font-bold py-2">{t.cancel}</button>
+                                 </div>
+                             )}
                         </div>
                     </div>
                 </div>

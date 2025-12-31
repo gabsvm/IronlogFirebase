@@ -53,7 +53,7 @@ export const TRANSLATIONS = {
         editTemplate: "Edit Program", resetTemplate: "Reset to Default", editDay: "Edit Day", addDay: "Add Day", addSlot: "Add Exercise Slot", save: "Save", swapTitle: "Swap Exercise", swapMsg: "How do you want to apply this change?", swapSession: "This Session Only", swapForever: "Update Plan (Forever)", programEditor: "Program Editor", selectExBtn: "Select Exercise", any: "Any",
         manageEx: "Manage Exercises", addEx: "Add New Exercise", exName: "Exercise Name", selectMuscle: "Select Muscle", deleteConfirm: "Delete this exercise?",
         setsCount: "Sets", notes: "Notes", addNote: "Add Note...", volumeStatus: { low: "Low", maintenance: "Maint.", optimal: "Optimal", high: "High" }, showRIR: "Show RIR Column", install: "Install App", unitToggle: "Weight Unit", addExercise: "Add Exercise", updateTemplate: "Update Routine Template", selectMuscleToAdd: "Select Muscle to Add",
-        appearance: "Appearance", database: "Database", dangerZone: "Danger Zone", factoryReset: "Factory Reset App", workoutConfig: "Workout Config",
+        appearance: "Appearance", database: "Base de Datos", dangerZone: "Danger Zone", factoryReset: "Factory Reset App", workoutConfig: "Workout Config",
         completeWeek: "Complete Week", completeWeekConfirm: "Advance to next week?", autoRegulate: "Auto-regulate volume?", autoRegulateDesc: "Based on your sore/pump feedback, we will adjust set counts for next week.", applyingChanges: "Applying Changes:", setsAdded: "sets added", setsRemoved: "sets removed", noChanges: "No volume changes needed.",
         finishMesoConfirm: "Finish this mesocycle? This will archive your current progress and let you start a fresh cycle.",
         deleteDataConfirm: "Delete ALL data? This cannot be undone.",
@@ -62,15 +62,16 @@ export const TRANSLATIONS = {
         replaceEx: "Replace Exercise", removeEx: "Remove Exercise", moveUp: "Move Up", moveDown: "Move Down",
         emptyWorkoutTitle: "Empty Workout?", emptyWorkoutMsg: "You haven't completed any sets yet. Are you sure?",
         completedSetsMsg: "You've completed {0} sets. Save progress?", confirmRemoveEx: "Remove this exercise from current session?",
-        volPerCycle: "Volume (Sets) / Cycle", avgDuration: "Duración Media", addSetBtn: "ADD SET", removeSetBtn: "REMOVE SET",
+        volPerCycle: "Volume (Sets) / Cycle", avgDuration: "Duration", addSetBtn: "ADD SET", removeSetBtn: "REMOVE SET",
         prev: "Prev", target: "TARGET",
         warmup: "Smart Warmup", warmupTitle: "Warmup Protocol", potentiation: "Potentiation", workingWeight: "Working Weight",
-        warmupSets: { light: "Light", moderate: "Moderate", potentiation: "Potenciación" },
+        warmupSets: { light: "Light", moderate: "Moderate", potentiation: "Potentiation" },
         // New
         mesoConfig: "Mesocycle Settings", targetWeeks: "Planned Duration", weeks: "Weeks",
         deloadMode: "Deload Mode", deloadDesc: "Reduces volume (50%) for recovery.", enableDeload: "Enable Deload",
         skipDayConfirm: "Skip this workout? It will be marked as skipped.",
         mesoName: "Mesocycle Name",
+        exportReport: "Export Report & Finish", justFinish: "Just Finish",
         // Onboarding
         onb: {
             skip: "Skip", next: "Next", start: "Start",
@@ -108,6 +109,7 @@ export const TRANSLATIONS = {
         deloadMode: "Modo Descarga", deloadDesc: "Reduce el volumen (50%) para recuperación.", enableDeload: "Activar Descarga",
         skipDayConfirm: "¿Saltar este entrenamiento? Se marcará como saltado.",
         mesoName: "Nombre del Mesociclo",
+        exportReport: "Exportar Reporte & Terminar", justFinish: "Solo Terminar",
         // Onboarding
         onb: {
             skip: "Omitir", next: "Siguiente", start: "Empezar",
