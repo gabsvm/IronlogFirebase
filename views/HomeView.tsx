@@ -18,10 +18,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     const t = TRANSLATIONS[lang];
     const tm = (key: string) => (TRANSLATIONS[lang].muscle as any)[key] || key;
     
-    // Modal for completion
+    // Modal state
     const [showCompleteModal, setShowCompleteModal] = useState<'week' | 'meso' | null>(null);
     const [showMesoSettings, setShowMesoSettings] = useState(false);
     const [showStartWizard, setShowStartWizard] = useState(false);
+    const [skipConfirmationId, setSkipConfirmationId] = useState<number | null>(null);
 
     // New Meso State
     const [newMesoType, setNewMesoType] = useState<MesoType>('hyp_1');
@@ -124,11 +125,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
         setShowCompleteModal(null);
     };
 
-    const handleSkip = (e: React.MouseEvent, dayIdx: number) => {
+    const handleSkipClick = (e: React.MouseEvent, dayIdx: number) => {
         e.stopPropagation();
-        if (onSkipSession && window.confirm(t.skipDayConfirm)) {
-            onSkipSession(dayIdx);
+        setSkipConfirmationId(dayIdx);
+    };
+
+    const confirmSkip = () => {
+        if (onSkipSession && skipConfirmationId !== null) {
+            onSkipSession(skipConfirmationId);
         }
+        setSkipConfirmationId(null);
     };
 
     const handleAdvanceWeek = () => {
@@ -332,7 +338,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                                     ) : (
                                         <div className="flex gap-2">
                                              <button 
-                                                onClick={(e) => handleSkip(e, idx)}
+                                                onClick={(e) => handleSkipClick(e, idx)}
                                                 className="w-8 h-8 bg-zinc-100 dark:bg-white/5 text-zinc-400 rounded-full flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                                                 title={t.skipDay}
                                             >
@@ -387,6 +393,29 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                     </Button>
                 </div>
             </div>
+
+            {/* Skip Confirmation Modal */}
+            {skipConfirmationId !== null && (
+                <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setSkipConfirmationId(null)}>
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-500 flex items-center justify-center mx-auto mb-4">
+                                <Icon name="SkipForward" size={32} />
+                            </div>
+                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
+                                {t.skipDay}
+                            </h3>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                {t.skipDayConfirm}
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button variant="secondary" onClick={() => setSkipConfirmationId(null)}>{t.cancel}</Button>
+                            <Button variant="danger" onClick={confirmSkip}>{t.skipDay}</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Confirmation Modal */}
             {showCompleteModal && (
