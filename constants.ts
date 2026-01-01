@@ -66,12 +66,59 @@ export const TRANSLATIONS = {
         prev: "Prev", target: "TARGET",
         warmup: "Smart Warmup", warmupTitle: "Warmup Protocol", potentiation: "Potentiation", workingWeight: "Working Weight",
         warmupSets: { light: "Light", moderate: "Moderate", potentiation: "Potentiation" },
-        // New
         mesoConfig: "Mesocycle Settings", targetWeeks: "Planned Duration", weeks: "Weeks",
         deloadMode: "Deload Mode", deloadDesc: "Reduces volume (50%) for recovery.", enableDeload: "Enable Deload",
         skipDayConfirm: "Skip this workout? It will be marked as skipped.",
         mesoName: "Mesocycle Name",
         exportReport: "Export Report & Finish", justFinish: "Just Finish",
+        mesoType: "Phase Type",
+        phases: {
+            hyp_1: "Base Hypertrophy 1",
+            hyp_2: "Base Hypertrophy 2",
+            metabolite: "Metabolite Phase",
+            resensitization: "Resensitization"
+        },
+        phaseDesc: {
+            hyp_1: "Standard volume accumulation. RIR 3->1.",
+            hyp_2: "Higher initial volume. Aggressive overload.",
+            metabolite: "High reps (20-30), short rests, the 'burn'.",
+            resensitization: "Low volume, heavy weight (3-6 reps) to reset fatigue."
+        },
+        targetRIR: "Target RIR",
+        recoveryWeek: "Recovery Week",
+        
+        // Plates & Units
+        units: {
+            kg: "KG",
+            pl: "Plates",
+            lb: "LBS",
+            toggle: "Change Unit (KG/Plates)",
+            plateWeight: "Weight per Plate",
+            setPlateWeight: "Set Weight per Plate (kg)",
+            enterWeight: "e.g. 5, 10..."
+        },
+        
+        // Feedback Matrix
+        fb: {
+            sorenessLabel: "Soreness / Recovery",
+            performanceLabel: "Performance / Pump",
+            soreness: {
+                1: "None / Healed Early",
+                2: "Healed on Time",
+                3: "Still Sore / Ouch"
+            },
+            performance: {
+                1: "Bad / Weak",
+                2: "Good / Target",
+                3: "Great / Strong"
+            },
+            adjust: {
+                add: "+1 Set",
+                sub: "-1 Set",
+                keep: "Keep Volume"
+            }
+        },
+        
         // Onboarding
         onb: {
             skip: "Skip", next: "Next", start: "Start",
@@ -104,12 +151,59 @@ export const TRANSLATIONS = {
         prev: "Prev", target: "OBJETIVO",
         warmup: "Calentamiento", warmupTitle: "Protocolo Calentamiento", potentiation: "Potenciación", workingWeight: "Peso de Trabajo",
         warmupSets: { light: "Ligero", moderate: "Moderado", potentiation: "Potenciación" },
-        // New
         mesoConfig: "Configurar Mesociclo", targetWeeks: "Duración Planeada", weeks: "Semanas",
         deloadMode: "Modo Descarga", deloadDesc: "Reduce el volumen (50%) para recuperación.", enableDeload: "Activar Descarga",
         skipDayConfirm: "¿Saltar este entrenamiento? Se marcará como saltado.",
         mesoName: "Nombre del Mesociclo",
         exportReport: "Exportar Reporte & Terminar", justFinish: "Solo Terminar",
+        mesoType: "Fase (Tipo)",
+        phases: {
+            hyp_1: "Hipertrofia Base 1",
+            hyp_2: "Hipertrofia Base 2",
+            metabolite: "Fase Metabolitos",
+            resensitization: "Resensibilización"
+        },
+        phaseDesc: {
+            hyp_1: "Acumulación estándar. RIR 3->1.",
+            hyp_2: "Mayor volumen inicial. Sobrecarga agresiva.",
+            metabolite: "Altas reps (20-30), descansos cortos, 'burn'.",
+            resensitization: "Bajo volumen, peso alto (3-6 reps) para limpiar fatiga."
+        },
+        targetRIR: "RIR Objetivo",
+        recoveryWeek: "Semana Recuperación",
+
+        // Plates & Units
+        units: {
+            kg: "KG",
+            pl: "Planchas",
+            lb: "LBS",
+            toggle: "Cambiar Unidad (Kg/Planchas)",
+            plateWeight: "Peso por Plancha",
+            setPlateWeight: "Define Peso x Plancha (kg)",
+            enterWeight: "ej. 5, 10..."
+        },
+        
+        // Feedback Matrix
+        fb: {
+            sorenessLabel: "Agujetas / Recuperación",
+            performanceLabel: "Rendimiento / Pump",
+            soreness: {
+                1: "Nada / Recuperado Antes",
+                2: "Recuperado a Tiempo",
+                3: "Con Agujetas / Dolor"
+            },
+            performance: {
+                1: "Malo / Débil",
+                2: "Bueno / Objetivo",
+                3: "Genial / Fuerte"
+            },
+            adjust: {
+                add: "+1 Serie",
+                sub: "-1 Serie",
+                keep: "Mantener Vol."
+            }
+        },
+
         // Onboarding
         onb: {
             skip: "Omitir", next: "Siguiente", start: "Empezar",

@@ -27,13 +27,16 @@ export interface WorkoutSet {
   hintReps?: string | number;
 }
 
+export type WeightUnit = 'kg' | 'lb' | 'pl';
+
 export interface SessionExercise extends ExerciseDef {
   instanceId: number;
   slotLabel?: string;
   targetReps?: string; // e.g., "6-10"
   note?: string;
   sets: WorkoutSet[];
-  weightUnit?: 'kg' | 'pl';
+  weightUnit?: WeightUnit; // Changed from 'kg' | 'pl'
+  plateWeight?: number; // Weight per plate if unit is 'pl'
   supersetId?: string;
   isPlaceholder?: boolean;
 }
@@ -62,9 +65,12 @@ export interface ProgramDay {
   slots: ProgramSlot[];
 }
 
+export type MesoType = 'hyp_1' | 'hyp_2' | 'metabolite' | 'resensitization';
+
 export interface MesoCycle {
   id: number;
   name?: string; // User defined name
+  mesoType: MesoType; // NEW: Phase type
   week: number;
   plan: (string | null)[][]; // Array of Day Plans (Array of Exercise IDs)
   targetWeeks?: number; // How many weeks intended
@@ -84,6 +90,13 @@ export interface Log {
   exercises: SessionExercise[];
 }
 
+// NEW: Structured feedback for advanced algorithm
+export interface FeedbackEntry {
+    soreness: number; // 1 (none) to 3 (hurt)
+    performance: number; // 1 (bad) to 3 (great)
+    adjustment: number; // Calculated change (-1, 0, +1)
+}
+
 export interface AppState {
     program: ProgramDay[];
     activeMeso: MesoCycle | null;
@@ -96,6 +109,7 @@ export interface AppState {
         rpTargetRIR: number;
         keepScreenOn: boolean;
     };
-    rpFeedback: Record<string, Record<string, Record<string, number>>>; // mesoId -> week -> muscle -> rating
+    // Updated feedback structure: mesoId -> week -> muscle -> Entry
+    rpFeedback: Record<string, Record<string, Record<string, FeedbackEntry>>>; 
     hasSeenOnboarding: boolean;
 }

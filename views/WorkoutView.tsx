@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
@@ -7,7 +8,7 @@ import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
 import { MuscleGroup, ExerciseDef } from '../types';
-import { getTranslated } from '../utils';
+import { getTranslated, getMesoStageConfig } from '../utils';
 
 const MuscleTag = ({ label }: { label: string }) => (
     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400">
@@ -23,7 +24,7 @@ interface WorkoutViewProps {
 }
 
 export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAddSet, onDeleteSet }) => {
-    const { activeSession, setActiveSession, setRestTimer, lang, config, exercises, rpFeedback, setRpFeedback } = useApp();
+    const { activeSession, activeMeso, setActiveSession, setRestTimer, lang, config, exercises, rpFeedback, setRpFeedback } = useApp();
     const t = TRANSLATIONS[lang];
     const [sessionElapsed, setSessionElapsed] = useState(0);
     
@@ -37,6 +38,13 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     const [linkingId, setLinkingId] = useState<number | null>(null);
     const [editingMuscleId, setEditingMuscleId] = useState<number | null>(null);
     const [warmupExId, setWarmupExId] = useState<number | null>(null);
+    
+    // Unit config state
+    const [configPlateExId, setConfigPlateExId] = useState<number | null>(null);
+    const [plateWeightInput, setPlateWeightInput] = useState('');
+
+    // Calculate Stage Config (RIR, Phase notes)
+    const stageConfig = activeMeso ? getMesoStageConfig(activeMeso.mesoType || 'hyp_1', activeMeso.week, !!activeMeso.isDeload) : null;
 
     useEffect(() => {
         let i: any;
@@ -103,7 +111,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         });
 
         if (completing) {
-            const dur = 120; // Default rest
+            const isMetabolite = activeMeso?.mesoType === 'metabolite';
+            const dur = isMetabolite ? 60 : 120; // 60s for metabolite, 120s standard
             setRestTimer({ active: true, duration: dur, timeLeft: dur, endAt: Date.now() + (dur * 1000) });
         }
     };
@@ -122,14 +131,15 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         }
     };
 
-    const handleSaveFeedback = (ratings: Record<string, number>) => {
+    const handleSaveFeedback = (feedbackData: Record<string, any>) => {
         const { mesoId, week } = activeSession;
         setRpFeedback(prev => {
             const newFb = { ...prev };
             if (!newFb[mesoId]) newFb[mesoId] = {};
             if (!newFb[mesoId][week]) newFb[mesoId][week] = {};
-            Object.keys(ratings).forEach(m => {
-                newFb[mesoId][week][m] = ratings[m];
+            // Store complete object
+            Object.keys(feedbackData).forEach(m => {
+                newFb[mesoId][week][m] = feedbackData[m];
             });
             return newFb;
         });
@@ -257,19 +267,60 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         setLinkingId(null);
     };
 
+    const handleToggleUnit = (exInstanceId: number) => {
+        setActiveSession(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                exercises: (prev.exercises || []).map(e => {
+                    if (e.instanceId !== exInstanceId) return e;
+                    const newUnit = e.weightUnit === 'pl' ? 'kg' : 'pl';
+                    // If switching to plates and no weight defined, trigger the modal logic by some means or rely on user clicking header
+                    return { ...e, weightUnit: newUnit };
+                })
+            };
+        });
+        setOpenMenuId(null);
+    };
+
+    const handleUpdatePlateWeight = (exInstanceId: number) => {
+        const weight = parseFloat(plateWeightInput);
+        if (!isNaN(weight) && weight > 0) {
+            setActiveSession(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    exercises: (prev.exercises || []).map(e => e.instanceId === exInstanceId ? { ...e, plateWeight: weight } : e)
+                };
+            });
+        }
+        setConfigPlateExId(null);
+        setPlateWeightInput('');
+    };
+
     const finishedSets = sessionExercises.reduce((acc, ex) => acc + (ex.sets || []).filter(s => s.completed).length, 0);
     
     return (
         <div className="fixed inset-0 z-40 flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans" onClick={() => setOpenMenuId(null)}>
             
             {/* Header */}
-            <div className="glass z-30 px-4 h-16 shrink-0 flex items-center justify-between border-b border-zinc-200 dark:border-white/5">
+            <div className="glass z-30 px-4 h-20 shrink-0 flex items-center justify-between border-b border-zinc-200 dark:border-white/5">
                 <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full active:bg-zinc-200 dark:active:bg-zinc-800 transition-colors -ml-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
                     <Icon name="ChevronLeft" size={24} />
                 </button>
                 <div className="text-center">
                     <div className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-0.5">{t.active}</div>
-                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 leading-none">{activeSession.name}</div>
+                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 leading-none mb-1">{activeSession.name}</div>
+                    {/* RIR Target Header */}
+                    {stageConfig && (
+                        <div className="inline-flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                             {stageConfig.label === 'recovery' ? (
+                                <><Icon name="Activity" size={10} className="text-blue-500" /> RECOVERY / DELOAD</>
+                             ) : (
+                                <><Icon name="Zap" size={10} className="text-yellow-500" /> TARGET: {stageConfig.label} ({stageConfig.rir} RIR)</>
+                             )}
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="font-mono text-sm font-bold text-zinc-400 tabular-nums">
@@ -291,6 +342,14 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
+                
+                {/* Phase Info Banner */}
+                {stageConfig && stageConfig.note && (
+                    <div className="p-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        {stageConfig.note}
+                    </div>
+                )}
+
                 {sessionExercises.map((ex, idx) => {
                     if (!ex) return null; // Defensive check for individual exercises
 
@@ -299,6 +358,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                     const isFirst = idx === 0;
                     const isLast = idx === sessionExercises.length - 1;
                     const sets = Array.isArray(ex.sets) ? ex.sets : [];
+                    const unit = ex.weightUnit || 'kg';
+                    const unitLabel = unit === 'pl' ? t.units.pl : t.units.kg;
                     
                     return (
                         <div 
@@ -319,6 +380,15 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                             {isSuperset && <span className="bg-orange-100 text-orange-600 text-[9px] font-bold px-1.5 py-0.5 rounded">SS</span>}
                                             <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
                                             {ex.targetReps && <span className="text-[10px] font-bold text-zinc-400 tracking-wide">{t.target}: {ex.targetReps}</span>}
+                                            {/* Plate Calculation Hint */}
+                                            {unit === 'pl' && (
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setConfigPlateExId(ex.instanceId); }}
+                                                    className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[9px] font-bold px-2 py-0.5 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                                                >
+                                                    {ex.plateWeight ? `1 PL = ${ex.plateWeight}kg` : t.units.setPlateWeight}
+                                                </button>
+                                            )}
                                         </div>
                                         <h3 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight tracking-tight">
                                             {getTranslated(ex.name, lang)}
@@ -364,6 +434,9 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                                         </button>
                                                     </div>
 
+                                                    <button onClick={(e) => { e.stopPropagation(); handleToggleUnit(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                                        <Icon name="Dumbbell" size={16} /> {t.units.toggle}
+                                                    </button>
                                                     <button onClick={(e) => { e.stopPropagation(); setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                                         <Icon name="RefreshCw" size={16} /> {t.replaceEx}
                                                     </button>
@@ -395,7 +468,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                             {/* Sets Header */}
                             <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-zinc-50 dark:bg-black/20 border-b border-zinc-100 dark:border-white/5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
                                 <div className="col-span-1">#</div>
-                                <div className="col-span-4 text-left pl-4">{t.weight}</div>
+                                <div className="col-span-4 text-left pl-4">{t.weight} ({unit === 'pl' ? 'PL' : 'KG'})</div>
                                 <div className="col-span-4">{t.reps}</div>
                                 {config.showRIR && <div className="col-span-2">{t.rir}</div>}
                                 <div className="col-span-1"></div>
@@ -405,6 +478,14 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                             <div className="divide-y divide-zinc-100 dark:divide-white/5">
                                 {sets.map((set, sIdx) => {
                                     const isDone = set.completed;
+                                    const placeholderRIR = stageConfig?.rir !== null ? String(stageConfig?.rir) : "-";
+                                    
+                                    // Calculated KG for display if plate mode
+                                    let calculatedKg: number | null = null;
+                                    if (unit === 'pl' && ex.plateWeight && set.weight) {
+                                        calculatedKg = Number(set.weight) * ex.plateWeight;
+                                    }
+
                                     return (
                                         <div key={set.id} className={`grid grid-cols-12 gap-2 px-4 py-3 items-center transition-colors duration-300 relative group ${isDone ? 'bg-green-50/50 dark:bg-green-500/5' : ''}`}>
                                             <div className="col-span-1 flex justify-center">
@@ -413,9 +494,12 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                                    <span className="hidden group-hover:block"><Icon name="X" size={10} /></span>
                                                 </div>
                                             </div>
-                                            <div className="col-span-4 relative">
+                                            <div className="col-span-4 relative flex items-center justify-center gap-1">
                                                 <input type="number" inputMode="decimal" className={`w-full bg-transparent text-lg font-bold p-0 border-0 focus:ring-0 text-center transition-colors ${isDone ? 'text-green-800 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`} placeholder={set.hintWeight ? String(set.hintWeight) : "0"} value={set.weight} onChange={(e) => handleSetUpdate(ex.instanceId, set.id, 'weight', e.target.value)} />
-                                                <div className="text-[9px] text-zinc-400 text-center font-medium -mt-1">{set.hintWeight ? `${t.prev}: ${set.hintWeight}` : 'kg'}</div>
+                                                <div className="flex flex-col items-center">
+                                                    <div className="text-[9px] text-zinc-400 font-medium -mt-1 leading-none">{set.hintWeight ? `${t.prev}: ${set.hintWeight}` : unitLabel}</div>
+                                                    {calculatedKg !== null && <div className="text-[9px] text-blue-500 font-bold leading-none mt-0.5">≈{calculatedKg}kg</div>}
+                                                </div>
                                             </div>
                                             <div className="col-span-4 relative">
                                                 <input type="number" inputMode="numeric" className={`w-full bg-transparent text-lg font-bold p-0 border-0 focus:ring-0 text-center transition-colors ${isDone ? 'text-green-800 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`} placeholder={set.hintReps ? String(set.hintReps) : "0"} value={set.reps} onChange={(e) => handleSetUpdate(ex.instanceId, set.id, 'reps', e.target.value)} />
@@ -423,7 +507,14 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                             </div>
                                             {config.showRIR && (
                                                 <div className="col-span-2 flex justify-center">
-                                                    <input type="number" inputMode="numeric" className={`w-12 bg-zinc-100 dark:bg-white/5 rounded text-sm font-bold py-1 border-0 focus:ring-1 focus:ring-zinc-500 text-center text-zinc-600 dark:text-zinc-300 ${isDone ? 'opacity-50' : ''}`} placeholder="-" value={set.rpe} onChange={(e) => handleSetUpdate(ex.instanceId, set.id, 'rpe', e.target.value)} />
+                                                    <input 
+                                                        type="number" 
+                                                        inputMode="numeric" 
+                                                        className={`w-12 bg-zinc-100 dark:bg-white/5 rounded text-sm font-bold py-1 border-0 focus:ring-1 focus:ring-zinc-500 text-center text-zinc-600 dark:text-zinc-300 ${isDone ? 'opacity-50' : ''}`} 
+                                                        placeholder={placeholderRIR}
+                                                        value={set.rpe} 
+                                                        onChange={(e) => handleSetUpdate(ex.instanceId, set.id, 'rpe', e.target.value)} 
+                                                    />
                                                 </div>
                                             )}
                                             <div className="col-span-1 flex justify-end">
@@ -497,7 +588,11 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
             {/* RP Feedback */}
             {showFeedbackModal && activeSession && (
-                <FeedbackModal muscles={sessionExercises.map(e => e?.muscle || 'CHEST')} onCancel={() => setShowFeedbackModal(false)} onConfirm={handleSaveFeedback} />
+                <FeedbackModal 
+                    muscles={sessionExercises.map(e => e?.muscle || 'CHEST')} 
+                    onCancel={() => setShowFeedbackModal(false)} 
+                    onConfirm={handleSaveFeedback} 
+                />
             )}
 
             {/* Replace Exercise Selector */}
@@ -521,6 +616,28 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                     {TRANSLATIONS[lang].muscle[m]}
                                 </button>
                             ))}
+                        </div>
+                     </div>
+                 </div>
+            )}
+
+            {/* Config Plate Weight Modal */}
+            {configPlateExId && (
+                 <div className="fixed inset-0 z-[80] bg-black/60 flex items-center justify-center p-6" onClick={() => setConfigPlateExId(null)}>
+                     <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl w-full max-w-xs space-y-4" onClick={e => e.stopPropagation()}>
+                        <h3 className="font-bold text-lg dark:text-white text-center">{t.units.plateWeight}</h3>
+                        <div className="space-y-4">
+                            <input 
+                                type="number" 
+                                autoFocus
+                                className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 text-center font-bold text-xl outline-none"
+                                placeholder={t.units.enterWeight}
+                                value={plateWeightInput}
+                                onChange={(e) => setPlateWeightInput(e.target.value)}
+                            />
+                            <Button fullWidth onClick={() => handleUpdatePlateWeight(configPlateExId)}>
+                                {t.save}
+                            </Button>
                         </div>
                      </div>
                  </div>

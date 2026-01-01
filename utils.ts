@@ -1,4 +1,5 @@
-import { Lang, Log, WorkoutSet } from "./types";
+
+import { Lang, Log, WorkoutSet, MesoType } from "./types";
 
 export const formatDate = (d: number, l: Lang) => 
     new Date(d).toLocaleDateString(l==='en'?'en-US':'es-ES', {weekday:'short', month:'short', day:'numeric'});
@@ -22,45 +23,83 @@ export const roundWeight = (w: number) => {
     return Math.round(x/step)*step; 
 };
 
-/**
- * Safely gets a translated string from a potential object/string/null value.
- * Fixes crash where typeof null === 'object' causes access property on null.
- */
 export const getTranslated = (val: string | { en: string; es: string } | null | undefined, lang: Lang): string => {
     if (!val) return 'Unknown';
     if (typeof val === 'string') return val;
-    // Check if it's a valid object with translation keys, not null
     if (typeof val === 'object') {
         return val[lang] || val['en'] || 'Unknown';
     }
     return 'Unknown';
 };
 
-/**
- * Finds the last performance of a specific exercise to populate hints
- */
 export const getLastLogForExercise = (exerciseId: string, logs: Log[]): WorkoutSet[] | null => {
-    // 1. Strict input check
     if (!logs || !Array.isArray(logs)) return null;
-    
-    // 2. Filter out null/corrupted entries safely before sorting
     const validLogs = logs.filter(l => l && typeof l === 'object');
-
-    // 3. Sort by date desc
     const sortedLogs = [...validLogs].sort((a, b) => (b.endTime || 0) - (a.endTime || 0));
     
     for (const log of sortedLogs) {
         if (log.skipped) continue;
-        
         const exercises = log.exercises;
         if (!Array.isArray(exercises)) continue;
-
-        // 4. Find exercise safely handling potential nulls in exercise array
         const ex = exercises.find(e => e && e.id === exerciseId);
-        
         if (ex && ex.sets && Array.isArray(ex.sets) && ex.sets.some(s => s && s.completed)) {
             return ex.sets;
         }
     }
     return null;
+};
+
+/**
+ * Calculates RIR and phase notes based on Meso Type and Week
+ * RP Logic: W1: 3RIR, W2: 2RIR, W3: 1RIR, W4+: 0-1RIR
+ */
+export const getMesoStageConfig = (type: MesoType, week: number, isDeload: boolean) => {
+    if (isDeload) {
+        return { rir: null, label: 'recovery', note: 'DELOAD: Half reps, Light Weight. Focus on technique.' };
+    }
+
+    if (type === 'resensitization') {
+         // Resensitization: Lower volume, Heavy weight, Stay away from failure to clear fatigue
+         return { rir: 2, label: '2/fail', note: 'Resensitization: Heavy weight, low volume (3-6 reps).' };
+    }
+
+    if (type === 'metabolite') {
+        // Metabolite: Burn focus, short rest
+        if (week === 1) return { rir: 3, label: '3/fail', note: 'Metabolite: High Reps (20+), Short Rest (30-60s)' };
+        if (week === 2) return { rir: 2, label: '2/fail', note: 'Increase Pump. Short Rest.' };
+        return { rir: 0, label: 'FAILURE', note: 'Maximum Pump. Go to failure.' };
+    }
+
+    // Standard Hypertrophy
+    if (week === 1) return { rir: 3, label: '3/fail', note: 'Week 1: Stop 3 reps before failure.' };
+    if (week === 2) return { rir: 2, label: '2/fail', note: 'Week 2: Stop 2 reps before failure.' };
+    if (week === 3) return { rir: 1, label: '1/fail', note: 'Week 3: Stop 1 rep before failure.' };
+    
+    return { rir: 0, label: '0-1/fail', note: 'Accumulation: Train near failure.' };
+};
+
+/**
+ * RP-Style Algorithm for volume adjustment
+ * Returns: -1 (reduce), 0 (maintain), 1 (increase)
+ */
+export const calculateVolumeAdjustment = (soreness: number, performance: number): number => {
+    // Soreness: 1=None, 2=Recovered(Ideal), 3=Sore/Pain
+    // Performance: 1=Bad, 2=Expected, 3=Great/Pump
+
+    // 1. If still sore -> Reduce volume immediately
+    if (soreness === 3) return -1;
+
+    // 2. If recovered perfectly (2) or healed early (1)
+    if (soreness <= 2) {
+        // If performance was bad, maybe fatigue is masking it, or just bad day. Usually maintain or reduce.
+        if (performance === 1) return 0; // Maintain (give another chance) or could be -1
+        
+        // If healed early (1) AND performance was Good/Great (2/3) -> Increase
+        if (soreness === 1 && performance >= 2) return 1;
+        
+        // If recovered just in time (2) -> Maintain (Sweet spot)
+        return 0;
+    }
+
+    return 0;
 };

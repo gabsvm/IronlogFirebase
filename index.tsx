@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, Component } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
@@ -25,8 +25,10 @@ interface ErrorBoundaryState {
   error: any;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false, error: null };
+  // Explicitly declare props to avoid TS errors in strict environments where Component inference might fail
+  declare props: Readonly<ErrorBoundaryProps>;
 
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };

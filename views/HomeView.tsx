@@ -5,6 +5,7 @@ import { TRANSLATIONS } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { getTranslated, formatDate } from '../utils';
+import { MesoType, FeedbackEntry } from '../types';
 
 interface HomeViewProps {
     startSession: (dayIdx: number) => void;
@@ -20,6 +21,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     // Modal for completion
     const [showCompleteModal, setShowCompleteModal] = useState<'week' | 'meso' | null>(null);
     const [showMesoSettings, setShowMesoSettings] = useState(false);
+    const [showStartWizard, setShowStartWizard] = useState(false);
+
+    // New Meso State
+    const [newMesoType, setNewMesoType] = useState<MesoType>('hyp_1');
 
     // Defensive: Ensure program is an array
     const safeProgram = Array.isArray(program) ? program : [];
@@ -27,7 +32,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
 
     const handleStartMeso = () => {
         const initialPlan = safeProgram.map(day => (day?.slots || []).map(slot => slot.exerciseId || null)); 
-        setActiveMeso({ id: Date.now(), week: 1, plan: initialPlan, targetWeeks: 4, isDeload: false });
+        
+        let targetWeeks = 5;
+        if (newMesoType === 'resensitization') targetWeeks = 4;
+        
+        setActiveMeso({ 
+            id: Date.now(), 
+            week: 1, 
+            plan: initialPlan, 
+            targetWeeks: targetWeeks, 
+            isDeload: false,
+            mesoType: newMesoType,
+            name: t.phases[newMesoType]
+        });
+        setShowStartWizard(false);
     };
 
     const generateMesoReport = () => {
@@ -39,7 +57,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
         const startTime = mesoLogs[0].endTime;
         const endTime = mesoLogs[mesoLogs.length - 1].endTime;
         
-        // 1. Volume Calculation
         const volumeByWeek: Record<number, Record<string, number>> = {};
         
         mesoLogs.forEach(log => {
@@ -52,7 +69,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
             });
         });
 
-        // 2. Progression (Start vs End)
         const exerciseProgress: Record<string, any> = {};
         
         mesoLogs.forEach(log => {
@@ -63,23 +79,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                 }, null);
 
                 if (bestSet) {
-                    const exName = getTranslated(ex.name, 'en'); // Use English for key or export consistency
+                    const exName = getTranslated(ex.name, 'en');
                     if (!exerciseProgress[exName]) {
                         exerciseProgress[exName] = { start: null, end: null, id: ex.id, muscle: ex.muscle };
                     }
                     
                     const setStr = `${bestSet.weight}kg x ${bestSet.reps}`;
-                    
                     if (!exerciseProgress[exName].start) {
                         exerciseProgress[exName].start = setStr;
                     }
-                    exerciseProgress[exName].end = setStr; // Always update end to capture latest
+                    exerciseProgress[exName].end = setStr; 
                 }
             });
         });
 
         const report = {
             mesoName: activeMeso.name || "Unnamed Cycle",
+            mesoType: activeMeso.mesoType,
             dateStart: formatDate(startTime, lang),
             dateEnd: formatDate(endTime, lang),
             durationWeeks: activeMeso.week,
@@ -118,16 +134,19 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     const handleAdvanceWeek = () => {
         if (!activeMeso) return;
 
-        // Auto-regulation logic
+        // Auto-regulation logic (RP Style)
         let changesReport: string[] = [];
         if (config.rpEnabled) {
             const currentFeedback = rpFeedback[activeMeso.id]?.[activeMeso.week];
             if (currentFeedback) {
                 const adjustments: Record<string, number> = {};
                 
-                Object.entries(currentFeedback).forEach(([muscle, rating]) => {
-                     if (rating === 1) adjustments[muscle] = 1;
-                     if (rating === 5) adjustments[muscle] = -1;
+                // Read adjustments directly from the feedback calculation done in Modal
+                Object.entries(currentFeedback).forEach(([muscle, val]) => {
+                     const data = val as FeedbackEntry;
+                     if (data.adjustment !== 0) {
+                         adjustments[muscle] = data.adjustment;
+                     }
                 });
 
                 if (Object.keys(adjustments).length > 0) {
@@ -136,9 +155,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                         slots: (day.slots || []).map(slot => {
                             const adj = adjustments[slot.muscle];
                             if (adj) {
-                                const newTarget = Math.max(1, slot.setTarget + adj);
+                                // Clamp between 1 and 10 sets roughly
+                                const newTarget = Math.max(1, Math.min(12, slot.setTarget + adj));
                                 if (newTarget !== slot.setTarget) {
-                                    const msg = `${tm(slot.muscle)}: ${adj > 0 ? '+1' : '-1'} set`;
+                                    const msg = `${tm(slot.muscle)}: ${adj > 0 ? '+1' : '-1'} set (${newTarget})`;
                                     if (!changesReport.includes(msg)) changesReport.push(msg);
                                     return { ...slot, setTarget: newTarget };
                                 }
@@ -156,7 +176,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
         
         if (msg) alert(msg);
         
-        setActiveMeso(prev => prev ? { ...prev, week: prev.week + 1 } : null);
+        // Auto-detect deload if we passed target weeks
+        const nextWeek = activeMeso.week + 1;
+        const shouldBeDeload = activeMeso.targetWeeks ? nextWeek >= activeMeso.targetWeeks : false;
+
+        setActiveMeso(prev => prev ? { 
+            ...prev, 
+            week: nextWeek,
+            isDeload: shouldBeDeload // Suggest deload if we hit the target
+        } : null);
+        
         setShowCompleteModal(null);
     };
 
@@ -177,7 +206,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                         Start a new mesocycle to unlock RP-style progression and analytics.
                     </p>
                 </div>
-                <Button onClick={handleStartMeso} size="lg" className="w-full max-w-xs shadow-xl shadow-red-500/20 py-3">
+                <Button onClick={() => setShowStartWizard(true)} size="lg" className="w-full max-w-xs shadow-xl shadow-red-500/20 py-3">
                     {t.startMeso}
                 </Button>
                 
@@ -186,6 +215,40 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                         <Icon name="Edit" size={14} /> {t.editTemplate}
                     </Button>
                 </div>
+
+                {/* Meso Start Wizard */}
+                {showStartWizard && (
+                    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in">
+                        <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{t.startMeso}</h3>
+                                <button onClick={() => setShowStartWizard(false)} className="text-zinc-400"><Icon name="X" size={24} /></button>
+                            </div>
+                            
+                            <div className="space-y-4 mb-8">
+                                <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">{t.mesoType}</p>
+                                {(['hyp_1', 'hyp_2', 'metabolite', 'resensitization'] as MesoType[]).map(type => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setNewMesoType(type)}
+                                        className={`w-full text-left p-4 rounded-xl border transition-all ${
+                                            newMesoType === type 
+                                            ? 'bg-red-50 dark:bg-red-900/20 border-red-500 text-red-700 dark:text-red-400' 
+                                            : 'bg-zinc-50 dark:bg-white/5 border-transparent text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10'
+                                        }`}
+                                    >
+                                        <div className="font-bold mb-1">{t.phases[type]}</div>
+                                        <div className="text-xs opacity-70">{t.phaseDesc[type]}</div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <Button onClick={handleStartMeso} fullWidth size="lg">
+                                {t.createAndSelect}
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -205,15 +268,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                     <h2 className="text-lg font-black text-zinc-900 dark:text-white mb-1">{activeMeso.name}</h2>
                 )}
                 <div className="flex items-center gap-2 mb-1">
-                     <span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">
-                        {isDeload ? t.deloadMode : (!activeMeso.name ? t.massPhase : '')}
+                     <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase bg-zinc-100 dark:bg-white/5 px-2 py-0.5 rounded">
+                        {t.phases[activeMeso.mesoType] || t.phases['hyp_1']}
                      </span>
                 </div>
                 
                 <div className="flex items-center gap-2">
                     <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full border shadow-lg ${isDeload ? 'bg-blue-500/10 border-blue-500/30 text-blue-500' : 'bg-zinc-900 dark:bg-white/5 border-zinc-800 dark:border-white/10 text-white'}`}>
                         <span className={isDeload ? 'text-blue-500' : 'text-red-500'}><Icon name="Activity" size={16} /></span>
-                        <span className="font-bold text-sm">{t.active}</span>
+                        <span className="font-bold text-sm">{isDeload ? t.recoveryWeek : t.active}</span>
                         <span className="w-px h-3 bg-zinc-700"></span>
                         <span className="text-zinc-400 text-sm font-bold">{t.week} {activeMeso.week} <span className="opacity-50 text-[10px]">/ {activeMeso.targetWeeks || 4}</span></span>
                     </div>
