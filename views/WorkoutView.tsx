@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
 import { Icon } from '../components/ui/Icon';
@@ -61,10 +61,28 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         return () => clearInterval(i);
     }, [activeSession?.startTime]);
 
-    if (!activeSession) return null;
+    // Calculate unique superset IDs to assign colors
+    const sessionExercises = Array.isArray(activeSession?.exercises) ? activeSession!.exercises.filter(Boolean) : [];
     
-    // Defensive access
-    const sessionExercises = Array.isArray(activeSession.exercises) ? activeSession.exercises.filter(Boolean) : [];
+    const supersetStyles = useMemo(() => {
+        const uniqueIds = Array.from(new Set(sessionExercises.map(e => e.supersetId).filter((id): id is string => !!id)));
+        const palette = [
+            { border: 'border-l-orange-500', badge: 'bg-orange-100 text-orange-600', ring: 'ring-orange-500' },
+            { border: 'border-l-blue-500', badge: 'bg-blue-100 text-blue-600', ring: 'ring-blue-500' },
+            { border: 'border-l-purple-500', badge: 'bg-purple-100 text-purple-600', ring: 'ring-purple-500' },
+            { border: 'border-l-emerald-500', badge: 'bg-emerald-100 text-emerald-600', ring: 'ring-emerald-500' },
+            { border: 'border-l-pink-500', badge: 'bg-pink-100 text-pink-600', ring: 'ring-pink-500' },
+            { border: 'border-l-cyan-500', badge: 'bg-cyan-100 text-cyan-600', ring: 'ring-cyan-500' },
+        ];
+        
+        const map: Record<string, typeof palette[0]> = {};
+        uniqueIds.forEach((id, idx) => {
+            map[id] = palette[idx % palette.length];
+        });
+        return map;
+    }, [sessionExercises.map(e => e.supersetId).join(',')]); // Re-calc only when structure changes
+
+    if (!activeSession) return null;
 
     const handleSetUpdate = (exInstanceId: number, setId: number, field: string, value: any) => {
         setActiveSession(prev => {
@@ -381,7 +399,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 {sessionExercises.map((ex, idx) => {
                     if (!ex) return null;
 
-                    const isSuperset = !!ex.supersetId;
+                    const ssStyle = ex.supersetId ? supersetStyles[ex.supersetId] : null;
                     const isLinkingTarget = linkingId && linkingId !== ex.instanceId;
                     const isFirst = idx === 0;
                     const isLast = idx === sessionExercises.length - 1;
@@ -395,7 +413,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                             onClick={() => isLinkingTarget && handleLinkTo(ex.instanceId)}
                             className={`
                                 relative flex flex-col bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-white/5 overflow-hidden transition-all
-                                ${isSuperset ? 'border-l-4 border-l-orange-500' : ''}
+                                ${ssStyle ? `border-l-4 ${ssStyle.border}` : ''}
                                 ${isLinkingTarget ? 'ring-2 ring-orange-500 cursor-pointer opacity-80 hover:opacity-100' : ''}
                                 ${linkingId === ex.instanceId ? 'ring-2 ring-orange-500' : ''}
                             `}
@@ -405,7 +423,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            {isSuperset && <span className="bg-orange-100 text-orange-600 text-[9px] font-bold px-1.5 py-0.5 rounded">SS</span>}
+                                            {ssStyle && <span className={`${ssStyle.badge} text-[9px] font-bold px-1.5 py-0.5 rounded`}>SS</span>}
                                             <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
                                             {ex.targetReps && <span className="text-[10px] font-bold text-zinc-400 tracking-wide">{t.target}: {ex.targetReps}</span>}
                                             {unit === 'pl' && (
@@ -468,8 +486,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                                     <button onClick={(e) => { e.stopPropagation(); setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                                         <Icon name="Dumbbell" size={16} /> {t.changeMuscle}
                                                     </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); handleToggleSupersetLink(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center gap-2">
-                                                        <Icon name={isSuperset ? "Unlink" : "Link"} size={16} /> {isSuperset ? t.unlinkSuperset : t.linkSuperset}
+                                                    <button onClick={(e) => { e.stopPropagation(); handleToggleSupersetLink(ex.instanceId); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${ssStyle ? 'text-red-500' : 'text-orange-600'}`}>
+                                                        <Icon name={ssStyle ? "Unlink" : "Link"} size={16} /> {ssStyle ? t.unlinkSuperset : t.linkSuperset}
                                                     </button>
                                                     <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                                     <button onClick={(e) => { e.stopPropagation(); handleRemoveExercise(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
