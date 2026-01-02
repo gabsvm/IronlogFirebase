@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { TRANSLATIONS } from '../constants';
+import { TRANSLATIONS, FULL_BODY_TEMPLATE } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { getTranslated, formatDate } from '../utils';
@@ -32,7 +32,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     const safeLogs = Array.isArray(logs) ? logs : [];
 
     const handleStartMeso = () => {
-        const initialPlan = safeProgram.map(day => (day?.slots || []).map(slot => slot.exerciseId || null)); 
+        let planToUse = safeProgram;
+
+        // If specific template logic required (Dr Mike 4x Full Body)
+        if (newMesoType === 'full_body') {
+            // Overwrite program with 4 day full body template
+            planToUse = FULL_BODY_TEMPLATE;
+            setProgram(FULL_BODY_TEMPLATE);
+        }
+
+        const initialPlan = planToUse.map(day => (day?.slots || []).map(slot => slot.exerciseId || null)); 
         
         let targetWeeks = 5;
         if (newMesoType === 'resensitization') targetWeeks = 4;
@@ -225,15 +234,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                 {/* Meso Start Wizard */}
                 {showStartWizard && (
                     <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in">
-                        <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
-                            <div className="flex justify-between items-center mb-6">
+                        <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-between items-center mb-6 shrink-0">
                                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{t.startMeso}</h3>
                                 <button onClick={() => setShowStartWizard(false)} className="text-zinc-400"><Icon name="X" size={24} /></button>
                             </div>
                             
-                            <div className="space-y-4 mb-8">
-                                <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">{t.mesoType}</p>
-                                {(['hyp_1', 'hyp_2', 'metabolite', 'resensitization'] as MesoType[]).map(type => (
+                            <div className="space-y-4 mb-8 overflow-y-auto scroll-container flex-1">
+                                <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-white dark:bg-zinc-900 py-2 z-10">{t.mesoType}</p>
+                                {(['hyp_1', 'hyp_2', 'full_body', 'metabolite', 'resensitization'] as MesoType[]).map(type => (
                                     <button
                                         key={type}
                                         onClick={() => setNewMesoType(type)}
@@ -244,14 +253,25 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                                         }`}
                                     >
                                         <div className="font-bold mb-1">{t.phases[type]}</div>
-                                        <div className="text-xs opacity-70">{t.phaseDesc[type]}</div>
+                                        <div className="text-xs opacity-70 leading-relaxed">{t.phaseDesc[type]}</div>
                                     </button>
                                 ))}
                             </div>
 
-                            <Button onClick={handleStartMeso} fullWidth size="lg">
-                                {t.createAndSelect}
-                            </Button>
+                            <div className="shrink-0 space-y-4">
+                                {newMesoType === 'full_body' && (
+                                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-xl flex gap-3 items-start animate-in fade-in">
+                                        <div className="text-orange-500 shrink-0 mt-0.5"><Icon name="Activity" size={16} /></div>
+                                        <p className="text-xs text-orange-700 dark:text-orange-300 leading-tight font-medium">
+                                            {t.overwriteTemplateConfirm}
+                                        </p>
+                                    </div>
+                                )}
+
+                                <Button onClick={handleStartMeso} fullWidth size="lg">
+                                    {t.createAndSelect}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}

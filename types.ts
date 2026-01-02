@@ -65,7 +65,7 @@ export interface ProgramDay {
   slots: ProgramSlot[];
 }
 
-export type MesoType = 'hyp_1' | 'hyp_2' | 'metabolite' | 'resensitization';
+export type MesoType = 'hyp_1' | 'hyp_2' | 'metabolite' | 'resensitization' | 'full_body';
 
 export interface MesoCycle {
   id: number;

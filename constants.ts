@@ -9,14 +9,23 @@ export const MUSCLE_GROUPS: Record<string, MuscleGroup> = {
 };
 
 export const DEFAULT_LIBRARY: ExerciseDef[] = [
+    // Chest
     { id: 'bp_flat', name: { en: 'Machine Chest Press', es: 'Press Pecho Máquina' }, muscle: 'CHEST' },
     { id: 'bp_inc', name: { en: 'Incline Dumbbell Press', es: 'Press Inclinado Mancuernas' }, muscle: 'CHEST' },
     { id: 'bp_bar', name: { en: 'Barbell Bench Press', es: 'Press Banca Barra' }, muscle: 'CHEST' },
+    { id: 'bp_inc_bar', name: { en: 'Incline Barbell Press', es: 'Press Inclinado Barra' }, muscle: 'CHEST' },
+    { id: 'bp_inc_wide', name: { en: 'Wide Grip Incline Press', es: 'Press Inclinado Agarre Ancho' }, muscle: 'CHEST' },
     { id: 'pec_fly', name: { en: 'Pec Dec Flye', es: 'Aperturas Pec Dec' }, muscle: 'CHEST' },
+    
+    // Back
     { id: 'lat_pull', name: { en: 'Lat Pulldown', es: 'Jalón al Pecho' }, muscle: 'BACK' },
+    { id: 'lat_pull_supine', name: { en: 'Supine Lat Pulldown', es: 'Jalón Supino (Chin-grip)' }, muscle: 'BACK' },
+    { id: 'lat_prayer', name: { en: 'Cable Lat Prayer', es: 'Pullover Polea Alta' }, muscle: 'BACK' },
     { id: 'row_mach', name: { en: 'Machine Row', es: 'Remo en Máquina' }, muscle: 'BACK' },
     { id: 'row_cable', name: { en: 'Cable Row', es: 'Remo en Polea' }, muscle: 'BACK' },
     { id: 'pullup', name: { en: 'Pull Ups', es: 'Dominadas' }, muscle: 'BACK' },
+    
+    // Legs
     { id: 'sq_hack', name: { en: 'Hack Squat', es: 'Sentadilla Hack' }, muscle: 'QUADS' },
     { id: 'leg_ext', name: { en: 'Leg Extension', es: 'Extensiones de Cuádriceps' }, muscle: 'QUADS' },
     { id: 'leg_press', name: { en: 'Leg Press', es: 'Prensa de Piernas' }, muscle: 'QUADS' },
@@ -24,14 +33,27 @@ export const DEFAULT_LIBRARY: ExerciseDef[] = [
     { id: 'leg_curl', name: { en: 'Seated Leg Curl', es: 'Curl Femoral Sentado' }, muscle: 'HAMSTRINGS' },
     { id: 'lying_curl', name: { en: 'Lying Leg Curl', es: 'Curl Femoral Tumbado' }, muscle: 'HAMSTRINGS' },
     { id: 'calf_raise', name: { en: 'Calf Raise', es: 'Elevación de Talones' }, muscle: 'CALVES' },
+    
+    // Shoulders
     { id: 'ohp', name: { en: 'Overhead Press', es: 'Press Militar' }, muscle: 'SHOULDERS' },
     { id: 'lat_raise', name: { en: 'Lateral Raise', es: 'Elevaciones Laterales' }, muscle: 'SHOULDERS' },
+    { id: 'lat_raise_cable', name: { en: 'Cable Lateral Raise', es: 'Elev. Laterales Polea' }, muscle: 'SHOULDERS' },
+    { id: 'lat_raise_mach', name: { en: 'Machine Lateral Raise', es: 'Elev. Laterales Máquina' }, muscle: 'SHOULDERS' },
+    { id: 'lat_raise_seat', name: { en: 'Seated Lateral Raise', es: 'Elev. Laterales Sentado' }, muscle: 'SHOULDERS' },
     { id: 'face_pull', name: { en: 'Face Pull', es: 'Face Pull' }, muscle: 'SHOULDERS' },
     { id: 'shrug_db', name: { en: 'Dumbbell Shrugs', es: 'Encogimientos Mancuerna' }, muscle: 'TRAPS' },
+    
+    // Arms
     { id: 'curl_ez', name: { en: 'EZ Bar Curl', es: 'Curl Barra EZ' }, muscle: 'BICEPS' },
+    { id: 'curl_bar', name: { en: 'Barbell Curl', es: 'Curl con Barra' }, muscle: 'BICEPS' },
     { id: 'curl_db', name: { en: 'Dumbbell Curl', es: 'Curl con Mancuernas' }, muscle: 'BICEPS' },
+    { id: 'curl_cable', name: { en: 'Cable Curl', es: 'Curl en Polea' }, muscle: 'BICEPS' },
+    
+    { id: 'skull_crusher', name: { en: 'Skull Crushers', es: 'Rompecráneos (Skullcrusher)' }, muscle: 'TRICEPS' },
     { id: 'tri_push', name: { en: 'Tricep Pushdown', es: 'Extensión Tríceps Polea' }, muscle: 'TRICEPS' },
     { id: 'tri_ext', name: { en: 'Overhead Extension', es: 'Extensión sobre Cabeza' }, muscle: 'TRICEPS' },
+    { id: 'jm_press', name: { en: 'JM Press / Smith Tri', es: 'Press JM / Smith Tríceps' }, muscle: 'TRICEPS' },
+    
     { id: 'abs_cable', name: { en: 'Cable Crunch', es: 'Crunch en Polea' }, muscle: 'ABS' },
     { id: 'wrist_curl', name: { en: 'Wrist Curl', es: 'Curl de Muñeca' }, muscle: 'FOREARMS' }
 ];
@@ -41,6 +63,57 @@ export const DEFAULT_TEMPLATE: ProgramDay[] = [
     { id: 'd2', dayName: { en: "Lower 1", es: "Pierna 1" }, slots: [{ muscle: 'QUADS', setTarget: 3 }, { muscle: 'QUADS', setTarget: 3 }, { muscle: 'GLUTES', setTarget: 3 }, { muscle: 'HAMSTRINGS', setTarget: 3 }, { muscle: 'CALVES', setTarget: 3 }] }, 
     { id: 'd3', dayName: { en: "Upper 2", es: "Torso 2" }, slots: [{ muscle: 'SHOULDERS', setTarget: 3 }, { muscle: 'BICEPS', setTarget: 3 }, { muscle: 'BICEPS', setTarget: 3 }, { muscle: 'BACK', setTarget: 3 }, { muscle: 'TRICEPS', setTarget: 3 }, { muscle: 'TRICEPS', setTarget: 3 }, { muscle: 'CHEST', setTarget: 3 }] }, 
     { id: 'd4', dayName: { en: "Lower 2", es: "Pierna 2" }, slots: [{ muscle: 'HAMSTRINGS', setTarget: 3 }, { muscle: 'HAMSTRINGS', setTarget: 3 }, { muscle: 'GLUTES', setTarget: 3 }, { muscle: 'QUADS', setTarget: 3 }, { muscle: 'CALVES', setTarget: 3 }] } 
+];
+
+// Dr. Mike's "Pure Bodybuilding / Aesthetic Focus" Routine
+// Focus: V-Taper (Side Delts, Wide Lats), Upper Chest, Arms. Legs in maintenance.
+export const FULL_BODY_TEMPLATE: ProgramDay[] = [
+    { 
+        id: 'aes1', 
+        dayName: { en: "Day 1: Back Width & Upper Chest", es: "Día 1: Amplitud Espalda & Pecho Alto" }, 
+        slots: [
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'pullup' },        // Strict Technique
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_pull' },      // Varied Grip
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc_bar' },   // Control descent
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc' },       // DB Volume
+            { muscle: 'QUADS', setTarget: 2, exerciseId: 'leg_press' }     // Maintenance Legs
+        ] 
+    },
+    { 
+        id: 'aes2', 
+        dayName: { en: "Day 2: Arms & Delts (Tri Focus)", es: "Día 2: Brazos & Hombros (Énfasis Tríceps)" }, 
+        slots: [
+            { muscle: 'TRICEPS', setTarget: 4, exerciseId: 'skull_crusher' }, // Elbows tucked
+            { muscle: 'TRICEPS', setTarget: 3, exerciseId: 'tri_ext' },       // Long head (Overhead)
+            { muscle: 'SHOULDERS', setTarget: 4, exerciseId: 'lat_raise' },   // Side Delts
+            { muscle: 'SHOULDERS', setTarget: 3, exerciseId: 'lat_raise_cable' }, // Constant Tension
+            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_bar' },       // Myo-reps suggested
+            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'wrist_curl' }    // High reps (50-60)
+        ] 
+    },
+    { 
+        id: 'aes3', 
+        dayName: { en: "Day 3: Chest & Back (Chest Focus)", es: "Día 3: Pecho & Espalda (Énfasis Pecho)" }, 
+        slots: [
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc_wide' },    // Wide Grip, Pause at bottom
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_flat' },        // Machine Press Volume
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_pull_supine' }, // Supine/Chin Grip
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_prayer' },      // Isolation Width
+            { muscle: 'QUADS', setTarget: 2, exerciseId: 'leg_ext' }         // Maintenance Legs
+        ] 
+    },
+    { 
+        id: 'aes4', 
+        dayName: { en: "Day 4: Arms & Delts (Bi Focus)", es: "Día 4: Brazos & Hombros (Énfasis Bíceps)" }, 
+        slots: [
+            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_ez' },          // 5-10 or 10-15 range
+            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_cable' },       // High rep 15-20
+            { muscle: 'SHOULDERS', setTarget: 4, exerciseId: 'lat_raise_mach' },// Machine
+            { muscle: 'SHOULDERS', setTarget: 3, exerciseId: 'lat_raise_seat' },// Seated DB
+            { muscle: 'TRICEPS', setTarget: 3, exerciseId: 'jm_press' },        // Giant set style (50-60 total)
+            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'wrist_curl' }      // Forearm pushups/curls
+        ] 
+    }
 ];
 
 export const TRANSLATIONS = {
@@ -76,13 +149,15 @@ export const TRANSLATIONS = {
             hyp_1: "Base Hypertrophy 1",
             hyp_2: "Base Hypertrophy 2",
             metabolite: "Metabolite Phase",
-            resensitization: "Resensitization"
+            resensitization: "Resensitization",
+            full_body: "Aesthetic V-Taper (Dr. Mike)"
         },
         phaseDesc: {
             hyp_1: "Standard volume accumulation. RIR 3->1.",
             hyp_2: "Higher initial volume. Aggressive overload.",
             metabolite: "High reps (20-30), short rests, the 'burn'.",
-            resensitization: "Low volume, heavy weight (3-6 reps) to reset fatigue."
+            resensitization: "Low volume, heavy weight (3-6 reps) to reset fatigue.",
+            full_body: "Focus on V-Taper (Lats/Side Delts) & Arms. Maintenance Legs."
         },
         targetRIR: "Target RIR",
         recoveryWeek: "Recovery Week",
@@ -127,7 +202,8 @@ export const TRANSLATIONS = {
             s3_title: "Smart Tracking", s3_desc: "Track RIR, use our built-in rest timer, and get warmup sets calculated instantly.",
             s4_title: "Progress", s4_desc: "Visualize your volume landmarks (MEV/MRV) and ensure you are overloading progressively."
         },
-        createAndSelect: "Create & Select"
+        createAndSelect: "Create & Select",
+        overwriteTemplateConfirm: "This overwrites your current plan with Dr. Mike's Aesthetic Split (4 Days/Week).",
     },
     es: { 
         startMeso: "Iniciar Mesociclo", finishWorkout: "Terminar Sesión", finishConfirm: "¿Terminar entrenamiento?", cancel: "Cancelar", delete: "Borrar", skip: "Saltar Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Reemplazar Ejercicio", changeMuscle: "Cambiar músculo", chooseMuscle: "Elegir músculo", addSetBelow: "Añadir Serie Debajo", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Serie", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Progreso", settings: "Ajustes", rp: "Progresión RP", rpEnabled: "Sugerencias RP", rpTargetRIR: "RIR objetivo", volume: "Volumen Semanal", workouts: "Sesiones Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Volver", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar el mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No encontrado", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Ciclo", totalWorkouts: "Entrenamientos", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona para unir...", superset: "SUPERSERIE", workoutComplete: "¡ENTRENAMIENTO TERMINADO!", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "Esto sobrescribirá los datos. ¿Continuar?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Eliminar Slot", offline: "Modo Local", mesoAvg: "Promedio Mesociclo", 
@@ -161,13 +237,15 @@ export const TRANSLATIONS = {
             hyp_1: "Hipertrofia Base 1",
             hyp_2: "Hipertrofia Base 2",
             metabolite: "Fase Metabolitos",
-            resensitization: "Resensibilización"
+            resensitization: "Resensibilización",
+            full_body: "Estética / V-Taper (Dr. Mike)"
         },
         phaseDesc: {
             hyp_1: "Acumulación estándar. RIR 3->1.",
             hyp_2: "Mayor volumen inicial. Sobrecarga agresiva.",
             metabolite: "Altas reps (20-30), descansos cortos, 'burn'.",
-            resensitization: "Bajo volumen, peso alto (3-6 reps) para limpiar fatiga."
+            resensitization: "Bajo volumen, peso alto (3-6 reps) para limpiar fatiga.",
+            full_body: "Enfoque V-Taper (Dorsal/Deltoides) y Brazos. Pierna mantenimiento."
         },
         targetRIR: "RIR Objetivo",
         recoveryWeek: "Semana Recuperación",
@@ -212,6 +290,7 @@ export const TRANSLATIONS = {
             s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.",
             s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva."
         },
-        createAndSelect: "Crear y Seleccionar"
+        createAndSelect: "Crear y Seleccionar",
+        overwriteTemplateConfirm: "Esto sobrescribe tu rutina actual con el plan de Estética (4 días) de Dr. Mike.",
     }
 };
