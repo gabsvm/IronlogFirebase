@@ -1,3 +1,4 @@
+
 const CACHE_NAME = 'ironlog-v2';
 const ASSETS = [
   '/',
@@ -11,25 +12,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-});
-
-self.addEventListener('fetch', (e) => {
-  // Stale-while-revalidate strategy
-  e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      const fetchPromise = fetch(e.request).then((networkResponse) => {
-        // Cache new resources automatically
-        if (e.request.method === 'GET' && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        }
-        return networkResponse;
-      }).catch(() => {
-          // Fallback if offline and not in cache (optional, mostly handled by cachedResponse)
-      });
-      return cachedResponse || fetchPromise;
-    })
-  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
@@ -42,6 +25,39 @@ self.addEventListener('activate', (e) => {
           }
         })
       );
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (e) => {
+  // Only cache GET requests
+  if (e.request.method !== 'GET') return;
+
+  e.respondWith(
+    caches.match(e.request).then((cachedResponse) => {
+      // Network fetch to update cache in background (Stale-While-Revalidate)
+      const fetchPromise = fetch(e.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Fallback logic could go here
+        });
+
+      // If we have a cached response, return it immediately, 
+      // but ensure the network request runs to update the cache for next time.
+      if (cachedResponse) {
+        e.waitUntil(fetchPromise);
+        return cachedResponse;
+      }
+
+      // If no cache, return the network response directly
+      return fetchPromise;
     })
   );
 });

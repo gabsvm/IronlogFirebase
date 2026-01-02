@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
-import { MuscleGroup, ExerciseDef, SetType } from '../types';
+import { MuscleGroup, ExerciseDef, SetType, SessionExercise } from '../types';
 import { getTranslated, getMesoStageConfig } from '../utils';
 
 const MuscleTag = ({ label }: { label: string }) => (
@@ -62,7 +62,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     }, [activeSession?.startTime]);
 
     // Calculate unique superset IDs to assign colors
-    const sessionExercises = Array.isArray(activeSession?.exercises) ? activeSession!.exercises.filter(Boolean) : [];
+    const sessionExercises = (activeSession?.exercises || []).filter((e): e is SessionExercise => !!e);
     
     const supersetStyles = useMemo(() => {
         const uniqueIds = Array.from(new Set(sessionExercises.map(e => e.supersetId).filter((id): id is string => !!id)));
@@ -81,6 +81,12 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         });
         return map;
     }, [sessionExercises.map(e => e.supersetId).join(',')]); // Re-calc only when structure changes
+
+    const supersetStylesMap = supersetStyles; // Alias for cleaner usage if needed, though we use the map directly
+
+    useEffect(() => {
+        // Recalculate if needed, but the memo handles it
+    }, [sessionExercises.length]);
 
     if (!activeSession) return null;
 

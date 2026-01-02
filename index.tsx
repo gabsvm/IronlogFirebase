@@ -5,17 +5,17 @@ import App from './App';
 import './index.css';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
-// Safely try to unregister service workers
-try {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-        registration.unregister().catch(() => {});
-      }
-    }).catch(() => {});
-  }
-} catch (e) {
-  // Silently ignore
+// Register Service Worker for PWA capabilities
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('SW registered: ', registration);
+      })
+      .catch(registrationError => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
 }
 
 interface ErrorBoundaryProps {
