@@ -14,6 +14,7 @@ import { getLastLogForExercise } from './utils';
 import { Icon } from './components/ui/Icon';
 import { TRANSLATIONS } from './constants';
 import { ExerciseDef } from './types';
+import { Button } from './components/ui/Button';
 
 const AppContent = () => {
     const { 
@@ -28,6 +29,7 @@ const AppContent = () => {
     // Extended view state
     const [view, setView] = useState<'home' | 'workout' | 'history' | 'exercises' | 'program' | 'stats'>('home');
     const [showSettings, setShowSettings] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
 
     // History management for Android Back Button
     const isPopping = useRef(false);
@@ -135,11 +137,9 @@ const AppContent = () => {
 
     // --- WORKOUT LOGIC ---
 
-    // New: Handle Skip Day
     const skipSession = (dayIdx: number) => {
         if (!activeMeso) return;
 
-        // Create a skipped log entry
         const safeProgram = Array.isArray(program) ? program : [];
         const dayDef = safeProgram[dayIdx];
         const name = dayDef 
@@ -165,13 +165,11 @@ const AppContent = () => {
     const startSession = (dayIdx: number) => {
         if (!activeMeso) return;
         
-        // Resume if exists
         if (activeSession && activeSession.dayIdx === dayIdx) {
             setView('workout');
             return;
         }
 
-        // Defensive checks for data integrity
         const safeProgram = Array.isArray(program) ? program : [];
         const dayDef = safeProgram[dayIdx];
         if (!dayDef) return;
@@ -180,48 +178,33 @@ const AppContent = () => {
             ? (typeof dayDef.dayName === 'object' ? dayDef.dayName[lang] : dayDef.dayName) 
             : `Day ${dayIdx + 1}`;
 
-        // Safely access plan
         const mesoPlan = Array.isArray(activeMeso.plan) ? activeMeso.plan : [];
         const dayPlan = Array.isArray(mesoPlan[dayIdx]) ? mesoPlan[dayIdx] : [];
-
-        // Hydrate session exercises
         const safeExercises = Array.isArray(exercises) ? exercises.filter(e => !!e) : [];
         const safeLogs = Array.isArray(logs) ? logs : [];
-
-        // Deload Logic: if isDeload is true, cut sets by half
         const isDeload = !!activeMeso.isDeload;
 
         const sessionExs = (dayDef.slots || []).map((slotDef, idx) => {
-            // Guard against null slots
             if (!slotDef) return null;
 
             const exId = dayPlan[idx];
             let exDef: ExerciseDef | undefined;
 
-            // 1. Try to find the assigned exercise by ID
             if (exId) {
                 exDef = safeExercises.find(e => e.id === exId);
             }
-
-            // 2. If no ID (new plan), find the first exercise matching the muscle group
             if (!exDef) {
                 exDef = safeExercises.find(e => e.muscle === slotDef.muscle);
             }
-
-            // 3. Fallback to just the first exercise in DB
             if (!exDef && safeExercises.length > 0) {
                 exDef = safeExercises[0];
             }
-
-            // 4. Absolute fallback to prevent crash
             if (!exDef) {
                 exDef = { id: 'unknown', name: 'Unknown Exercise', muscle: slotDef.muscle || 'CHEST' };
             }
 
-            // Look up history
             const lastSets = getLastLogForExercise(exDef.id, safeLogs);
             
-            // DELOAD LOGIC: Reduce volume
             let setTarget = slotDef.setTarget || 3;
             if (isDeload) {
                 setTarget = Math.max(1, Math.ceil(setTarget / 2));
@@ -248,7 +231,7 @@ const AppContent = () => {
                 targetReps: slotDef.reps,
                 sets: initialSets as any
             };
-        }).filter(Boolean); // Remove nulls from mapping
+        }).filter(Boolean);
 
         setActiveSession({
             id: Date.now(),
@@ -468,12 +451,7 @@ const AppContent = () => {
                             <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.dangerZone}</label>
                                 <button 
-                                    onClick={() => {
-                                        if(window.confirm(t.deleteDataConfirm)) {
-                                            localStorage.clear();
-                                            window.location.reload();
-                                        }
-                                    }}
+                                    onClick={() => setShowResetModal(true)}
                                     className="w-full py-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500 border border-red-100 dark:border-red-500/20 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                                 >
                                     {t.factoryReset}
@@ -483,6 +461,38 @@ const AppContent = () => {
 
                         <div className="text-center pt-6 border-t border-zinc-100 dark:border-white/5">
                             <p className="text-xs font-medium text-zinc-400">IronLog Pro v2.1.3</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Factory Reset Modal */}
+            {showResetModal && (
+                <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setShowResetModal(false)}>
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-500 flex items-center justify-center">
+                                <Icon name="Trash2" size={32} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{t.dangerZone}</h3>
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                    {t.deleteDataConfirm}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 w-full pt-2">
+                                <Button variant="secondary" onClick={() => setShowResetModal(false)} className="w-full">{t.cancel}</Button>
+                                <Button 
+                                    variant="danger" 
+                                    onClick={() => {
+                                        localStorage.clear();
+                                        window.location.reload();
+                                    }} 
+                                    className="w-full"
+                                >
+                                    {t.factoryReset}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

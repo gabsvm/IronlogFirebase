@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { AppState, Lang, Theme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay } from '../types';
 import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
@@ -54,12 +55,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [lang, setLang] = useState<Lang>('en');
     const [theme, setTheme] = useState<Theme>('dark');
     
-    // IMPORTANT: Keys MUST match the original HTML/JS app to preserve user data
-    const [program, setProgram] = useLS<ProgramDay[]>('il_prog_v15', DEFAULT_TEMPLATE);
-    const [activeMeso, setActiveMeso] = useLS<MesoCycle | null>('il_meso_v15', null);
-    const [activeSession, setActiveSession] = useLS<ActiveSession | null>('il_session_v15', null);
-    const [exercises, setExercises] = useLS<ExerciseDef[]>('il_ex_v15', DEFAULT_LIBRARY);
-    const [logs, setLogs] = useLS<Log[]>('il_logs_v15', []);
+    // IMPORTANT: Keys updated to v16 to force data refresh on deployment
+    const [program, setProgram] = useLS<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE);
+    const [activeMeso, setActiveMeso] = useLS<MesoCycle | null>('il_meso_v16', null);
+    const [activeSession, setActiveSession] = useLS<ActiveSession | null>('il_session_v16', null);
+    const [exercises, setExercises] = useLS<ExerciseDef[]>('il_ex_v16', DEFAULT_LIBRARY);
+    const [logs, setLogs] = useLS<Log[]>('il_logs_v16', []);
     
     // Config items split in original, unified here for cleaner context but synced separately if needed? 
     // The original used individual LS keys for config. We should respect that pattern.
@@ -69,7 +70,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [keepScreenOn, setKeepScreenOn] = useLS('il_cfg_screen', false);
     
     const [rpFeedback, setRpFeedback] = useLS<AppState['rpFeedback']>('il_rp_fb_v1', {});
-    const [hasSeenOnboarding, setHasSeenOnboarding] = useLS<boolean>('il_onboarded', false);
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useLS<boolean>('il_onboarded_v2', false);
 
     const [restTimer, setRestTimer] = useState({ active: false, timeLeft: 0, duration: 120, endAt: 0 });
     const workerRef = useRef<Worker | null>(null);
