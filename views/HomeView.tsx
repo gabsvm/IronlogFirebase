@@ -22,6 +22,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     const [showCompleteModal, setShowCompleteModal] = useState<'week' | 'meso' | null>(null);
     const [showMesoSettings, setShowMesoSettings] = useState(false);
     const [showStartWizard, setShowStartWizard] = useState(false);
+    const [showRoutineGuide, setShowRoutineGuide] = useState(false);
     const [skipConfirmationId, setSkipConfirmationId] = useState<number | null>(null);
 
     // New Meso State
@@ -306,6 +307,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                         <span className="w-px h-3 bg-zinc-700"></span>
                         <span className="text-zinc-400 text-sm font-bold">{t.week} {activeMeso.week} <span className="opacity-50 text-[10px]">/ {activeMeso.targetWeeks || 4}</span></span>
                     </div>
+                    
+                    <button 
+                        onClick={() => setShowRoutineGuide(true)}
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:scale-105 transition-transform"
+                        title={t.routineGuide}
+                    >
+                        <Icon name="FileText" size={16} />
+                    </button>
+                    
                     <button 
                         onClick={() => setShowMesoSettings(true)}
                         className="w-9 h-9 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
@@ -413,6 +423,57 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                     </Button>
                 </div>
             </div>
+
+             {/* Routine Guide Modal */}
+             {showRoutineGuide && activeMeso && (
+                 <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setShowRoutineGuide(false)}>
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl p-0 shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center p-6 border-b border-zinc-100 dark:border-white/5 shrink-0 bg-zinc-50/50 dark:bg-white/[0.02]">
+                            <div>
+                                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{t.routineGuide}</h3>
+                                <p className="text-xs text-zinc-500">{t.executionInfo}</p>
+                            </div>
+                            <button onClick={() => setShowRoutineGuide(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><Icon name="X" size={24} /></button>
+                        </div>
+                        
+                        <div className="overflow-y-auto p-6 space-y-8 scroll-container">
+                            {safeProgram.map((day, idx) => (
+                                <div key={idx} className="space-y-3">
+                                    <h4 className="font-black text-sm text-zinc-900 dark:text-white uppercase tracking-wider sticky top-0 bg-white dark:bg-zinc-900 py-2 z-10 border-b border-zinc-100 dark:border-white/5">
+                                        {getTranslated(day.dayName, lang)}
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {day.slots?.map((slot, sIdx) => {
+                                            // Find specific exercise if assigned, or generic info
+                                            const exId = activeMeso.plan?.[idx]?.[sIdx] || slot.exerciseId;
+                                            const exDef = exId ? exercises.find(e => e.id === exId) : null;
+                                            
+                                            // Only show if we have an exercise definition
+                                            if (!exDef) return null;
+
+                                            return (
+                                                <div key={sIdx} className="bg-zinc-50 dark:bg-white/5 rounded-xl p-3 border border-zinc-100 dark:border-white/5">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <span className="font-bold text-sm text-zinc-800 dark:text-zinc-200">{getTranslated(exDef.name, lang)}</span>
+                                                        <span className="text-[10px] font-bold text-zinc-400 uppercase bg-white dark:bg-black/20 px-1.5 py-0.5 rounded border border-zinc-100 dark:border-white/5">{tm(slot.muscle)}</span>
+                                                    </div>
+                                                    {exDef.instructions ? (
+                                                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mt-2 italic border-l-2 border-red-500/30 pl-2">
+                                                            {getTranslated(exDef.instructions, lang)}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-[10px] text-zinc-400 mt-1">{t.noData}</p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                 </div>
+             )}
 
             {/* Skip Confirmation Modal */}
             {skipConfirmationId !== null && (

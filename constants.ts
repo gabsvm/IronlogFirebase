@@ -10,25 +10,78 @@ export const MUSCLE_GROUPS: Record<string, MuscleGroup> = {
 
 export const DEFAULT_LIBRARY: ExerciseDef[] = [
     // Chest
-    { id: 'bp_flat', name: { en: 'Machine Chest Press', es: 'Press Pecho Máquina' }, muscle: 'CHEST' },
-    { id: 'bp_inc', name: { en: 'Incline Dumbbell Press', es: 'Press Inclinado Mancuernas' }, muscle: 'CHEST' },
-    { id: 'bp_bar', name: { en: 'Barbell Bench Press', es: 'Press Banca Barra' }, muscle: 'CHEST' },
-    { id: 'bp_inc_bar', name: { en: 'Incline Barbell Press', es: 'Press Inclinado Barra' }, muscle: 'CHEST' },
-    { id: 'bp_inc_wide', name: { en: 'Wide Grip Incline Press', es: 'Press Inclinado Agarre Ancho' }, muscle: 'CHEST' },
-    { id: 'pec_fly', name: { en: 'Pec Dec Flye', es: 'Aperturas Pec Dec' }, muscle: 'CHEST' },
+    { 
+        id: 'bp_flat', 
+        name: { en: 'Machine Chest Press', es: 'Press Pecho Máquina' }, 
+        muscle: 'CHEST',
+        instructions: { en: "Standard volume builder.", es: "Añade volumen de forma segura." }
+    },
+    { 
+        id: 'bp_inc', 
+        name: { en: 'Incline Dumbbell Press', es: 'Press Inclinado Mancuernas' }, 
+        muscle: 'CHEST',
+        instructions: { en: "Focus on upper chest. Get a deep stretch.", es: "Enfoque en pecho superior. Busca un estiramiento profundo." }
+    },
+    { 
+        id: 'bp_bar', 
+        name: { en: 'Barbell Bench Press', es: 'Press Banca Barra' }, 
+        muscle: 'CHEST' 
+    },
+    { 
+        id: 'bp_inc_bar', 
+        name: { en: 'Incline Barbell Press', es: 'Press Inclinado Barra' }, 
+        muscle: 'CHEST',
+        instructions: { en: "Regular grip, control the descent. Touches upper chest.", es: "Agarre regular, controla la bajada. Toca la parte superior del pecho." }
+    },
+    { 
+        id: 'bp_inc_wide', 
+        name: { en: 'Wide Grip Incline Press', es: 'Press Inclinado Agarre Ancho' }, 
+        muscle: 'CHEST',
+        instructions: { en: "Wider grip to bias chest. Pause at the bottom.", es: "Agarre más ancho para enfatizar el pecho. Haz una pausa en la parte inferior." }
+    },
+    { 
+        id: 'pec_fly', 
+        name: { en: 'Pec Dec Flye', es: 'Aperturas Pec Dec' }, 
+        muscle: 'CHEST' 
+    },
     
     // Back
-    { id: 'lat_pull', name: { en: 'Lat Pulldown', es: 'Jalón al Pecho' }, muscle: 'BACK' },
-    { id: 'lat_pull_supine', name: { en: 'Supine Lat Pulldown', es: 'Jalón Supino (Chin-grip)' }, muscle: 'BACK' },
-    { id: 'lat_prayer', name: { en: 'Cable Lat Prayer', es: 'Pullover Polea Alta' }, muscle: 'BACK' },
+    { 
+        id: 'lat_pull', 
+        name: { en: 'Lat Pulldown', es: 'Jalón al Pecho' }, 
+        muscle: 'BACK',
+        instructions: { en: "Prone, neutral, or supine grip. Focus on back width.", es: "Agarre prono, neutro o supino. Enfocado en la amplitud de espalda." }
+    },
+    { 
+        id: 'lat_pull_supine', 
+        name: { en: 'Supine Lat Pulldown', es: 'Jalón Supino (Chin-grip)' }, 
+        muscle: 'BACK',
+        instructions: { en: "Underhand grip. Great for lats.", es: "Agarre supino (palmas hacia ti). Excelente para dorsales." }
+    },
+    { 
+        id: 'lat_prayer', 
+        name: { en: 'Cable Lat Prayer', es: 'Pullover Polea Alta' }, 
+        muscle: 'BACK',
+        instructions: { en: "Isolation movement for back width. Keep tension constant.", es: "Movimiento de aislamiento para ancho de espalda. Mantén tensión constante." }
+    },
     { id: 'row_mach', name: { en: 'Machine Row', es: 'Remo en Máquina' }, muscle: 'BACK' },
     { id: 'row_cable', name: { en: 'Cable Row', es: 'Remo en Polea' }, muscle: 'BACK' },
-    { id: 'pullup', name: { en: 'Pull Ups', es: 'Dominadas' }, muscle: 'BACK' },
+    { 
+        id: 'pullup', 
+        name: { en: 'Pull Ups', es: 'Dominadas' }, 
+        muscle: 'BACK',
+        instructions: { en: "Strict technique, full range of motion. No swinging.", es: "Técnica estricta, rango de movimiento completo. Sin balanceos." } 
+    },
     
     // Legs
     { id: 'sq_hack', name: { en: 'Hack Squat', es: 'Sentadilla Hack' }, muscle: 'QUADS' },
     { id: 'leg_ext', name: { en: 'Leg Extension', es: 'Extensiones de Cuádriceps' }, muscle: 'QUADS' },
-    { id: 'leg_press', name: { en: 'Leg Press', es: 'Prensa de Piernas' }, muscle: 'QUADS' },
+    { 
+        id: 'leg_press', 
+        name: { en: 'Leg Press', es: 'Prensa de Piernas' }, 
+        muscle: 'QUADS',
+        instructions: { en: "Maintenance volume. Full ROM.", es: "Volumen de mantenimiento. Rango completo." } 
+    },
     { id: 'rdl', name: { en: 'Romanian Deadlift', es: 'Peso Muerto Rumano' }, muscle: 'HAMSTRINGS' },
     { id: 'leg_curl', name: { en: 'Seated Leg Curl', es: 'Curl Femoral Sentado' }, muscle: 'HAMSTRINGS' },
     { id: 'lying_curl', name: { en: 'Lying Leg Curl', es: 'Curl Femoral Tumbado' }, muscle: 'HAMSTRINGS' },
@@ -36,26 +89,77 @@ export const DEFAULT_LIBRARY: ExerciseDef[] = [
     
     // Shoulders
     { id: 'ohp', name: { en: 'Overhead Press', es: 'Press Militar' }, muscle: 'SHOULDERS' },
-    { id: 'lat_raise', name: { en: 'Lateral Raise', es: 'Elevaciones Laterales' }, muscle: 'SHOULDERS' },
-    { id: 'lat_raise_cable', name: { en: 'Cable Lateral Raise', es: 'Elev. Laterales Polea' }, muscle: 'SHOULDERS' },
+    { 
+        id: 'lat_raise', 
+        name: { en: 'Lateral Raise', es: 'Elevaciones Laterales' }, 
+        muscle: 'SHOULDERS',
+        instructions: { en: "Standard dumbbell raises for capped delts.", es: "Elevaciones estándar para hombros redondos 'capitaneados'." }
+    },
+    { 
+        id: 'lat_raise_cable', 
+        name: { en: 'Cable Lateral Raise', es: 'Elev. Laterales Polea' }, 
+        muscle: 'SHOULDERS',
+        instructions: { en: "Maintain constant tension throughout the movement.", es: "Mantén tensión constante durante todo el movimiento." }
+    },
     { id: 'lat_raise_mach', name: { en: 'Machine Lateral Raise', es: 'Elev. Laterales Máquina' }, muscle: 'SHOULDERS' },
     { id: 'lat_raise_seat', name: { en: 'Seated Lateral Raise', es: 'Elev. Laterales Sentado' }, muscle: 'SHOULDERS' },
     { id: 'face_pull', name: { en: 'Face Pull', es: 'Face Pull' }, muscle: 'SHOULDERS' },
     { id: 'shrug_db', name: { en: 'Dumbbell Shrugs', es: 'Encogimientos Mancuerna' }, muscle: 'TRAPS' },
     
     // Arms
-    { id: 'curl_ez', name: { en: 'EZ Bar Curl', es: 'Curl Barra EZ' }, muscle: 'BICEPS' },
-    { id: 'curl_bar', name: { en: 'Barbell Curl', es: 'Curl con Barra' }, muscle: 'BICEPS' },
+    { 
+        id: 'curl_ez', 
+        name: { en: 'EZ Bar Curl', es: 'Curl Barra EZ' }, 
+        muscle: 'BICEPS',
+        instructions: { en: "Strict curls. Range 5-10 or 10-15.", es: "Curl estricto. Rangos de 5-10 o 10-15 reps." }
+    },
+    { 
+        id: 'curl_bar', 
+        name: { en: 'Barbell Curl', es: 'Curl con Barra' }, 
+        muscle: 'BICEPS',
+        instructions: { en: "Can use Myo-reps here for volume.", es: "Puedes usar Myo-reps aquí para meter volumen rápido." }
+    },
     { id: 'curl_db', name: { en: 'Dumbbell Curl', es: 'Curl con Mancuernas' }, muscle: 'BICEPS' },
-    { id: 'curl_cable', name: { en: 'Cable Curl', es: 'Curl en Polea' }, muscle: 'BICEPS' },
+    { 
+        id: 'curl_cable', 
+        name: { en: 'Cable Curl', es: 'Curl en Polea' }, 
+        muscle: 'BICEPS',
+        instructions: { en: "High reps (15-20). Constant tension.", es: "Altas repeticiones (15-20). Tensión constante." }
+    },
     
-    { id: 'skull_crusher', name: { en: 'Skull Crushers', es: 'Rompecráneos (Skullcrusher)' }, muscle: 'TRICEPS' },
+    { 
+        id: 'skull_crusher', 
+        name: { en: 'Skull Crushers', es: 'Rompecráneos (Skullcrusher)' }, 
+        muscle: 'TRICEPS',
+        instructions: { en: "Keep elbows tucked in.", es: "Mantén los codos cerrados hacia dentro." }
+    },
     { id: 'tri_push', name: { en: 'Tricep Pushdown', es: 'Extensión Tríceps Polea' }, muscle: 'TRICEPS' },
-    { id: 'tri_ext', name: { en: 'Overhead Extension', es: 'Extensión sobre Cabeza' }, muscle: 'TRICEPS' },
-    { id: 'jm_press', name: { en: 'JM Press / Smith Tri', es: 'Press JM / Smith Tríceps' }, muscle: 'TRICEPS' },
+    { 
+        id: 'tri_ext', 
+        name: { en: 'Overhead Extension', es: 'Extensión sobre Cabeza' }, 
+        muscle: 'TRICEPS',
+        instructions: { en: "Focus on the long head stretch.", es: "Enfócate en el estiramiento de la cabeza larga." }
+    },
+    { 
+        id: 'jm_press', 
+        name: { en: 'JM Press / Smith Tri', es: 'Press JM / Smith Tríceps' }, 
+        muscle: 'TRICEPS',
+        instructions: { en: "Giant set style: aim for 50-60 total reps.", es: "Estilo 'Giant Set': busca 50-60 reps totales con descansos cortos." }
+    },
     
     { id: 'abs_cable', name: { en: 'Cable Crunch', es: 'Crunch en Polea' }, muscle: 'ABS' },
-    { id: 'wrist_curl', name: { en: 'Wrist Curl', es: 'Curl de Muñeca' }, muscle: 'FOREARMS' }
+    { 
+        id: 'wrist_curl', 
+        name: { en: 'Wrist Curl', es: 'Curl de Muñeca' }, 
+        muscle: 'FOREARMS',
+        instructions: { en: "Marathon sets: 50-60 reps with short breaks.", es: "Series maratón: 50-60 repeticiones con descansos cortos." }
+    },
+    {
+        id: 'forearm_pushup',
+        name: { en: 'Forearm Bar Pushups', es: 'Flexiones Antebrazo en Barra' },
+        muscle: 'FOREARMS',
+        instructions: { en: "Lean on bar, push with fingers/wrists.", es: "Apóyate en la barra, empuja usando dedos y muñecas." }
+    }
 ];
 
 export const DEFAULT_TEMPLATE: ProgramDay[] = [ 
@@ -65,8 +169,7 @@ export const DEFAULT_TEMPLATE: ProgramDay[] = [
     { id: 'd4', dayName: { en: "Lower 2", es: "Pierna 2" }, slots: [{ muscle: 'HAMSTRINGS', setTarget: 3 }, { muscle: 'HAMSTRINGS', setTarget: 3 }, { muscle: 'GLUTES', setTarget: 3 }, { muscle: 'QUADS', setTarget: 3 }, { muscle: 'CALVES', setTarget: 3 }] } 
 ];
 
-// Dr. Mike's "Pure Bodybuilding / Aesthetic Focus" Routine
-// Focus: V-Taper (Side Delts, Wide Lats), Upper Chest, Arms. Legs in maintenance.
+// Dr. Mike's "Pure Bodybuilding / Aesthetic Focus" Routine (4 Days)
 export const FULL_BODY_TEMPLATE: ProgramDay[] = [
     { 
         id: 'aes1', 
@@ -111,16 +214,16 @@ export const FULL_BODY_TEMPLATE: ProgramDay[] = [
             { muscle: 'SHOULDERS', setTarget: 4, exerciseId: 'lat_raise_mach' },// Machine
             { muscle: 'SHOULDERS', setTarget: 3, exerciseId: 'lat_raise_seat' },// Seated DB
             { muscle: 'TRICEPS', setTarget: 3, exerciseId: 'jm_press' },        // Giant set style (50-60 total)
-            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'wrist_curl' }      // Forearm pushups/curls
+            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'forearm_pushup' }  // Forearm pushups
         ] 
     }
 ];
 
 export const TRANSLATIONS = {
     en: { 
-        startMeso: "Start New Mesocycle", finishWorkout: "Finish Workout", finishConfirm: "Finish workout?", cancel: "Cancel", delete: "Delete", skip: "Skip Exercise", skipDay: "Skip Workout", skipped: "Skipped", completed: "Completed", swap: "Swap Exercise", changeMuscle: "Change muscle", chooseMuscle: "Choose muscle", addSetBelow: "Add Set Below", deleteSet: "Delete Set", skipSet: "Skip Set", unskipSet: "Unskip Set", sets: "Set", weight: "Weight", reps: "Reps", rir: "RIR", log: "Log", note: "Range: 6-10", active: "Active", history: "Progress", settings: "Settings", volume: "Weekly Volume", workouts: "Recent Workouts", noData: "No data", duration: "Duration", exercises: "Exercises", configure: "Configure", week: "WEEK", massPhase: "Mass Phase", resting: "Resting", language: "Language", theme: "Theme", back: "Back", finishCycle: "Finish Cycle", confirmCycle: "Finish current mesocycle?", selectEx: "Select Exercise", searchPlaceholder: "Search...", createEx: "Create", noExFound: "No exercises found", keepScreen: "Keep Screen On", setType: "SET TYPE", mesoStats: "Mesocycle Stats", totalWorkouts: "Total Workouts", currentWeek: "Current Week", linkSuperset: "Link Superset", unlinkSuperset: "Unlink", selectToLink: "Select exercise to link...", superset: "SUPERSET", workoutComplete: "WORKOUT COMPLETE", goodJob: "Great job!", totalVolume: "Total Volume", totalSets: "Total Sets", totalReps: "Total Reps", share: "Share", close: "Save & Close", resume: "Resume Workout", backup: "Data Backup", export: "Export Data", import: "Import Data", importConfirm: "Overwrite data?", dataSaved: "Saved!", addSet: "Set", remSet: "Set", delSlot: "Delete Slot", offline: "Local Mode", mesoAvg: "Meso Avg Volume", 
-        types: { regular: "Regular", myorep: "Myorep", myorep_match: "Myorep Match", cluster: "Cluster", top: "Top Set", backoff: "Back-off Set" }, 
-        typeDesc: { regular: "Standard set", myorep: "Rest-pause", myorep_match: "Match reps", cluster: "Intra-set rest", top: "High intensity", backoff: "Volume work" }, 
+        startMeso: "Start New Mesocycle", finishWorkout: "Finish Workout", finishConfirm: "Finish workout?", cancel: "Cancel", delete: "Delete", skip: "Skip Exercise", skipDay: "Skip Workout", skipped: "Skipped", completed: "Completed", swap: "Swap Exercise", changeMuscle: "Change muscle", chooseMuscle: "Choose muscle", addSetBelow: "Add Set Below", deleteSet: "Delete Set", skipSet: "Skip Set", unskipSet: "Unskip Set", sets: "Set", weight: "Weight", reps: "Reps", rir: "RIR", log: "Log", note: "Range: 6-10", active: "Active", history: "Progress", settings: "Settings", volume: "Weekly Volume", workouts: "Recent Workouts", noData: "No data", duration: "Duration", exercises: "Exercises", configure: "Configure", week: "WEEK", massPhase: "Mass Phase", resting: "Resting", language: "Language", theme: "Theme", back: "Back", finishCycle: "Finish Cycle", confirmCycle: "Finish current mesocycle?", selectEx: "Select Exercise", searchPlaceholder: "Search...", createEx: "Create", noExFound: "No exercises found", keepScreen: "Keep Screen On", setType: "SET TYPE", mesoStats: "Mesocycle Stats", totalWorkouts: "Total Workouts", currentWeek: "Current Week", linkSuperset: "Link Superset", unlinkSuperset: "Unlink", selectToLink: "Select exercise to link...", superset: "SUPERSET", workoutComplete: "WORKOUT COMPLETE", goodJob: "Great job!", totalVolume: "Total Volume", totalSets: "Total Sets", totalReps: "Total Reps", share: "Share", close: "Save & Close", resume: "Resume Workout", backup: "Data Backup", export: "Export Data", import: "Import Data", importConfirm: "Overwrite data?", dataSaved: "Saved!", addSet: "Set", remSet: "Set", delSlot: "Delete Slot", offline: "Local Mode", mesoAvg: "Meso Avg Volume", routineGuide: "Routine Guide", executionInfo: "Execution & Goals",
+        types: { regular: "Regular", myorep: "Myorep", myorep_match: "Myorep Match", cluster: "Cluster", top: "Top Set", backoff: "Back-off Set", giant: "Giant Set", warmup: "Warmup" }, 
+        typeDesc: { regular: "Standard set", myorep: "Rest-pause", myorep_match: "Match reps", cluster: "Intra-set rest", top: "High intensity", backoff: "Volume work", giant: "High reps, short rest", warmup: "Preparation" }, 
         muscle: { CHEST: "Chest", BACK: "Back", QUADS: "Quads", HAMSTRINGS: "Hamstrings", GLUTES: "Glutes", CALVES: "Calves", SHOULDERS: "Shoulders", BICEPS: "Biceps", TRICEPS: "Triceps", TRAPS: "Traps", ABS: "Abs", FOREARMS: "Forearms" },
         rp: "RP Progression", rpEnabled: "RP suggestions", rpTargetRIR: "Target RIR", rpFeedbackTitle: "Muscle feedback", rpRatingHelp: "1=too little, 3=good, 5=too much", rpSave: "Save feedback", rpSuggestion: "Suggested", rpNoSuggestion: "No suggestion",
         editTemplate: "Edit Program", resetTemplate: "Reset to Default", editDay: "Edit Day", addDay: "Add Day", addSlot: "Add Exercise Slot", save: "Save", swapTitle: "Swap Exercise", swapMsg: "How do you want to apply this change?", swapSession: "This Session Only", swapForever: "Update Plan (Forever)", programEditor: "Program Editor", selectExBtn: "Select Exercise", any: "Any",
@@ -206,9 +309,9 @@ export const TRANSLATIONS = {
         overwriteTemplateConfirm: "This overwrites your current plan with Dr. Mike's Aesthetic Split (4 Days/Week).",
     },
     es: { 
-        startMeso: "Iniciar Mesociclo", finishWorkout: "Terminar Sesión", finishConfirm: "¿Terminar entrenamiento?", cancel: "Cancelar", delete: "Borrar", skip: "Saltar Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Reemplazar Ejercicio", changeMuscle: "Cambiar músculo", chooseMuscle: "Elegir músculo", addSetBelow: "Añadir Serie Debajo", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Serie", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Progreso", settings: "Ajustes", rp: "Progresión RP", rpEnabled: "Sugerencias RP", rpTargetRIR: "RIR objetivo", volume: "Volumen Semanal", workouts: "Sesiones Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Volver", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar el mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No encontrado", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Ciclo", totalWorkouts: "Entrenamientos", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona para unir...", superset: "SUPERSERIE", workoutComplete: "¡ENTRENAMIENTO TERMINADO!", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "Esto sobrescribirá los datos. ¿Continuar?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Eliminar Slot", offline: "Modo Local", mesoAvg: "Promedio Mesociclo", 
-        types: { regular: "Regular", myorep: "Myorep", myorep_match: "Myorep Match", cluster: "Cluster", top: "Top Set", backoff: "Back-off Set" }, 
-        typeDesc: { regular: "Estándar", myorep: "Rest-pause", myorep_match: "Igualar reps", cluster: "Descanso intra-serie", top: "Alta intensidad", backoff: "Trabajo volumen" }, 
+        startMeso: "Iniciar Mesociclo", finishWorkout: "Terminar Sesión", finishConfirm: "¿Terminar entrenamiento?", cancel: "Cancelar", delete: "Borrar", skip: "Saltar Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Reemplazar Ejercicio", changeMuscle: "Cambiar músculo", chooseMuscle: "Elegir músculo", addSetBelow: "Añadir Serie Debajo", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Serie", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Progreso", settings: "Ajustes", rp: "Progresión RP", rpEnabled: "Sugerencias RP", rpTargetRIR: "RIR objetivo", volume: "Volumen Semanal", workouts: "Sesiones Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Volver", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar el mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No encontrado", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Ciclo", totalWorkouts: "Entrenamientos", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona para unir...", superset: "SUPERSERIE", workoutComplete: "¡ENTRENAMIENTO TERMINADO!", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "Esto sobrescribirá los datos. ¿Continuar?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Eliminar Slot", offline: "Modo Local", mesoAvg: "Promedio Mesociclo", routineGuide: "Guía de Rutina", executionInfo: "Ejecución & Objetivos",
+        types: { regular: "Regular", myorep: "Myorep", myorep_match: "Myorep Match", cluster: "Cluster", top: "Top Set", backoff: "Back-off Set", giant: "Giant Set", warmup: "Calentamiento" }, 
+        typeDesc: { regular: "Estándar", myorep: "Rest-pause", myorep_match: "Igualar reps", cluster: "Descanso intra-serie", top: "Alta intensidad", backoff: "Trabajo volumen", giant: "Altas reps, poco descanso", warmup: "Preparación" }, 
         muscle: { CHEST: "Pecho", BACK: "Espalda", QUADS: "Cuádriceps", HAMSTRINGS: "Isquios", GLUTES: "Glúteos", CALVES: "Gemelos", SHOULDERS: "Hombros", BICEPS: "Bíceps", TRICEPS: "Tríceps", TRAPS: "Trapecios", ABS: "Abdominales", FOREARMS: "Antebrazos" },
         rpFeedbackTitle: "Valoración Muscular", rpRatingHelp: "1=fácil/sin dolor, 3=bien, 5=excesivo/dolor",
         editTemplate: "Editar Programa", resetTemplate: "Restaurar Defecto", editDay: "Editar Día", addDay: "Añadir Día", addSlot: "Añadir Slot", save: "Guardar", swapTitle: "Reemplazar Ejercicio", swapMsg: "¿Cómo quieres aplicar este cambio?", swapSession: "Solo esta Sesión", swapForever: "Actualizar Plan (Para siempre)", programEditor: "Editor de Programa", selectExBtn: "Elegir Ejercicio", any: "Cualquiera",

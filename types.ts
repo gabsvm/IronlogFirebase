@@ -11,9 +11,10 @@ export interface ExerciseDef {
   id: string;
   name: string | { en: string; es: string };
   muscle: MuscleGroup;
+  instructions?: { en: string; es: string }; // New field for execution details
 }
 
-export type SetType = 'regular' | 'myorep' | 'myorep_match' | 'cluster' | 'top' | 'backoff';
+export type SetType = 'regular' | 'myorep' | 'myorep_match' | 'cluster' | 'top' | 'backoff' | 'giant' | 'warmup';
 
 export interface WorkoutSet {
   id: number;

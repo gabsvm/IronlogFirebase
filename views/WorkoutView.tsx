@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
-import { MuscleGroup, ExerciseDef } from '../types';
+import { MuscleGroup, ExerciseDef, SetType } from '../types';
 import { getTranslated, getMesoStageConfig } from '../utils';
 
 const MuscleTag = ({ label }: { label: string }) => (
@@ -42,6 +42,9 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     // Unit config state
     const [configPlateExId, setConfigPlateExId] = useState<number | null>(null);
     const [plateWeightInput, setPlateWeightInput] = useState('');
+
+    // Set Type Selector State (Modal)
+    const [changingSetType, setChangingSetType] = useState<{ exId: number, setId: number, currentType: SetType } | null>(null);
 
     // Calculate Stage Config (RIR, Phase notes)
     const stageConfig = activeMeso ? getMesoStageConfig(activeMeso.mesoType || 'hyp_1', activeMeso.week, !!activeMeso.isDeload) : null;
@@ -112,7 +115,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
         if (completing) {
             const isMetabolite = activeMeso?.mesoType === 'metabolite';
-            const dur = isMetabolite ? 60 : 120; // 60s for metabolite, 120s standard
+            // Adjust rest based on set type if needed, e.g. Myo-reps shorter rest
+            let dur = isMetabolite ? 60 : 120;
+            if (set.type === 'myorep' || set.type === 'giant') dur = 30;
+            
             setRestTimer({ active: true, duration: dur, timeLeft: dur, endAt: Date.now() + (dur * 1000) });
         }
     };
@@ -275,7 +281,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 exercises: (prev.exercises || []).map(e => {
                     if (e.instanceId !== exInstanceId) return e;
                     const newUnit = e.weightUnit === 'pl' ? 'kg' : 'pl';
-                    // If switching to plates and no weight defined, trigger the modal logic by some means or rely on user clicking header
                     return { ...e, weightUnit: newUnit };
                 })
             };
@@ -300,6 +305,31 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
     const finishedSets = sessionExercises.reduce((acc, ex) => acc + (ex.sets || []).filter(s => s.completed).length, 0);
     
+    // Set Type Helpers
+    const setTypes: SetType[] = ['regular', 'warmup', 'myorep', 'myorep_match', 'giant', 'top', 'backoff', 'cluster'];
+    const getTypeColor = (type: SetType) => {
+        switch(type) {
+            case 'warmup': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+            case 'myorep': 
+            case 'myorep_match': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+            case 'giant': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+            case 'top': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+            default: return 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-300';
+        }
+    };
+    const getTypeLabel = (type: SetType) => {
+        switch(type) {
+            case 'regular': return 'R';
+            case 'warmup': return 'W';
+            case 'myorep': return 'M';
+            case 'myorep_match': return 'MM';
+            case 'giant': return 'G';
+            case 'top': return 'T';
+            case 'backoff': return 'B';
+            case 'cluster': return 'C';
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-40 flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans" onClick={() => setOpenMenuId(null)}>
             
@@ -311,7 +341,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 <div className="text-center">
                     <div className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-0.5">{t.active}</div>
                     <div className="text-base font-black text-zinc-900 dark:text-zinc-100 leading-none mb-1">{activeSession.name}</div>
-                    {/* RIR Target Header */}
                     {stageConfig && (
                         <div className="inline-flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                              {stageConfig.label === 'recovery' ? (
@@ -343,7 +372,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
                 
-                {/* Phase Info Banner */}
                 {stageConfig && stageConfig.note && (
                     <div className="p-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
                         {stageConfig.note}
@@ -351,7 +379,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 )}
 
                 {sessionExercises.map((ex, idx) => {
-                    if (!ex) return null; // Defensive check for individual exercises
+                    if (!ex) return null;
 
                     const isSuperset = !!ex.supersetId;
                     const isLinkingTarget = linkingId && linkingId !== ex.instanceId;
@@ -380,7 +408,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                             {isSuperset && <span className="bg-orange-100 text-orange-600 text-[9px] font-bold px-1.5 py-0.5 rounded">SS</span>}
                                             <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
                                             {ex.targetReps && <span className="text-[10px] font-bold text-zinc-400 tracking-wide">{t.target}: {ex.targetReps}</span>}
-                                            {/* Plate Calculation Hint */}
                                             {unit === 'pl' && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setConfigPlateExId(ex.instanceId); }}
@@ -410,10 +437,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                                 <Icon name="MoreVertical" size={20} />
                                             </button>
                                             
-                                            {/* Dropdown */}
                                             {openMenuId === ex.instanceId && (
                                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                                    {/* Reorder Buttons */}
                                                     <div className="flex border-b border-zinc-100 dark:border-white/5">
                                                         <button 
                                                             disabled={isFirst}
@@ -455,7 +480,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                         </div>
                                     </div>
                                 </div>
-                                {/* Notes Field */}
                                 <input 
                                     type="text"
                                     placeholder={t.addNote}
@@ -479,8 +503,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                 {sets.map((set, sIdx) => {
                                     const isDone = set.completed;
                                     const placeholderRIR = stageConfig?.rir !== null ? String(stageConfig?.rir) : "-";
+                                    const setType = set.type || 'regular';
                                     
-                                    // Calculated KG for display if plate mode
                                     let calculatedKg: number | null = null;
                                     if (unit === 'pl' && ex.plateWeight && set.weight) {
                                         calculatedKg = Number(set.weight) * ex.plateWeight;
@@ -488,11 +512,18 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
                                     return (
                                         <div key={set.id} className={`grid grid-cols-12 gap-2 px-4 py-3 items-center transition-colors duration-300 relative group ${isDone ? 'bg-green-50/50 dark:bg-green-500/5' : ''}`}>
-                                            <div className="col-span-1 flex justify-center">
-                                                <div onClick={() => !isDone && onDeleteSet(ex.instanceId, set.id)} className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all ${isDone ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500'}`}>
-                                                   <span className="group-hover:hidden">{sIdx + 1}</span>
-                                                   <span className="hidden group-hover:block"><Icon name="X" size={10} /></span>
-                                                </div>
+                                            <div className="col-span-1 flex justify-center relative">
+                                                <button 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        if (!isDone) {
+                                                            setChangingSetType({ exId: ex.instanceId, setId: set.id, currentType: setType });
+                                                        }
+                                                    }}
+                                                    className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold cursor-pointer transition-all active:scale-95 ${isDone ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : `${getTypeColor(setType)} ring-1 ring-inset ring-black/5 dark:ring-white/10 hover:ring-red-500`}`}
+                                                >
+                                                   {isDone ? <Icon name="Check" size={10} /> : getTypeLabel(setType)}
+                                                </button>
                                             </div>
                                             <div className="col-span-4 relative flex items-center justify-center gap-1">
                                                 <input type="number" inputMode="decimal" className={`w-full bg-transparent text-lg font-bold p-0 border-0 focus:ring-0 text-center transition-colors ${isDone ? 'text-green-800 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`} placeholder={set.hintWeight ? String(set.hintWeight) : "0"} value={set.weight} onChange={(e) => handleSetUpdate(ex.instanceId, set.id, 'weight', e.target.value)} />
@@ -559,6 +590,35 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                     {t.finishWorkout}
                 </Button>
             </div>
+
+            {/* Set Type Selector Modal */}
+            {changingSetType && (
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setChangingSetType(null)}>
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-4 shadow-2xl border border-zinc-200 dark:border-white/10 animate-slideUp space-y-2" onClick={e => e.stopPropagation()}>
+                        <div className="text-center mb-4">
+                            <h3 className="font-bold text-zinc-900 dark:text-white">{t.setType}</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {setTypes.map(type => (
+                                <button 
+                                    key={type}
+                                    onClick={() => {
+                                        handleSetUpdate(changingSetType.exId, changingSetType.setId, 'type', type);
+                                        setChangingSetType(null);
+                                    }}
+                                    className={`p-3 rounded-xl border flex items-center gap-3 transition-all ${changingSetType.currentType === type ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-900' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-white/5 text-zinc-600 dark:text-zinc-300'}`}
+                                >
+                                    <span className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold ${getTypeColor(type)}`}>
+                                        {getTypeLabel(type)}
+                                    </span>
+                                    <span className="text-xs font-bold">{t.types[type]}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => setChangingSetType(null)} className="w-full py-3 mt-2 text-zinc-400 font-bold text-xs">{t.cancel}</button>
+                    </div>
+                </div>
+            )}
 
             {/* Finish Modal */}
             {showFinishModal && (
