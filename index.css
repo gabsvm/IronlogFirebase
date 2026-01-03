@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,6 +13,9 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden; /* Prevent body scroll, handle inside Layout */
+  /* Disable text selection for app-like feel */
+  user-select: none; 
+  -webkit-user-select: none;
 }
 
 body {
@@ -28,6 +32,11 @@ body {
     background: transparent;
 }
 
+/* Safe Area Utilities for Native */
+.pt-safe {
+    padding-top: env(safe-area-inset-top, 20px);
+}
+
 .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 20px);
 }
@@ -37,6 +46,12 @@ input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* Allow text selection only on inputs */
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Animations */

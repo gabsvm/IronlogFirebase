@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { TRANSLATIONS } from '../../constants';
@@ -58,20 +59,34 @@ export const RestTimerOverlay: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-2 mb-3">
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                            <button 
+                                onClick={() => setRestTimer(p => {
+                                    if (!p.active) return p;
+                                    const sub = 10;
+                                    return { 
+                                        ...p, 
+                                        endAt: (p.endAt || Date.now()) - sub * 1000, 
+                                        timeLeft: Math.max(0, p.timeLeft - sub)
+                                    };
+                                })} 
+                                className="py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 transition-colors active:scale-95 flex items-center justify-center gap-1"
+                            >
+                                <Icon name="Minus" size={12} /> 10s
+                            </button>
                             <button 
                                 onClick={() => setRestTimer(p => {
                                     if (!p.active) return p;
                                     const add = 30;
                                     return { ...p, endAt: (p.endAt || Date.now()) + add * 1000, timeLeft: p.timeLeft + add, duration: p.duration + add };
                                 })} 
-                                className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 transition-colors active:scale-95 flex items-center justify-center gap-1"
+                                className="py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 transition-colors active:scale-95 flex items-center justify-center gap-1"
                             >
                                 <Icon name="Plus" size={12} /> 30s
                             </button>
                             <button 
                                 onClick={() => setRestTimer(p => ({ ...p, active: false, timeLeft: 0, endAt: 0 }))} 
-                                className="flex-1 py-3 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold transition-colors active:scale-95 flex items-center justify-center gap-1"
+                                className="py-3 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold transition-colors active:scale-95 flex items-center justify-center gap-1"
                             >
                                 <Icon name="SkipForward" size={14} /> SKIP
                             </button>

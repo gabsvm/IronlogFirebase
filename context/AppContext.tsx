@@ -1,8 +1,9 @@
 
-import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useRef, ReactNode, useState } from 'react';
 import { AppState, Lang, Theme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay } from '../types';
 import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
-import { playTimerFinishSound } from '../utils/audio';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useTimer } from '../hooks/useTimer';
 
 interface AppContextType extends AppState {
     lang: Lang;
@@ -10,73 +11,46 @@ interface AppContextType extends AppState {
     setLang: (l: Lang) => void;
     setTheme: (t: Theme) => void;
     
-    // Actions
-    setProgram: React.Dispatch<React.SetStateAction<ProgramDay[]>>;
-    setActiveMeso: React.Dispatch<React.SetStateAction<MesoCycle | null>>;
-    setActiveSession: React.Dispatch<React.SetStateAction<ActiveSession | null>>;
-    setExercises: React.Dispatch<React.SetStateAction<ExerciseDef[]>>;
-    setLogs: React.Dispatch<React.SetStateAction<Log[]>>;
-    setConfig: React.Dispatch<React.SetStateAction<AppState['config']>>;
-    setRpFeedback: React.Dispatch<React.SetStateAction<AppState['rpFeedback']>>;
-    setHasSeenOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
+    setProgram: (val: ProgramDay[] | ((prev: ProgramDay[]) => ProgramDay[])) => void;
+    setActiveMeso: (val: MesoCycle | null | ((prev: MesoCycle | null) => MesoCycle | null)) => void;
+    setActiveSession: (val: ActiveSession | null | ((prev: ActiveSession | null) => ActiveSession | null)) => void;
+    setExercises: (val: ExerciseDef[] | ((prev: ExerciseDef[]) => ExerciseDef[])) => void;
+    setLogs: (val: Log[] | ((prev: Log[]) => Log[])) => void;
+    setConfig: (val: AppState['config']) => void;
+    setRpFeedback: (val: AppState['rpFeedback'] | ((prev: AppState['rpFeedback']) => AppState['rpFeedback'])) => void;
+    setHasSeenOnboarding: (val: boolean) => void;
     
-    // Timer
     restTimer: { active: boolean; timeLeft: number; duration: number; endAt: number };
     setRestTimer: React.Dispatch<React.SetStateAction<{ active: boolean; timeLeft: number; duration: number; endAt: number }>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Helper for local storage with error handling and fallback
-function useLS<T>(key: string, initial: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-    const [val, setVal] = useState<T>(() => {
-        try {
-            const item = localStorage.getItem(key);
-            if (item === null) return initial;
-            const parsed = JSON.parse(item);
-            // Defensive: if parsed is null but we expect an object/array (initial is not null), fallback to initial.
-            if (parsed === null && initial !== null) return initial;
-            return parsed;
-        } catch {
-            return initial;
-        }
-    });
-
-    useEffect(() => {
-        try {
-            localStorage.setItem(key, JSON.stringify(val));
-        } catch(e) { console.error("LS Error", e); }
-    }, [key, val]);
-
-    return [val, setVal];
-}
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [lang, setLang] = useState<Lang>('en');
     const [theme, setTheme] = useState<Theme>('dark');
     
-    // IMPORTANT: Keys updated to v16 to force data refresh on deployment
-    const [program, setProgram] = useLS<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE);
-    const [activeMeso, setActiveMeso] = useLS<MesoCycle | null>('il_meso_v16', null);
-    const [activeSession, setActiveSession] = useLS<ActiveSession | null>('il_session_v16', null);
-    const [exercises, setExercises] = useLS<ExerciseDef[]>('il_ex_v16', DEFAULT_LIBRARY);
-    const [logs, setLogs] = useLS<Log[]>('il_logs_v16', []);
+    // Persistence using custom hook (preserves existing v16 keys)
+    const [program, setProgram] = useLocalStorage<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE);
+    const [activeMeso, setActiveMeso] = useLocalStorage<MesoCycle | null>('il_meso_v16', null);
+    const [activeSession, setActiveSession] = useLocalStorage<ActiveSession | null>('il_session_v16', null);
+    const [exercises, setExercises] = useLocalStorage<ExerciseDef[]>('il_ex_v16', DEFAULT_LIBRARY);
+    const [logs, setLogs] = useLocalStorage<Log[]>('il_logs_v16', []);
     
-    // Config items split in original, unified here for cleaner context but synced separately if needed? 
-    // The original used individual LS keys for config. We should respect that pattern.
-    const [showRIR, setShowRIR] = useLS('il_cfg_rir', true);
-    const [rpEnabled, setRpEnabled] = useLS('il_cfg_rp', true);
-    const [rpTargetRIR, setRpTargetRIR] = useLS('il_cfg_rp_rir', 2);
-    const [keepScreenOn, setKeepScreenOn] = useLS('il_cfg_screen', false);
+    // Config items (Legacy split keys preserved)
+    const [showRIR, setShowRIR] = useLocalStorage('il_cfg_rir', true);
+    const [rpEnabled, setRpEnabled] = useLocalStorage('il_cfg_rp', true);
+    const [rpTargetRIR, setRpTargetRIR] = useLocalStorage('il_cfg_rp_rir', 2);
+    const [keepScreenOn, setKeepScreenOn] = useLocalStorage('il_cfg_screen', false);
     
-    const [rpFeedback, setRpFeedback] = useLS<AppState['rpFeedback']>('il_rp_fb_v1', {});
-    const [hasSeenOnboarding, setHasSeenOnboarding] = useLS<boolean>('il_onboarded_v2', false);
+    const [rpFeedback, setRpFeedback] = useLocalStorage<AppState['rpFeedback']>('il_rp_fb_v1', {});
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useLocalStorage<boolean>('il_onboarded_v2', false);
 
-    const [restTimer, setRestTimer] = useState({ active: false, timeLeft: 0, duration: 120, endAt: 0 });
-    const workerRef = useRef<Worker | null>(null);
+    // Timer Logic extracted
+    const { restTimer, setRestTimer } = useTimer();
     const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-    // Sync theme class
+    // Theme Effect
     useEffect(() => {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
@@ -88,13 +62,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [theme]);
 
-    // Wake Lock Logic
+    // Wake Lock Effect
     useEffect(() => {
         const requestWakeLock = async () => {
             if (keepScreenOn && 'wakeLock' in navigator) {
                 try {
                     wakeLockRef.current = await navigator.wakeLock.request('screen');
-                    // console.log('Wake Lock active');
                 } catch (err) {
                     console.error('Wake Lock failed:', err);
                 }
@@ -104,117 +77,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                     .catch(e => console.error(e));
             }
         };
-
         requestWakeLock();
-
-        // Re-acquire lock when visibility changes (e.g. tab switch)
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && keepScreenOn) {
-                requestWakeLock();
-            }
+            if (document.visibilityState === 'visible' && keepScreenOn) requestWakeLock();
         };
-
         document.addEventListener('visibilitychange', handleVisibilityChange);
-
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             if (wakeLockRef.current) wakeLockRef.current.release();
         };
     }, [keepScreenOn]);
 
-    // Initialize Web Worker for Background Timer
-    useEffect(() => {
-        // Blob for inline worker to avoid external file issues in simple setups
-        const workerCode = `
-            let interval = null;
-            self.onmessage = function(e) {
-                if (e.data === 'start') {
-                    if (interval) clearInterval(interval);
-                    interval = setInterval(() => {
-                        self.postMessage('tick');
-                    }, 250); // Tick often to catch end times accurately
-                } else if (e.data === 'stop') {
-                    if (interval) clearInterval(interval);
-                    interval = null;
-                }
-            };
-        `;
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        workerRef.current = new Worker(URL.createObjectURL(blob));
-
-        // Request Notification Permission on mount (user interaction usually required, but we try)
-        if ("Notification" in window && Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-
-        return () => {
-            workerRef.current?.terminate();
-        };
-    }, []);
-
-    // Timer Logic driven by Web Worker
-    useEffect(() => {
-        if (!workerRef.current) return;
-
-        const handleTick = () => {
-            setRestTimer(prev => {
-                if (!prev.active) return prev;
-                
-                const now = Date.now();
-                const remainingMs = Math.max(0, (prev.endAt || 0) - now);
-                const secondsLeft = Math.ceil(remainingMs / 1000);
-                
-                // Update Title for background visibility
-                document.title = secondsLeft > 0 ? `(${Math.floor(secondsLeft/60)}:${(secondsLeft%60).toString().padStart(2,'0')}) Resting...` : "IronLog Pro";
-
-                if (secondsLeft <= 0) {
-                    // TIMER FINISHED
-                    playTimerFinishSound();
-                    
-                    if ("Notification" in window && Notification.permission === "granted") {
-                         // Only send if we haven't sent one recently (simple debounce logic implied by state change)
-                         new Notification("Rest Finished!", {
-                             body: "Get back to work!",
-                             icon: "/vite.svg", // Fallback icon
-                             vibrate: [200, 100, 200]
-                         } as any);
-                    }
-
-                    // Reset title
-                    document.title = "IronLog Pro";
-                    
-                    // Stop worker
-                    workerRef.current?.postMessage('stop');
-                    
-                    return { ...prev, active: false, timeLeft: 0, endAt: 0 };
-                }
-                
-                // Only update state if second changed to save renders
-                if (secondsLeft === prev.timeLeft) return prev;
-                return { ...prev, timeLeft: secondsLeft };
-            });
-        };
-
-        workerRef.current.onmessage = handleTick;
-
-        if (restTimer.active) {
-            workerRef.current.postMessage('start');
-        } else {
-            workerRef.current.postMessage('stop');
-            document.title = "IronLog Pro";
-        }
-
-    }, [restTimer.active]); // Re-bind when active status changes
-
     const setConfig = (newConfig: any) => {
-        if (typeof newConfig === 'function') {
-             console.warn("Update config via individual setters in this refactor version if strictly needed");
-        } else {
-            if (newConfig.showRIR !== undefined) setShowRIR(newConfig.showRIR);
-            if (newConfig.rpEnabled !== undefined) setRpEnabled(newConfig.rpEnabled);
-            if (newConfig.rpTargetRIR !== undefined) setRpTargetRIR(newConfig.rpTargetRIR);
-            if (newConfig.keepScreenOn !== undefined) setKeepScreenOn(newConfig.keepScreenOn);
-        }
+        if (newConfig.showRIR !== undefined) setShowRIR(newConfig.showRIR);
+        if (newConfig.rpEnabled !== undefined) setRpEnabled(newConfig.rpEnabled);
+        if (newConfig.rpTargetRIR !== undefined) setRpTargetRIR(newConfig.rpTargetRIR);
+        if (newConfig.keepScreenOn !== undefined) setKeepScreenOn(newConfig.keepScreenOn);
     };
 
     const config = { showRIR, rpEnabled, rpTargetRIR, keepScreenOn };

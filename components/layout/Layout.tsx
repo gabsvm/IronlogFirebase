@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { TRANSLATIONS } from '../../constants';
@@ -26,9 +27,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, onOpenS
 
     return (
         <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300 font-sans">
-            {/* Header */}
+            {/* Header with Safe Area Top padding */}
             {view !== 'workout' && (
-                <div className="glass sticky top-0 z-20 shrink-0">
+                <div className="glass sticky top-0 z-20 shrink-0 pt-safe">
                     <div className="px-4 h-14 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="w-6 h-6 bg-gradient-to-br from-red-600 to-red-700 rounded flex items-center justify-center text-white font-black italic text-xs shadow-md shadow-red-600/20">RP</div>
@@ -42,11 +43,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, onOpenS
             )}
 
             {/* Main Content */}
-            <div className="flex-1 overflow-y-auto scroll-container pb-24 relative">
+            <div className={`flex-1 overflow-y-auto scroll-container pb-24 relative ${view === 'workout' ? 'pt-safe' : ''}`}>
                 {children}
             </div>
 
-            {/* Bottom Nav */}
+            {/* Bottom Nav with Safe Area Bottom padding handled by pb-safe in styles */}
             {view !== 'workout' && (
                 <div className="fixed bottom-0 left-0 right-0 glass flex z-30 pb-safe">
                     <NavBtn id="home" label={t.active} icon="Layout" />
