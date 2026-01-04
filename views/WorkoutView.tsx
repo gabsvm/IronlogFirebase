@@ -7,6 +7,8 @@ import { Button } from '../components/ui/Button';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
+import { PlateCalculatorModal } from '../components/ui/PlateCalculatorModal'; 
+import { PRCelebrationOverlay } from '../components/ui/PRCelebrationOverlay'; // Imported
 import { ExerciseDef, SessionExercise, SetType } from '../types';
 import { getTranslated, getMesoStageConfig } from '../utils';
 import { useWorkoutController } from '../hooks/useWorkoutController';
@@ -159,10 +161,15 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="font-mono text-sm font-bold text-zinc-400 tabular-nums">
-                        {Math.floor(ctrl.sessionElapsed / 60)}:{(ctrl.sessionElapsed % 60).toString().padStart(2, '0')}
-                    </div>
+                <div className="flex items-center gap-2">
+                    {/* Plate Calculator Button */}
+                    <button 
+                         onClick={(e) => { e.stopPropagation(); ctrl.setShowPlateCalc({ weight: 20 }); }}
+                         className="w-9 h-9 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                    >
+                        <Icon name="Dumbbell" size={18} />
+                    </button>
+                    
                     <button onClick={(e) => { e.stopPropagation(); ctrl.setShowFinishModal(true); }} className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg shadow-red-900/20 transition-transform active:scale-95 flex items-center justify-center">
                         <Icon name="Check" size={20} />
                     </button>
@@ -260,6 +267,19 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                          </div>
                      </div>
                  </div>
+            )}
+            
+            {/* PR Celebration Overlay */}
+            {ctrl.showPRSuccess && (
+                <PRCelebrationOverlay onDismiss={ctrl.dismissPRSuccess} />
+            )}
+            
+            {/* Plate Calculator Modal */}
+            {ctrl.showPlateCalc && (
+                <PlateCalculatorModal 
+                    initialWeight={ctrl.showPlateCalc.weight}
+                    onClose={() => ctrl.setShowPlateCalc(null)}
+                />
             )}
 
             {/* Other Modals (Feedback, Exercise Selectors) pass their specific handlers */}

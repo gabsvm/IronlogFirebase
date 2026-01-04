@@ -119,10 +119,10 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             {/* Dropdown Menu */}
                             {ctrl.openMenuId === ex.instanceId && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 hover:bg-zinc-50 flex items-center gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="RefreshCw" size={16} /> {t.replaceEx}
                                     </button>
-                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 hover:bg-zinc-50 flex items-center gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="Dumbbell" size={16} /> {t.changeMuscle}
                                     </button>
                                     <button onClick={(e) => { 

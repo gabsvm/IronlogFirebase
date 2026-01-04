@@ -1,12 +1,14 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
-import { SessionExercise, ExerciseDef, SetType } from '../types';
+import { SessionExercise, ExerciseDef, SetType, Log } from '../types';
 import { arrayMove } from '@dnd-kit/sortable';
 import { triggerHaptic } from '../utils/audio';
+import confetti from 'canvas-confetti';
+import { getLastLogForExercise } from '../utils';
 
 export const useWorkoutController = (onFinishCallback: () => void) => {
-    const { activeSession, activeMeso, setActiveSession, setRestTimer, exercises, rpFeedback, setRpFeedback, config } = useApp();
+    const { activeSession, activeMeso, setActiveSession, setRestTimer, exercises, rpFeedback, setRpFeedback, config, logs } = useApp();
     const [sessionElapsed, setSessionElapsed] = useState(0);
 
     // Local UI State
@@ -21,6 +23,13 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     const [configPlateExId, setConfigPlateExId] = useState<number | null>(null);
     const [plateWeightInput, setPlateWeightInput] = useState('');
     const [changingSetType, setChangingSetType] = useState<{ exId: number, setId: number, currentType: SetType } | null>(null);
+    
+    // New: Plate Calculator State
+    const [showPlateCalc, setShowPlateCalc] = useState<{ weight: number } | null>(null);
+    
+    // PR Logic: Track if PR found, and if we should show the success overlay
+    const [hasNewPR, setHasNewPR] = useState(false);
+    const [showPRSuccess, setShowPRSuccess] = useState(false);
 
     // Timer Logic
     useEffect(() => {
@@ -105,16 +114,82 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         }
     }, [activeMeso, sessionExercises, setActiveSession, setRestTimer]);
 
+    const detectPRs = useCallback((): boolean => {
+        let prFound = false;
+        const safeLogs = Array.isArray(logs) ? logs : [];
+
+        for (const ex of sessionExercises) {
+            let currentBest1RM = 0;
+            (ex.sets || []).forEach(s => {
+                if (s.completed && s.weight && s.reps) {
+                    const e1rm = Number(s.weight) * (1 + Number(s.reps) / 30);
+                    if (e1rm > currentBest1RM) currentBest1RM = e1rm;
+                }
+            });
+
+            if (currentBest1RM > 0) {
+                let historicalBest1RM = 0;
+                safeLogs.forEach(l => {
+                    const oldEx = l.exercises?.find(e => e.id === ex.id);
+                    if (oldEx) {
+                        (oldEx.sets || []).forEach(s => {
+                            if (s.completed && s.weight && s.reps) {
+                                const e1rm = Number(s.weight) * (1 + Number(s.reps) / 30);
+                                if (e1rm > historicalBest1RM) historicalBest1RM = e1rm;
+                            }
+                        });
+                    }
+                });
+
+                if (currentBest1RM > historicalBest1RM) {
+                    prFound = true;
+                    break; 
+                }
+            }
+        }
+        return prFound;
+    }, [sessionExercises, logs]);
+
+    const fireConfetti = useCallback(() => {
+        const count = 200;
+        const defaults = {
+            origin: { y: 0.7 },
+            zIndex: 9999 
+        };
+        function fire(particleRatio: number, opts: any) {
+            confetti({
+                ...defaults,
+                ...opts,
+                particleCount: Math.floor(count * particleRatio)
+            });
+        }
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
+    }, []);
+
     const handleConfirmFinish = useCallback(() => {
         triggerHaptic('medium');
         setShowFinishModal(false);
-        // If RP feedback needed, show that modal, else finish
+        
+        const isPR = detectPRs();
+        setHasNewPR(isPR);
+
         if (config?.rpEnabled) {
             setShowFeedbackModal(true);
         } else {
-            onFinishCallback();
+            // No feedback needed flow
+            if (isPR) {
+                // Show celebration overlay, it will handle onFinish when dismissed
+                setShowPRSuccess(true);
+                fireConfetti();
+            } else {
+                onFinishCallback();
+            }
         }
-    }, [onFinishCallback, config]);
+    }, [onFinishCallback, config, detectPRs, fireConfetti]);
 
     const handleSaveFeedback = useCallback((feedbackData: Record<string, any>) => {
         if (!activeSession) return;
@@ -129,19 +204,31 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
             });
             return newFb;
         });
+        
         setShowFeedbackModal(false);
+        
+        // After feedback, check if we need to show PR screen or just finish
+        if (hasNewPR) {
+            setShowPRSuccess(true);
+            fireConfetti();
+        } else {
+            onFinishCallback();
+        }
+    }, [activeSession, setRpFeedback, onFinishCallback, hasNewPR, fireConfetti]);
+
+    const dismissPRSuccess = useCallback(() => {
+        setShowPRSuccess(false);
         onFinishCallback();
-    }, [activeSession, setRpFeedback, onFinishCallback]);
+    }, [onFinishCallback]);
 
     const reorderSessionExercises = useCallback((oldIndex: number, newIndex: number) => {
-        triggerHaptic('medium'); // Feedback on drop
+        triggerHaptic('medium'); 
         if (!activeSession?.exercises) return;
         const newExercises = arrayMove(activeSession.exercises, oldIndex, newIndex);
         setActiveSession(prev => prev ? { ...prev, exercises: newExercises } : null);
     }, [activeSession, setActiveSession]);
 
 
-    // Exercise Management Logic helpers state exposed to UI
     return {
         sessionElapsed,
         sessionExercises,
@@ -156,6 +243,8 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         configPlateExId, setConfigPlateExId,
         plateWeightInput, setPlateWeightInput,
         changingSetType, setChangingSetType,
+        showPlateCalc, setShowPlateCalc,
+        showPRSuccess, dismissPRSuccess, // NEW: exposed state
         handleSetUpdate,
         handleNoteUpdate,
         toggleSetComplete,

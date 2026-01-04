@@ -25,6 +25,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, onOpenS
         </button>
     );
 
+    // Optimization: When using Virtualization (History view), we disable the Layout's scroll container
+    // and let the view manage the scrolling context. This prevents double scrollbars and ensures Virtuoso works correctly.
+    const isVirtualized = view === 'history';
+
     return (
         <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300 font-sans">
             {/* Header with Safe Area Top padding */}
@@ -43,7 +47,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, onOpenS
             )}
 
             {/* Main Content */}
-            <div className={`flex-1 overflow-y-auto scroll-container pb-24 relative ${view === 'workout' ? 'pt-safe' : ''}`}>
+            <div className={`flex-1 relative ${isVirtualized ? 'overflow-hidden' : 'overflow-y-auto scroll-container'} pb-24 ${view === 'workout' ? 'pt-safe' : ''}`}>
                 {children}
             </div>
 
