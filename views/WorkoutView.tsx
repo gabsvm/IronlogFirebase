@@ -8,7 +8,7 @@ import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
 import { PlateCalculatorModal } from '../components/ui/PlateCalculatorModal'; 
-import { PRCelebrationOverlay } from '../components/ui/PRCelebrationOverlay'; // Imported
+import { PRCelebrationOverlay } from '../components/ui/PRCelebrationOverlay'; 
 import { ExerciseDef, SessionExercise, SetType } from '../types';
 import { getTranslated, getMesoStageConfig } from '../utils';
 import { useWorkoutController } from '../hooks/useWorkoutController';
@@ -56,8 +56,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         useSensor(PointerSensor),
         useSensor(KeyboardSensor),
         useSensor(TouchSensor, {
-            // Updated: Removed delay to make handle dragging instant and snappy
+            // Updated: Explicitly set delay to 0 to satisfy the DelayConstraint type definition while keeping it snappy.
+            // Alternatively could use { distance: 5 } but delay: 0 with tolerance works for handle-based dragging.
             activationConstraint: {
+                delay: 0,
                 tolerance: 5,
             },
         })

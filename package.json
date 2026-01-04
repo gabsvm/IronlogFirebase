@@ -22,7 +22,8 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "canvas-confetti": "^1.9.2",
-    "react-virtuoso": "^4.7.0"
+    "react-virtuoso": "^4.7.0",
+    "idb-keyval": "^6.2.1"
   },
   "overrides": {
     "react": "$react",
