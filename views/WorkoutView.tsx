@@ -1,17 +1,34 @@
 
 import React, { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
+import { TRANSLATIONS } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
-import { MuscleGroup, ExerciseDef, SessionExercise, SetType } from '../types';
+import { ExerciseDef, SessionExercise, SetType } from '../types';
 import { getTranslated, getMesoStageConfig } from '../utils';
 import { useWorkoutController } from '../hooks/useWorkoutController';
-import { SetRow } from '../components/workout/SetRow';
-import { MuscleTag } from '../components/workout/MuscleTag';
+import { SortableExerciseCard } from '../components/workout/SortableExerciseCard';
+import { triggerHaptic } from '../utils/audio';
+
+// DnD Imports
+import {
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 interface WorkoutViewProps {
     onFinish: () => void;
@@ -31,6 +48,33 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     // Derived State
     const stageConfig = activeMeso ? getMesoStageConfig(activeMeso.mesoType || 'hyp_1', activeMeso.week, !!activeMeso.isDeload) : null;
     const sessionExercises = ctrl.sessionExercises as SessionExercise[];
+    
+    // DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor),
+        useSensor(TouchSensor, {
+            // Updated: Removed delay to make handle dragging instant and snappy
+            activationConstraint: {
+                tolerance: 5,
+            },
+        })
+    );
+
+    const handleDragStart = (event: DragStartEvent) => {
+        triggerHaptic('light'); // Feedback when picking up an item
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const {active, over} = event;
+        
+        if (active.id !== over?.id) {
+            const oldIndex = sessionExercises.findIndex((item) => item.instanceId === active.id);
+            const newIndex = sessionExercises.findIndex((item) => item.instanceId === over?.id);
+            
+            ctrl.reorderSessionExercises(oldIndex, newIndex);
+        }
+    };
     
     // Superset Color Logic
     const supersetStyles = useMemo(() => {
@@ -59,30 +103,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         }
         ctrl.setConfigPlateExId(null);
         ctrl.setPlateWeightInput('');
-    };
-
-    // Generic handler for exercise array updates (reorder, remove, etc)
-    const updateExercises = (newExercises: SessionExercise[]) => {
-        ctrl.updateSession(prev => prev ? { ...prev, exercises: newExercises } : null);
-    };
-
-    const handleReorder = (exInstanceId: number, direction: 'up' | 'down') => {
-        const idx = sessionExercises.findIndex(e => e.instanceId === exInstanceId);
-        if (idx === -1) return;
-        if (direction === 'up' && idx === 0) return;
-        if (direction === 'down' && idx === sessionExercises.length - 1) return;
-        const newExs = [...sessionExercises];
-        const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-        [newExs[idx], newExs[swapIdx]] = [newExs[swapIdx], newExs[idx]];
-        updateExercises(newExs);
-        ctrl.setOpenMenuId(null);
-    };
-    
-    const handleRemove = (exId: number) => {
-        if(window.confirm(t.confirmRemoveEx)) {
-            updateExercises(sessionExercises.filter(e => e.instanceId !== exId));
-            ctrl.setOpenMenuId(null);
-        }
     };
 
     const handleAddExercise = (newExId: string, customDef?: ExerciseDef) => {
@@ -114,18 +134,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
          });
          ctrl.setReplacingExId(null);
          ctrl.setOpenMenuId(null);
-    };
-
-    const handleToggleSuperset = (exId: number, currentSsId?: string) => {
-        if (currentSsId) {
-             ctrl.updateSession(prev => !prev ? null : {
-                 ...prev,
-                 exercises: (prev.exercises || []).map(e => e.instanceId === exId ? { ...e, supersetId: undefined } : e)
-             });
-        } else {
-            ctrl.setLinkingId(exId);
-        }
-        ctrl.setOpenMenuId(null);
     };
 
     const finishedSets = sessionExercises.reduce((acc, ex) => acc + (ex.sets || []).filter(s => s.completed).length, 0);
@@ -178,143 +186,38 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                     </div>
                 )}
 
-                {sessionExercises.map((ex, idx) => {
-                    const ssStyle = ex.supersetId ? supersetStyles[ex.supersetId] : null;
-                    const isLinkingTarget = ctrl.linkingId && ctrl.linkingId !== ex.instanceId;
-                    const unit = ex.weightUnit || 'kg';
-                    const unitLabel = unit === 'pl' ? t.units.pl : t.units.kg;
-                    const sets = ex.sets || [];
+                <DndContext 
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext 
+                        items={sessionExercises.map(ex => ex.instanceId)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        {sessionExercises.map((ex) => {
+                            const ssStyle = ex.supersetId ? supersetStyles[ex.supersetId] : null;
+                            const isLinkingTarget = ctrl.linkingId && ctrl.linkingId !== ex.instanceId;
 
-                    return (
-                        <div 
-                            key={ex.instanceId} 
-                            onClick={() => {
-                                if (isLinkingTarget) {
-                                    const ssid = `ss_${Date.now()}`;
-                                    ctrl.updateSession(prev => !prev ? null : {
-                                        ...prev,
-                                        exercises: prev.exercises.map(e => (e.instanceId === ctrl.linkingId || e.instanceId === ex.instanceId) ? { ...e, supersetId: ssid } : e)
-                                    });
-                                    ctrl.setLinkingId(null);
-                                }
-                            }}
-                            className={`
-                                relative flex flex-col bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-white/5 overflow-hidden transition-all
-                                ${ssStyle ? `border-l-4 ${ssStyle.border}` : ''}
-                                ${isLinkingTarget ? 'ring-2 ring-orange-500 cursor-pointer opacity-80 hover:opacity-100' : ''}
-                                ${ctrl.linkingId === ex.instanceId ? 'ring-2 ring-orange-500' : ''}
-                            `}
-                        >
-                            {/* Exercise Header */}
-                            <div className="p-4 flex flex-col gap-2 border-b border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.02]">
-                                <div className="flex justify-between items-start">
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            {ssStyle && <span className={`${ssStyle.badge} text-[9px] font-bold px-1.5 py-0.5 rounded`}>SS</span>}
-                                            <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
-                                            {ex.targetReps && <span className="text-[10px] font-bold text-zinc-400 tracking-wide">{t.target}: {ex.targetReps}</span>}
-                                            {unit === 'pl' && (
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); ctrl.setConfigPlateExId(ex.instanceId); }}
-                                                    className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[9px] font-bold px-2 py-0.5 rounded hover:bg-blue-200"
-                                                >
-                                                    {ex.plateWeight ? `1 PL = ${ex.plateWeight}kg` : t.units.setPlateWeight}
-                                                </button>
-                                            )}
-                                        </div>
-                                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight tracking-tight">
-                                            {getTranslated(ex.name, lang)}
-                                        </h3>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={(e) => { e.stopPropagation(); ctrl.setWarmupExId(ex.instanceId); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-orange-500">
-                                            <Icon name="Zap" size={16} fill="currentColor" />
-                                        </button>
-                                        <div className="relative">
-                                            <button onClick={(e) => { e.stopPropagation(); ctrl.setOpenMenuId(ctrl.openMenuId === ex.instanceId ? null : ex.instanceId); }} className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                                                <Icon name="MoreVertical" size={20} />
-                                            </button>
-                                            
-                                            {/* Dropdown Menu */}
-                                            {ctrl.openMenuId === ex.instanceId && (
-                                                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                                    <div className="flex border-b border-zinc-100 dark:border-white/5">
-                                                        <button onClick={(e) => { e.stopPropagation(); handleReorder(ex.instanceId, 'up'); }} className="flex-1 py-3 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center text-zinc-600 dark:text-zinc-300">
-                                                            <Icon name="TrendingUp" size={16} />
-                                                        </button>
-                                                        <div className="w-px bg-zinc-100 dark:bg-white/5"></div>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleReorder(ex.instanceId, 'down'); }} className="flex-1 py-3 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transform rotate-180">
-                                                            <Icon name="TrendingUp" size={16} />
-                                                        </button>
-                                                    </div>
-                                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 hover:bg-zinc-50 flex items-center gap-2">
-                                                        <Icon name="RefreshCw" size={16} /> {t.replaceEx}
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 hover:bg-zinc-50 flex items-center gap-2">
-                                                        <Icon name="Dumbbell" size={16} /> {t.changeMuscle}
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); handleToggleSuperset(ex.instanceId, ex.supersetId); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${ssStyle ? 'text-red-500' : 'text-orange-600'}`}>
-                                                        <Icon name={ssStyle ? "Unlink" : "Link"} size={16} /> {ssStyle ? t.unlinkSuperset : t.linkSuperset}
-                                                    </button>
-                                                    <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
-                                                    <button onClick={(e) => { e.stopPropagation(); handleRemove(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                                        <Icon name="Trash2" size={16} /> {t.removeEx}
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <input 
-                                    type="text"
-                                    placeholder={t.addNote}
-                                    value={ex.note || ''}
-                                    onChange={(e) => ctrl.handleNoteUpdate(ex.instanceId, e.target.value)}
-                                    className="w-full bg-transparent text-xs text-zinc-500 placeholder-zinc-300 dark:placeholder-zinc-700 outline-none border-b border-transparent focus:border-red-500/50 transition-colors pb-1"
+                            return (
+                                <SortableExerciseCard
+                                    key={ex.instanceId}
+                                    exercise={ex}
+                                    ctrl={ctrl}
+                                    t={t}
+                                    lang={lang}
+                                    supersetStyle={ssStyle}
+                                    isLinkingTarget={!!isLinkingTarget}
+                                    config={config}
+                                    stageConfig={stageConfig}
+                                    onAddSet={onAddSet}
+                                    onDeleteSet={onDeleteSet}
                                 />
-                            </div>
-
-                            {/* Sets Header */}
-                            <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-zinc-50 dark:bg-black/20 border-b border-zinc-100 dark:border-white/5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
-                                <div className="col-span-1">#</div>
-                                <div className="col-span-4 text-left pl-4">{t.weight} ({unit === 'pl' ? 'PL' : 'KG'})</div>
-                                <div className="col-span-4">{t.reps}</div>
-                                {config.showRIR && <div className="col-span-2">{t.rir}</div>}
-                                <div className="col-span-1"></div>
-                            </div>
-
-                            {/* Sets List (Optimized) */}
-                            <div className="divide-y divide-zinc-100 dark:divide-white/5">
-                                {sets.map((set) => (
-                                    <SetRow
-                                        key={set.id}
-                                        set={set}
-                                        exInstanceId={ex.instanceId}
-                                        unit={unit}
-                                        unitLabel={unitLabel}
-                                        plateWeight={ex.plateWeight}
-                                        showRIR={config.showRIR}
-                                        stageRIR={stageConfig?.rir !== null ? String(stageConfig?.rir) : "-"}
-                                        onUpdate={ctrl.handleSetUpdate}
-                                        onToggleComplete={ctrl.toggleSetComplete}
-                                        onChangeType={(exId, setId, type) => ctrl.setChangingSetType({ exId, setId, currentType: type })}
-                                        lang={lang}
-                                    />
-                                ))}
-                            </div>
-
-                            {/* Footer Actions */}
-                            <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 grid grid-cols-2 divide-x divide-zinc-200 dark:divide-white/10">
-                                <button onClick={() => sets.length > 0 && onDeleteSet(ex.instanceId, sets[sets.length - 1].id)} disabled={sets.length <= 1} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-red-500 disabled:opacity-30">
-                                    <Icon name="Minus" size={14} /> {t.removeSetBtn}
-                                </button>
-                                <button onClick={() => onAddSet(ex.instanceId)} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
-                                    <Icon name="Plus" size={14} /> {t.addSetBtn}
-                                </button>
-                            </div>
-                        </div>
-                    );
-                })}
+                            );
+                        })}
+                    </SortableContext>
+                </DndContext>
 
                 <Button variant="secondary" onClick={() => ctrl.setAddingExercise(true)} fullWidth className="border-dashed py-3">
                     <Icon name="Plus" size={16} /> {t.addExercise}

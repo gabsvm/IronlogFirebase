@@ -1,13 +1,11 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
 import { HomeView } from './views/HomeView';
 import { WorkoutView } from './views/WorkoutView';
-import { HistoryView } from './views/HistoryView';
 import { ExercisesView } from './views/ExercisesView';
 import { ProgramEditView } from './views/ProgramEditView';
-import { StatsView } from './views/StatsView';
 import { RestTimerOverlay } from './components/ui/RestTimerOverlay';
 import { OnboardingModal } from './components/ui/OnboardingModal';
 import { getLastLogForExercise } from './utils';
@@ -15,6 +13,16 @@ import { Icon } from './components/ui/Icon';
 import { TRANSLATIONS } from './constants';
 import { ExerciseDef } from './types';
 import { Button } from './components/ui/Button';
+
+// Lazy Load heavier views
+const HistoryView = React.lazy(() => import('./views/HistoryView').then(module => ({ default: module.HistoryView })));
+const StatsView = React.lazy(() => import('./views/StatsView').then(module => ({ default: module.StatsView })));
+
+const LoadingSpinner = () => (
+    <div className="h-full flex items-center justify-center text-zinc-400">
+        <Icon name="RefreshCw" size={24} className="animate-spin" />
+    </div>
+);
 
 const AppContent = () => {
     const { 
@@ -320,8 +328,16 @@ const AppContent = () => {
             ) : (
                 <Layout view={view as any} setView={setView as any} onOpenSettings={() => setShowSettings(true)}>
                     {view === 'home' && <HomeView startSession={startSession} onEditProgram={() => setView('program')} onSkipSession={skipSession} />}
-                    {view === 'history' && <HistoryView />}
-                    {view === 'stats' && <StatsView />}
+                    {view === 'history' && (
+                        <Suspense fallback={<LoadingSpinner />}>
+                            <HistoryView />
+                        </Suspense>
+                    )}
+                    {view === 'stats' && (
+                         <Suspense fallback={<LoadingSpinner />}>
+                            <StatsView />
+                         </Suspense>
+                    )}
                 </Layout>
             )}
 

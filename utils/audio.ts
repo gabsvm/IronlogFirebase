@@ -25,3 +25,26 @@ export const playTimerFinishSound = () => {
         console.error("Audio play failed", e);
     }
 };
+
+// Haptic Feedback Utility
+export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' = 'light') => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        switch (type) {
+            case 'light':
+                navigator.vibrate(10); // Subtle click
+                break;
+            case 'medium':
+                navigator.vibrate(40); // Standard tap
+                break;
+            case 'heavy':
+                navigator.vibrate(70); // Strong feedback
+                break;
+            case 'success':
+                navigator.vibrate([50, 50, 50]); // Da-da-da pattern
+                break;
+            case 'warning':
+                navigator.vibrate([100, 50, 100]); // Long-short-long
+                break;
+        }
+    }
+};

@@ -2,6 +2,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { SessionExercise, ExerciseDef, SetType } from '../types';
+import { arrayMove } from '@dnd-kit/sortable';
+import { triggerHaptic } from '../utils/audio';
 
 export const useWorkoutController = (onFinishCallback: () => void) => {
     const { activeSession, activeMeso, setActiveSession, setRestTimer, exercises, rpFeedback, setRpFeedback, config } = useApp();
@@ -70,6 +72,14 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         if (!set || set.skipped) return;
 
         const completing = !set.completed;
+        
+        // HAPTIC FEEDBACK
+        if (completing) {
+            triggerHaptic('success');
+        } else {
+            triggerHaptic('light');
+        }
+
         // Start session time if first set
         setActiveSession(prev => {
             if(!prev) return null;
@@ -96,6 +106,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     }, [activeMeso, sessionExercises, setActiveSession, setRestTimer]);
 
     const handleConfirmFinish = useCallback(() => {
+        triggerHaptic('medium');
         setShowFinishModal(false);
         // If RP feedback needed, show that modal, else finish
         if (config?.rpEnabled) {
@@ -107,6 +118,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
 
     const handleSaveFeedback = useCallback((feedbackData: Record<string, any>) => {
         if (!activeSession) return;
+        triggerHaptic('success');
         const { mesoId, week } = activeSession;
         setRpFeedback(prev => {
             const newFb = { ...prev };
@@ -120,6 +132,14 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         setShowFeedbackModal(false);
         onFinishCallback();
     }, [activeSession, setRpFeedback, onFinishCallback]);
+
+    const reorderSessionExercises = useCallback((oldIndex: number, newIndex: number) => {
+        triggerHaptic('medium'); // Feedback on drop
+        if (!activeSession?.exercises) return;
+        const newExercises = arrayMove(activeSession.exercises, oldIndex, newIndex);
+        setActiveSession(prev => prev ? { ...prev, exercises: newExercises } : null);
+    }, [activeSession, setActiveSession]);
+
 
     // Exercise Management Logic helpers state exposed to UI
     return {
@@ -141,6 +161,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         toggleSetComplete,
         handleConfirmFinish,
         handleSaveFeedback,
+        reorderSessionExercises,
         updateSession: setActiveSession,
         exercisesLibrary: exercises,
         activeSession
