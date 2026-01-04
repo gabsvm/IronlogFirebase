@@ -12,7 +12,7 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "lucide-react": "^0.344.0",
+    "lucide-react": "^0.400.0",
     "chart.js": "^4.4.1",
     "react-chartjs-2": "^5.2.0",
     "@capacitor/core": "^5.7.0",
@@ -23,6 +23,10 @@
     "@dnd-kit/utilities": "^3.2.2",
     "canvas-confetti": "^1.9.2",
     "react-virtuoso": "^4.7.0"
+  },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",
