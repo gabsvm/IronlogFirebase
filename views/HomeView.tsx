@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS, FULL_BODY_TEMPLATE } from '../constants';
 import { Icon } from '../components/ui/Icon';
@@ -7,7 +7,9 @@ import { Button } from '../components/ui/Button';
 import { getTranslated, formatDate } from '../utils';
 import { MesoType, FeedbackEntry } from '../types';
 import { ActivityHeatmap } from '../components/stats/ActivityHeatmap';
-import { IronCoachChat } from '../components/ai/IronCoachChat';
+
+// Lazy load the AI Chat component to save bundle size
+const IronCoachChat = React.lazy(() => import('../components/ai/IronCoachChat').then(module => ({ default: module.IronCoachChat })));
 
 interface HomeViewProps {
     startSession: (dayIdx: number) => void;
@@ -445,8 +447,18 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                 </button>
             </div>
 
-            {/* AI Chat Modal */}
-            {showAIChat && <IronCoachChat onClose={() => setShowAIChat(false)} />}
+            {/* AI Chat Modal with Lazy Loading Suspense */}
+            {showAIChat && (
+                <Suspense fallback={
+                    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-end justify-center sm:items-center">
+                        <div className="bg-white dark:bg-zinc-900 w-full sm:max-w-md h-[50vh] rounded-t-3xl flex items-center justify-center">
+                            <Icon name="RefreshCw" size={32} className="animate-spin text-zinc-400" />
+                        </div>
+                    </div>
+                }>
+                    <IronCoachChat onClose={() => setShowAIChat(false)} />
+                </Suspense>
+            )}
 
              {/* Routine Guide Modal */}
              {showRoutineGuide && activeMeso && (

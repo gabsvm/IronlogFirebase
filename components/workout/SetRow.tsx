@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WorkoutSet, SetType } from '../../types';
 import { Icon } from '../ui/Icon';
 import { TRANSLATIONS } from '../../constants';
@@ -38,21 +38,38 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
     const isDone = set.completed;
     const setType = set.type || 'regular';
 
+    // --- Performance Optimization: Local State for Inputs ---
+    // We only commit to the global store onBlur or Enter. This prevents re-rendering the whole tree on every keystroke.
+    const [localWeight, setLocalWeight] = useState(set.weight);
+    const [localReps, setLocalReps] = useState(set.reps);
+    const [localRPE, setLocalRPE] = useState(set.rpe);
+
+    // Sync local state if external props change (e.g. from history import or drag reorder)
+    useEffect(() => { setLocalWeight(set.weight); }, [set.weight]);
+    useEffect(() => { setLocalReps(set.reps); }, [set.reps]);
+    useEffect(() => { setLocalRPE(set.rpe); }, [set.rpe]);
+
+    const commitChange = (field: string, value: any) => {
+        if (value !== set[field as keyof WorkoutSet]) {
+            onUpdate(exInstanceId, set.id, field, value);
+        }
+    };
+
     let calculatedKg: number | null = null;
-    if (unit === 'pl' && plateWeight && set.weight) {
-        calculatedKg = Number(set.weight) * plateWeight;
+    if (unit === 'pl' && plateWeight && localWeight) {
+        calculatedKg = Number(localWeight) * plateWeight;
     }
 
-    // UX: Auto-select content on focus for quick overwrite
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
         e.target.select();
     };
 
-    // UX: Pressing Enter toggles completion (Power User feature)
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, field: string, val: any) => {
         if (e.key === 'Enter') {
-            e.currentTarget.blur(); // Hide keyboard
+            e.currentTarget.blur(); 
+            commitChange(field, val); // Ensure commit happens before toggle
             if (!isDone) onToggleComplete(exInstanceId, set.id);
+            // Optional: Auto-focus next input logic could go here
         }
     };
 
@@ -75,10 +92,11 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
                     inputMode="decimal" 
                     className={`w-full bg-transparent text-lg font-bold p-0 border-0 focus:ring-0 text-center transition-colors ${isDone ? 'text-green-800 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`} 
                     placeholder={set.hintWeight ? String(set.hintWeight) : "0"} 
-                    value={set.weight} 
-                    onChange={(e) => onUpdate(exInstanceId, set.id, 'weight', e.target.value)}
+                    value={localWeight} 
+                    onChange={(e) => setLocalWeight(e.target.value)}
+                    onBlur={() => commitChange('weight', localWeight)}
                     onFocus={handleFocus}
-                    onKeyDown={(e) => { if(e.key === 'Enter') { (e.currentTarget.parentElement?.nextElementSibling?.querySelector('input') as HTMLInputElement)?.focus(); } }}
+                    onKeyDown={(e) => handleKeyDown(e, 'weight', localWeight)}
                 />
                 <div className="flex flex-col items-center">
                     <div className="text-[9px] text-zinc-400 font-medium -mt-1 leading-none">{set.hintWeight ? `${t.prev}: ${set.hintWeight}` : unitLabel}</div>
@@ -93,10 +111,11 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
                     inputMode="numeric" 
                     className={`w-full bg-transparent text-lg font-bold p-0 border-0 focus:ring-0 text-center transition-colors ${isDone ? 'text-green-800 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`} 
                     placeholder={set.hintReps ? String(set.hintReps) : "0"} 
-                    value={set.reps} 
-                    onChange={(e) => onUpdate(exInstanceId, set.id, 'reps', e.target.value)}
+                    value={localReps} 
+                    onChange={(e) => setLocalReps(e.target.value)}
+                    onBlur={() => commitChange('reps', localReps)}
                     onFocus={handleFocus}
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={(e) => handleKeyDown(e, 'reps', localReps)}
                 />
                 <div className="text-[9px] text-zinc-400 text-center font-medium -mt-1">{set.hintReps ? `${t.prev}: ${set.hintReps}` : 'reps'}</div>
             </div>
@@ -109,10 +128,11 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
                         inputMode="numeric" 
                         className={`w-12 bg-zinc-100 dark:bg-white/5 rounded text-sm font-bold py-2 border-0 focus:ring-1 focus:ring-zinc-500 text-center text-zinc-600 dark:text-zinc-300 ${isDone ? 'opacity-50' : ''}`} 
                         placeholder={stageRIR}
-                        value={set.rpe} 
-                        onChange={(e) => onUpdate(exInstanceId, set.id, 'rpe', e.target.value)}
+                        value={localRPE} 
+                        onChange={(e) => setLocalRPE(e.target.value)}
+                        onBlur={() => commitChange('rpe', localRPE)}
                         onFocus={handleFocus}
-                        onKeyDown={handleKeyDown}
+                        onKeyDown={(e) => handleKeyDown(e, 'rpe', localRPE)}
                     />
                 </div>
             )}

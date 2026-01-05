@@ -1,5 +1,5 @@
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
 import { formatDate, formatHoursMinutes, getTranslated } from '../utils';
@@ -102,12 +102,34 @@ export const HistoryView: React.FC = () => {
     const { logs, lang } = useApp();
     const t = TRANSLATIONS[lang];
     const [expandedId, setExpandedId] = useState<number | null>(null);
+    const [search, setSearch] = useState('');
 
     const safeLogs = Array.isArray(logs) ? logs : [];
 
+    const filteredLogs = useMemo(() => {
+        if (!search.trim()) return safeLogs;
+        const q = search.toLowerCase();
+        return safeLogs.filter(log => {
+            if (log.name.toLowerCase().includes(q)) return true;
+            return log.exercises?.some(ex => getTranslated(ex.name, lang).toLowerCase().includes(q));
+        });
+    }, [safeLogs, search, lang]);
+
     // Header component for Virtuoso
     const Header = () => (
-        <h2 className="text-2xl font-black text-zinc-900 dark:text-white px-6 pt-6 pb-4">History</h2>
+        <div className="px-6 pt-6 pb-4 space-y-4 bg-gray-50 dark:bg-zinc-950">
+            <h2 className="text-2xl font-black text-zinc-900 dark:text-white">History</h2>
+            <div className="relative">
+                <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input 
+                    type="text" 
+                    placeholder="Search workouts or exercises..."
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl py-3 pl-9 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 text-zinc-900 dark:text-white"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </div>
+        </div>
     );
 
     // Padding footer to avoid bottom nav overlap
@@ -125,23 +147,28 @@ export const HistoryView: React.FC = () => {
         );
     }
 
-    // 2. Implementation of Virtualized List
-    // We use a flex container h-full so Virtuoso knows how much space it has.
     return (
-        <div className="h-full w-full bg-gray-50 dark:bg-zinc-950">
-            <Virtuoso
-                style={{ height: '100%' }}
-                data={safeLogs}
-                components={{ Header, Footer }}
-                itemContent={(index, log) => (
-                    <HistoryCard 
-                        log={log} 
-                        isExpanded={expandedId === log.id}
-                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
-                        lang={lang}
-                    />
-                )}
-            />
+        <div className="h-full w-full bg-gray-50 dark:bg-zinc-950 flex flex-col">
+            {filteredLogs.length === 0 ? (
+                <>
+                    <Header />
+                    <div className="text-center py-10 text-zinc-400 text-sm">No matches found.</div>
+                </>
+            ) : (
+                <Virtuoso
+                    style={{ height: '100%' }}
+                    data={filteredLogs}
+                    components={{ Header, Footer }}
+                    itemContent={(index, log) => (
+                        <HistoryCard 
+                            log={log} 
+                            isExpanded={expandedId === log.id}
+                            onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                            lang={lang}
+                        />
+                    )}
+                />
+            )}
         </div>
     );
 };

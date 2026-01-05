@@ -1,60 +1,142 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, FunctionDeclaration, Type } from "@google/genai";
 import { useApp } from '../../context/AppContext';
 import { Icon } from '../ui/Icon';
+import { ProgramDay, MuscleGroup } from '../../types';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { getTranslated } from '../../utils';
 
 interface Message {
     id: string;
     role: 'user' | 'model';
     text: string;
-    isThinking?: boolean;
 }
 
 const QUICK_PROMPTS = [
-    { label: "Analyze Progress", prompt: "Analyze my last 3 workouts. Am I progressing in volume or load?" },
-    { label: "Check Fatigue", prompt: "Based on my recent logs, do I need a deload?" },
-    { label: "Motivation", prompt: "Give me a short, scientific motivation quote for hypertrophy." },
+    { label: "Create Beginner Routine", prompt: "Create a 3-day full body routine for a beginner." },
+    { label: "Modify Day 1", prompt: "Change Day 1 to focus purely on Chest and Triceps." },
+    { label: "Analyze Progress", prompt: "Analyze my last 3 workouts. Am I progressing?" },
 ];
 
+// TOOL 1: Create Full Program
+const createProgramTool: FunctionDeclaration = {
+    name: "createWorkoutPlan",
+    description: "Overwrites the ENTIRE workout program. Use this for new routines.",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            programName: { type: Type.STRING },
+            days: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        dayName: { type: Type.STRING },
+                        exercises: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    exerciseId: { type: Type.STRING, description: "The exact ID of the exercise from the provided list (e.g., 'bp_bar'). If unknown, leave empty." },
+                                    muscle: { type: Type.STRING, description: "Target muscle enum (CHEST, BACK...)" },
+                                    sets: { type: Type.NUMBER }
+                                },
+                                required: ["muscle"]
+                            }
+                        }
+                    },
+                    required: ["dayName", "exercises"]
+                }
+            }
+        },
+        required: ["days"]
+    }
+};
+
+// TOOL 2: Modify Specific Day (Granular Editing)
+const modifyDayTool: FunctionDeclaration = {
+    name: "modifyWorkoutDay",
+    description: "Modifies a SINGLE day in the current program by index. Use this to tweak specific days.",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            dayIndex: { type: Type.NUMBER, description: "0-based index of the day to modify (e.g., 0 for Day 1)" },
+            newStructure: {
+                type: Type.OBJECT,
+                properties: {
+                    dayName: { type: Type.STRING },
+                    exercises: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                exerciseId: { type: Type.STRING, description: "The exact ID of the exercise (e.g., 'bp_bar')." },
+                                muscle: { type: Type.STRING, description: "Target muscle enum" },
+                                sets: { type: Type.NUMBER }
+                            },
+                            required: ["muscle"]
+                        }
+                    }
+                },
+                required: ["exercises"]
+            }
+        },
+        required: ["dayIndex", "newStructure"]
+    }
+};
+
 export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const { activeMeso, logs, lang, config } = useApp();
-    const [messages, setMessages] = useState<Message[]>([
-        { id: 'init', role: 'model', text: lang === 'en' ? "I am IronCoach. Analyze your data, ask about exercises, or get programming advice." : "Soy IronCoach. Analizo tus datos, pregunto sobre ejercicios o te doy consejos de programación." }
+    const { activeMeso, logs, lang, config, setProgram, program, exercises } = useApp();
+    
+    // PERSISTENCE: Use LocalStorage for chat history
+    const [messages, setMessages] = useLocalStorage<Message[]>('il_chat_history_v1', [
+        { id: 'init', role: 'model', text: lang === 'en' ? "I am IronCoach. I can analyze your data, create new routines, or modify your current plan." : "Soy IronCoach. Puedo analizar tus datos, crear rutinas nuevas o modificar tu plan actual." }
     ]);
+    
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, isLoading]);
+
+    const handleClearChat = () => {
+        if(window.confirm("Clear chat history?")) {
+            setMessages([{ id: Date.now().toString(), role: 'model', text: lang === 'en' ? "Chat cleared. How can I help?" : "Chat borrado. ¿En qué puedo ayudarte?" }]);
+        }
+    };
 
     const buildContext = () => {
-        // Safe data gathering
         const safeLogs = Array.isArray(logs) ? logs : [];
         const recentLogs = safeLogs.slice(0, 5).map(l => ({
             date: new Date(l.endTime).toDateString(),
             name: l.name,
-            duration: Math.round(l.duration / 60) + 'min',
             volume: l.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter(s => s.completed).length || 0), 0)
         }));
 
-        const context = `
-            CURRENT STATE:
-            - Active Mesocycle: ${activeMeso ? `${activeMeso.name} (Week ${activeMeso.week}, Type: ${activeMeso.mesoType})` : "None"}
-            - Focus: Hypertrophy / Bodybuilding
+        // Create a mini-map of available exercises for the AI to "Entity Link"
+        // We limit to top 100 to save context window if library is huge
+        const exerciseMap = exercises.slice(0, 100).map(e => `- ID: "${e.id}", Name: "${getTranslated(e.name, 'en')}" (${e.muscle})`).join('\n');
+
+        const currentProgramSummary = (program || []).map((d, i) => 
+            `Day ${i+1} (${getTranslated(d.dayName, 'en')}): ${d.slots?.map(s => s.muscle).join(', ')}`
+        ).join('\n');
+
+        return `
+            CURRENT PROGRAM:
+            ${currentProgramSummary}
+
+            ACTIVE STATE:
+            - Mesocycle: ${activeMeso ? `${activeMeso.name} (Week ${activeMeso.week})` : "None"}
             
-            RECENT HISTORY (Last 5 sessions):
+            RECENT LOGS:
             ${JSON.stringify(recentLogs)}
-            
-            USER SETTINGS:
-            - RIR Tracking: ${config.showRIR ? 'Enabled' : 'Disabled'}
-            - Language: ${lang}
+
+            AVAILABLE EXERCISES (Use these IDs when creating plans):
+            ${exerciseMap}
         `;
-        return context;
     };
 
     const handleSend = async (textOverride?: string) => {
@@ -71,17 +153,21 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
             const systemInstruction = `
-                You are IronCoach, an elite hypertrophy coach AI integrated into the IronLog Pro app.
-                Your tone is analytical, scientific, yet encouraging (Mike Israetel style).
+                You are IronCoach, an elite hypertrophy coach agent.
                 
-                CONTEXT DATA:
+                CONTEXT:
                 ${contextData}
 
+                CAPABILITIES:
+                1. ANALYZE: Review user logs and volume.
+                2. CREATE: Use 'createWorkoutPlan' to build a FULL new routine.
+                3. MODIFY: Use 'modifyWorkoutDay' to change ONE specific day (e.g. "Change Day 1").
+
                 RULES:
-                1. Keep answers concise (under 100 words unless asked for detail).
-                2. Use Markdown-style bolding (**text**) for emphasis.
-                3. Focus on Progressive Overload, RIR (Reps In Reserve), and Volume Management.
-                4. Respond in the user's language (${lang === 'es' ? 'Spanish' : 'English'}).
+                - When assigning exercises, ALWAYS try to find the matching ID from the "AVAILABLE EXERCISES" list. 
+                - If the user asks for "Bench Press", use "bp_bar". If "Squat", use "sq_bar" (or similar from list).
+                - Keep responses concise and use Markdown.
+                - Language: ${lang === 'es' ? 'Spanish' : 'English'}.
             `;
 
             const history = messages.map(m => ({
@@ -97,40 +183,87 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 ],
                 config: {
                     systemInstruction,
-                    temperature: 0.7,
+                    temperature: 0.5, // Lower temp for more precision with tools
+                    tools: [{ functionDeclarations: [createProgramTool, modifyDayTool] }]
                 }
             });
 
-            const reply = response.text;
-            if (reply) {
-                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: reply }]);
+            const functionCalls = response.functionCalls;
+            let aiResponseText = response.text || "";
+            
+            if (functionCalls && functionCalls.length > 0) {
+                for (const call of functionCalls) {
+                    
+                    // --- TOOL: Create Full Plan ---
+                    if (call.name === 'createWorkoutPlan') {
+                        const args = call.args as any;
+                        const newProgram: ProgramDay[] = (args.days || []).map((day: any, idx: number) => ({
+                            id: `ai_d_${Date.now()}_${idx}`,
+                            dayName: { en: day.dayName, es: day.dayName },
+                            slots: (day.exercises || []).map((ex: any) => ({
+                                muscle: ex.muscle.toUpperCase() as MuscleGroup,
+                                setTarget: ex.sets || 3,
+                                exerciseId: ex.exerciseId || undefined
+                            }))
+                        }));
+                        setProgram(newProgram);
+                        aiResponseText += `\n\n✅ ${lang==='en' ? 'Created new routine:' : 'Nueva rutina creada:'} **${args.programName}**`;
+                    }
+
+                    // --- TOOL: Modify Single Day ---
+                    else if (call.name === 'modifyWorkoutDay') {
+                        const args = call.args as any;
+                        const idx = args.dayIndex;
+                        const structure = args.newStructure;
+
+                        if (program && program[idx]) {
+                            const updatedDay: ProgramDay = {
+                                ...program[idx],
+                                dayName: { en: structure.dayName || program[idx].dayName.en, es: structure.dayName || program[idx].dayName.es },
+                                slots: (structure.exercises || []).map((ex: any) => ({
+                                    muscle: ex.muscle.toUpperCase() as MuscleGroup,
+                                    setTarget: ex.sets || 3,
+                                    exerciseId: ex.exerciseId || undefined
+                                }))
+                            };
+                            
+                            setProgram(prev => {
+                                const newProg = [...prev];
+                                newProg[idx] = updatedDay;
+                                return newProg;
+                            });
+                            aiResponseText += `\n\n✅ ${lang==='en' ? `Updated Day ${idx + 1}.` : `Día ${idx + 1} actualizado.`}`;
+                        } else {
+                            aiResponseText += `\n\n⚠️ Error: Day ${idx + 1} not found.`;
+                        }
+                    }
+                }
+            }
+
+            if (aiResponseText) {
+                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: aiResponseText }]);
+            } else {
+                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Done." }]);
             }
 
         } catch (error) {
             console.error(error);
-            setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Connection error. Check your API Key or internet." }]);
+            setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Error connecting to IronCoach." }]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Custom simple formatter to replace ReactMarkdown and avoid "Double React" issues
+    // Custom simple formatter
     const formatMessage = (text: string) => {
-        // Split by newlines for paragraphs
         return text.split('\n').map((line, i) => {
             if (!line.trim()) return <div key={i} className="h-2"></div>;
-            
-            // Split by **bold** markers
             const parts = line.split(/(\*\*.*?\*\*)/g);
             return (
                 <p key={i} className="mb-1">
                     {parts.map((part, j) => {
                         if (part.startsWith('**') && part.endsWith('**')) {
                             return <strong key={j} className="text-indigo-600 dark:text-indigo-400 font-bold">{part.slice(2, -2)}</strong>;
-                        }
-                        // Handle bullet points manually for cleaner look
-                        if (part.trim().startsWith('- ')) {
-                            return <span key={j} className="pl-2 block border-l-2 border-indigo-200 dark:border-indigo-800 ml-1">{part.replace('- ', '')}</span>;
                         }
                         return <span key={j}>{part}</span>;
                     })}
@@ -153,12 +286,17 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                         </div>
                         <div>
                             <h3 className="font-black text-zinc-900 dark:text-white leading-none">IronCoach AI</h3>
-                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Powered by Gemini</p>
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Agent Mode Active</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white">
-                        <Icon name="X" size={24} />
-                    </button>
+                    <div className="flex gap-1">
+                        <button onClick={handleClearChat} className="p-2 text-zinc-400 hover:text-red-500" title="Clear History">
+                            <Icon name="Trash2" size={20} />
+                        </button>
+                        <button onClick={onClose} className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white">
+                            <Icon name="X" size={24} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Messages */}

@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
-import { MuscleGroup } from '../types';
+import { MuscleGroup, ExerciseDef } from '../types';
 import { getTranslated } from '../utils';
+import { Virtuoso } from 'react-virtuoso';
 
 interface ExercisesViewProps {
     onBack: () => void;
@@ -37,10 +39,37 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
         setNewName('');
     };
 
+    const sortedExercises = [...exercises].sort((a,b) => {
+         const na = getTranslated(a.name, lang);
+         const nb = getTranslated(b.name, lang);
+         return na.localeCompare(nb);
+    });
+
+    const Row = (index: number, ex: ExerciseDef) => (
+        <div className="px-4 py-1">
+            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-white/5 flex justify-between items-center shadow-sm">
+                <div>
+                    <div className="font-bold text-zinc-900 dark:text-white text-sm">
+                        {getTranslated(ex.name, lang)}
+                    </div>
+                    <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400">
+                        {TRANSLATIONS[lang].muscle[ex.muscle]}
+                    </span>
+                </div>
+                <button 
+                    onClick={() => handleDelete(ex.id)}
+                    className="p-2 text-zinc-300 hover:text-red-500 transition-colors"
+                >
+                    <Icon name="Trash2" size={18} />
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <div className="h-full flex flex-col bg-gray-50 dark:bg-zinc-950">
             {/* Header */}
-            <div className="glass px-4 h-14 shrink-0 flex items-center justify-between">
+            <div className="glass px-4 h-14 shrink-0 flex items-center justify-between z-10">
                 <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
                     <Icon name="ChevronLeft" size={20} />
                     <span className="font-bold text-sm">{t.back}</span>
@@ -50,31 +79,15 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
             </div>
 
             {mode === 'list' ? (
-                <div className="flex-1 overflow-y-auto p-4 scroll-container relative">
-                    <div className="space-y-2 pb-24">
-                        {exercises.sort((a,b) => {
-                             const na = getTranslated(a.name, lang);
-                             const nb = getTranslated(b.name, lang);
-                             return na.localeCompare(nb);
-                        }).map(ex => (
-                            <div key={ex.id} className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-white/5 flex justify-between items-center shadow-sm">
-                                <div>
-                                    <div className="font-bold text-zinc-900 dark:text-white text-sm">
-                                        {getTranslated(ex.name, lang)}
-                                    </div>
-                                    <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400">
-                                        {TRANSLATIONS[lang].muscle[ex.muscle]}
-                                    </span>
-                                </div>
-                                <button 
-                                    onClick={() => handleDelete(ex.id)}
-                                    className="p-2 text-zinc-300 hover:text-red-500 transition-colors"
-                                >
-                                    <Icon name="Trash2" size={18} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                <div className="flex-1 overflow-hidden relative">
+                    <Virtuoso
+                        style={{ height: '100%' }}
+                        data={sortedExercises}
+                        itemContent={Row}
+                        components={{
+                            Footer: () => <div className="h-24" /> // Padding for FAB
+                        }}
+                    />
                     
                     <div className="fixed bottom-6 right-6 z-10">
                         <button 

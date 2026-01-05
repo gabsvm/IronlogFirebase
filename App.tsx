@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { useTimerContext } from './context/TimerContext';
 import { Layout } from './components/layout/Layout';
 import { HomeView } from './views/HomeView';
 import { WorkoutView } from './views/WorkoutView';
@@ -28,9 +29,12 @@ const AppContent = () => {
     const { 
         activeSession, activeMeso, setActiveSession, 
         program, exercises, lang, setLang, logs, setLogs,
-        theme, setTheme, setRestTimer, setExercises, setProgram, setActiveMeso,
+        theme, setTheme, setExercises, setProgram, setActiveMeso,
         config, setConfig, hasSeenOnboarding, setHasSeenOnboarding
     } = useApp();
+    
+    // Use new Timer Context
+    const { setRestTimer } = useTimerContext();
     
     const t = TRANSLATIONS[lang];
 

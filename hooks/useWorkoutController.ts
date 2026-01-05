@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
+import { useTimerContext } from '../context/TimerContext'; // New import
 import { SessionExercise, ExerciseDef, SetType, Log } from '../types';
 import { arrayMove } from '@dnd-kit/sortable';
 import { triggerHaptic } from '../utils/audio';
@@ -8,7 +9,8 @@ import confetti from 'canvas-confetti';
 import { getLastLogForExercise } from '../utils';
 
 export const useWorkoutController = (onFinishCallback: () => void) => {
-    const { activeSession, activeMeso, setActiveSession, setRestTimer, exercises, rpFeedback, setRpFeedback, config, logs } = useApp();
+    const { activeSession, activeMeso, setActiveSession, exercises, rpFeedback, setRpFeedback, config, logs } = useApp();
+    const { setRestTimer } = useTimerContext(); // Use new context
     const [sessionElapsed, setSessionElapsed] = useState(0);
 
     // Local UI State

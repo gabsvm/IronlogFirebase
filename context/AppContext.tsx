@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useEffect, useRef, ReactNode, useState, PropsWithChildren } from 'react';
+
+import React, { createContext, useContext, useEffect, useRef, ReactNode, useState, PropsWithChildren, useMemo, useCallback } from 'react';
 import { AppState, Lang, Theme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay } from '../types';
 import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { usePersistedState } from '../hooks/usePersistedState'; // New Async Hook
-import { useTimer } from '../hooks/useTimer';
+import { usePersistedState } from '../hooks/usePersistedState';
 import { Icon } from '../components/ui/Icon';
+import { TimerProvider } from './TimerContext';
 
+// Removed restTimer from AppContextType to decouple high-frequency updates
 interface AppContextType extends AppState {
     lang: Lang;
     theme: Theme;
@@ -21,42 +23,32 @@ interface AppContextType extends AppState {
     setRpFeedback: (val: AppState['rpFeedback'] | ((prev: AppState['rpFeedback']) => AppState['rpFeedback'])) => void;
     setHasSeenOnboarding: (val: boolean) => void;
     
-    restTimer: { active: boolean; timeLeft: number; duration: number; endAt: number };
-    setRestTimer: React.Dispatch<React.SetStateAction<{ active: boolean; timeLeft: number; duration: number; endAt: number }>>;
-    
     isAppLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: PropsWithChildren) => {
-    // --- Synchronous Config (Keep in LocalStorage to prevent FOUC) ---
+    // --- Synchronous Config ---
     const [lang, setLang] = useLocalStorage<Lang>('il_lang_v1', 'en');
     const [theme, setTheme] = useLocalStorage<Theme>('il_theme_v1', 'dark');
     
-    // Config items (Legacy split keys preserved in LS for speed)
     const [showRIR, setShowRIR] = useLocalStorage('il_cfg_rir', true);
     const [rpEnabled, setRpEnabled] = useLocalStorage('il_cfg_rp', true);
     const [rpTargetRIR, setRpTargetRIR] = useLocalStorage('il_cfg_rp_rir', 2);
     const [keepScreenOn, setKeepScreenOn] = useLocalStorage('il_cfg_screen', false);
 
-    // --- Heavy Data (Migrated to IndexedDB) ---
-    const [program, setProgram, programLoading] = usePersistedState<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE);
-    const [activeMeso, setActiveMeso, mesoLoading] = usePersistedState<MesoCycle | null>('il_meso_v16', null);
-    const [activeSession, setActiveSession, sessionLoading] = usePersistedState<ActiveSession | null>('il_session_v16', null);
-    const [exercises, setExercises, exLoading] = usePersistedState<ExerciseDef[]>('il_ex_v16', DEFAULT_LIBRARY);
-    const [logs, setLogs, logsLoading] = usePersistedState<Log[]>('il_logs_v16', []);
+    // --- Heavy Data (IndexedDB) ---
+    const [program, setProgram, programLoading] = usePersistedState<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE, 1000);
+    const [activeMeso, setActiveMeso, mesoLoading] = usePersistedState<MesoCycle | null>('il_meso_v16', null, 500);
+    const [activeSession, setActiveSession, sessionLoading] = usePersistedState<ActiveSession | null>('il_session_v16', null, 500);
+    const [exercises, setExercises, exLoading] = usePersistedState<ExerciseDef[]>('il_ex_v16', DEFAULT_LIBRARY, 1000);
+    const [logs, setLogs, logsLoading] = usePersistedState<Log[]>('il_logs_v16', [], 1000);
     
-    const [rpFeedback, setRpFeedback, fbLoading] = usePersistedState<AppState['rpFeedback']>('il_rp_fb_v1', {});
-    
-    // Onboarding status can stay in IDB or LS, IDB is fine
-    const [hasSeenOnboarding, setHasSeenOnboarding, onboardingLoading] = usePersistedState<boolean>('il_onboarded_v2', false);
+    const [rpFeedback, setRpFeedback, fbLoading] = usePersistedState<AppState['rpFeedback']>('il_rp_fb_v1', {}, 1000);
+    const [hasSeenOnboarding, setHasSeenOnboarding, onboardingLoading] = usePersistedState<boolean>('il_onboarded_v2', false, 1000);
 
-    // Calculate global loading state
     const isAppLoading = programLoading || mesoLoading || sessionLoading || exLoading || logsLoading || fbLoading || onboardingLoading;
-
-    // Timer Logic
-    const { restTimer, setRestTimer } = useTimer();
     const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
     // Theme Effect
@@ -81,9 +73,8 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
                     console.error('Wake Lock failed:', err);
                 }
             } else if (!keepScreenOn && wakeLockRef.current) {
-                wakeLockRef.current.release()
-                    .then(() => { wakeLockRef.current = null; })
-                    .catch(e => console.error(e));
+                wakeLockRef.current.release().catch(e => console.error(e));
+                wakeLockRef.current = null;
             }
         };
         requestWakeLock();
@@ -97,14 +88,38 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         };
     }, [keepScreenOn]);
 
-    const setConfig = (newConfig: any) => {
+    const setConfig = useCallback((newConfig: any) => {
         if (newConfig.showRIR !== undefined) setShowRIR(newConfig.showRIR);
         if (newConfig.rpEnabled !== undefined) setRpEnabled(newConfig.rpEnabled);
         if (newConfig.rpTargetRIR !== undefined) setRpTargetRIR(newConfig.rpTargetRIR);
         if (newConfig.keepScreenOn !== undefined) setKeepScreenOn(newConfig.keepScreenOn);
-    };
+    }, [setShowRIR, setRpEnabled, setRpTargetRIR, setKeepScreenOn]);
 
-    const config = { showRIR, rpEnabled, rpTargetRIR, keepScreenOn };
+    const config = useMemo(() => ({ showRIR, rpEnabled, rpTargetRIR, keepScreenOn }), [showRIR, rpEnabled, rpTargetRIR, keepScreenOn]);
+
+    const contextValue = useMemo(() => ({
+        lang, setLang, theme, setTheme,
+        program, setProgram,
+        activeMeso, setActiveMeso,
+        activeSession, setActiveSession,
+        exercises, setExercises,
+        logs, setLogs,
+        config, setConfig,
+        rpFeedback, setRpFeedback,
+        hasSeenOnboarding, setHasSeenOnboarding,
+        isAppLoading
+    }), [
+        lang, setLang, theme, setTheme,
+        program, setProgram,
+        activeMeso, setActiveMeso,
+        activeSession, setActiveSession,
+        exercises, setExercises,
+        logs, setLogs,
+        config, setConfig,
+        rpFeedback, setRpFeedback,
+        hasSeenOnboarding, setHasSeenOnboarding,
+        isAppLoading
+    ]);
 
     if (isAppLoading) {
         return (
@@ -124,20 +139,10 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
     }
 
     return (
-        <AppContext.Provider value={{
-            lang, setLang, theme, setTheme,
-            program, setProgram,
-            activeMeso, setActiveMeso,
-            activeSession, setActiveSession,
-            exercises, setExercises,
-            logs, setLogs,
-            config, setConfig,
-            rpFeedback, setRpFeedback,
-            restTimer, setRestTimer,
-            hasSeenOnboarding, setHasSeenOnboarding,
-            isAppLoading
-        }}>
-            {children}
+        <AppContext.Provider value={contextValue}>
+            <TimerProvider>
+                {children}
+            </TimerProvider>
         </AppContext.Provider>
     );
 };

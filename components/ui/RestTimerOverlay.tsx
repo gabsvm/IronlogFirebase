@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
+import { useTimerContext } from '../../context/TimerContext'; // New import
 import { useApp } from '../../context/AppContext';
 import { TRANSLATIONS } from '../../constants';
 import { Icon } from './Icon';
 
 export const RestTimerOverlay: React.FC = () => {
-    const { restTimer, setRestTimer, lang } = useApp();
+    const { restTimer, setRestTimer } = useTimerContext(); // Use isolated context
+    const { lang } = useApp();
     const t = TRANSLATIONS[lang];
     const [minimized, setMinimized] = useState(false);
 
