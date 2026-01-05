@@ -151,8 +151,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
     // Helper to toggle view mode
     const toggleViewMode = () => {
-        if (document.startViewTransition) {
-            document.startViewTransition(() => {
+        if ((document as any).startViewTransition) {
+            (document as any).startViewTransition(() => {
                 setViewMode(prev => prev === 'list' ? 'focus' : 'list');
             });
         } else {

@@ -14,17 +14,6 @@ import { TRANSLATIONS } from './constants';
 import { ExerciseDef } from './types';
 import { Button } from './components/ui/Button';
 
-// Fix: Add type definition for View Transitions API
-declare global {
-  interface Document {
-    startViewTransition?: (callback: () => Promise<void> | void) => {
-      finished: Promise<void>;
-      ready: Promise<void>;
-      updateCallbackDone: Promise<void>;
-    };
-  }
-}
-
 // Lazy Load heavier views
 const HistoryView = React.lazy(() => import('./views/HistoryView').then(module => ({ default: module.HistoryView })));
 const StatsView = React.lazy(() => import('./views/StatsView').then(module => ({ default: module.StatsView })));
@@ -55,8 +44,8 @@ const AppContent = () => {
         if (newView === view) return;
         
         // Check if browser supports View Transitions
-        if (document.startViewTransition) {
-            document.startViewTransition(() => {
+        if ((document as any).startViewTransition) {
+            (document as any).startViewTransition(() => {
                 setViewState(newView);
             });
         } else {
@@ -83,8 +72,8 @@ const AppContent = () => {
                 // Determine if we should animate back? 
                 // For simplicity in this local router, we just set state.
                 // In a perfect world we would set a direction class for "slide right".
-                if (document.startViewTransition) {
-                    document.startViewTransition(() => {
+                if ((document as any).startViewTransition) {
+                    (document as any).startViewTransition(() => {
                         if (e.state.view) setViewState(e.state.view);
                         setShowSettings(!!e.state.settings);
                     });
