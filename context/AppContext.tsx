@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useEffect, useRef, ReactNode, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, ReactNode, useState, PropsWithChildren } from 'react';
 import { AppState, Lang, Theme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay } from '../types';
 import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -30,7 +29,7 @@ interface AppContextType extends AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider = ({ children }: { children: ReactNode }) => {
+export const AppProvider = ({ children }: PropsWithChildren) => {
     // --- Synchronous Config (Keep in LocalStorage to prevent FOUC) ---
     const [lang, setLang] = useLocalStorage<Lang>('il_lang_v1', 'en');
     const [theme, setTheme] = useLocalStorage<Theme>('il_theme_v1', 'dark');

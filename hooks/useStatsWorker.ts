@@ -1,0 +1,150 @@
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Log, MuscleGroup, ExerciseDef } from '../types';
+import { MUSCLE_GROUPS } from '../constants';
+
+// Types for Worker Messages
+type WorkerAction = 
+    | { type: 'CALCULATE_OVERVIEW', logs: Log[], activeMesoId?: number }
+    | { type: 'CALCULATE_CHART', logs: Log[], exerciseId: string, metric: '1rm' | 'volume' };
+
+type WorkerResponse = 
+    | { type: 'OVERVIEW_READY', volumeData: [string, number][], exerciseFrequency: Record<string, number> }
+    | { type: 'CHART_READY', dataPoints: { date: number, value: number, weight: number, reps: number }[] };
+
+export const useStatsWorker = () => {
+    const workerRef = useRef<Worker | null>(null);
+    const [isWorkerReady, setIsWorkerReady] = useState(false);
+
+    useEffect(() => {
+        // INLINE WORKER CODE
+        const workerCode = `
+            self.onmessage = function(e) {
+                const { type, logs, activeMesoId, exerciseId, metric } = e.data;
+
+                if (type === 'CALCULATE_OVERVIEW') {
+                    const muscleCounts = {};
+                    const exFreq = {};
+                    
+                    // Initialize muscles
+                    const muscles = ['CHEST', 'BACK', 'QUADS', 'HAMSTRINGS', 'GLUTES', 'CALVES', 'SHOULDERS', 'BICEPS', 'TRICEPS', 'TRAPS', 'ABS', 'FOREARMS'];
+                    muscles.forEach(m => muscleCounts[m] = 0);
+
+                    if (Array.isArray(logs)) {
+                        logs.forEach(log => {
+                            // Filter by active meso if provided
+                            if (activeMesoId && log.mesoId !== activeMesoId) return;
+
+                            if (log.exercises && Array.isArray(log.exercises)) {
+                                log.exercises.forEach(ex => {
+                                    // Count Sets for Volume
+                                    const setsDone = (ex.sets || []).filter(s => s.completed).length;
+                                    if (muscleCounts[ex.muscle] !== undefined) {
+                                        muscleCounts[ex.muscle] += setsDone;
+                                    }
+
+                                    // Count Frequency
+                                    exFreq[ex.id] = (exFreq[ex.id] || 0) + 1;
+                                });
+                            }
+                        });
+                    }
+
+                    const sortedVolume = Object.entries(muscleCounts).sort((a, b) => b[1] - a[1]);
+                    self.postMessage({ type: 'OVERVIEW_READY', volumeData: sortedVolume, exerciseFrequency: exFreq });
+                }
+
+                if (type === 'CALCULATE_CHART') {
+                    const dataPoints = [];
+                    // Sort logs chronologically for the chart
+                    const sortedLogs = [...logs].sort((a, b) => a.endTime - b.endTime);
+
+                    sortedLogs.forEach(log => {
+                        if (log.skipped) return;
+                        const ex = (log.exercises || []).find(e => e.id === exerciseId);
+                        if (!ex) return;
+
+                        let bestValue = 0;
+                        let bestSetDetails = { w: 0, r: 0 };
+
+                        if (metric === '1rm') {
+                            // Epley Formula: 1RM = Weight * (1 + Reps/30)
+                            (ex.sets || []).forEach(s => {
+                                if (s.completed && s.weight && s.reps) {
+                                    const w = Number(s.weight);
+                                    const r = Number(s.reps);
+                                    const est1rm = w * (1 + r / 30);
+                                    if (est1rm > bestValue) {
+                                        bestValue = est1rm;
+                                        bestSetDetails = { w, r };
+                                    }
+                                }
+                            });
+                        } else {
+                            // Total Volume Calculation
+                            bestValue = (ex.sets || []).reduce((acc, s) => {
+                                if (s.completed && s.weight && s.reps) {
+                                    return acc + (Number(s.weight) * Number(s.reps));
+                                }
+                                return acc;
+                            }, 0);
+                        }
+
+                        if (bestValue > 0) {
+                            dataPoints.push({
+                                date: log.endTime,
+                                value: Math.round(bestValue),
+                                weight: bestSetDetails.w,
+                                reps: bestSetDetails.r
+                            });
+                        }
+                    });
+
+                    self.postMessage({ type: 'CHART_READY', dataPoints });
+                }
+            };
+        `;
+
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        workerRef.current = new Worker(URL.createObjectURL(blob));
+        setIsWorkerReady(true);
+
+        return () => {
+            workerRef.current?.terminate();
+        };
+    }, []);
+
+    const calculateOverview = useCallback((logs: Log[], activeMesoId?: number): Promise<{ volumeData: [string, number][], exerciseFrequency: Record<string, number> }> => {
+        return new Promise((resolve) => {
+            if (!workerRef.current) return;
+            
+            const handler = (e: MessageEvent) => {
+                if (e.data.type === 'OVERVIEW_READY') {
+                    workerRef.current?.removeEventListener('message', handler);
+                    resolve({ volumeData: e.data.volumeData, exerciseFrequency: e.data.exerciseFrequency });
+                }
+            };
+            
+            workerRef.current.addEventListener('message', handler);
+            workerRef.current.postMessage({ type: 'CALCULATE_OVERVIEW', logs, activeMesoId });
+        });
+    }, []);
+
+    const calculateChartData = useCallback((logs: Log[], exerciseId: string, metric: '1rm' | 'volume'): Promise<{ date: number, value: number, weight: number, reps: number }[]> => {
+        return new Promise((resolve) => {
+            if (!workerRef.current) return;
+
+            const handler = (e: MessageEvent) => {
+                if (e.data.type === 'CHART_READY') {
+                    workerRef.current?.removeEventListener('message', handler);
+                    resolve(e.data.dataPoints);
+                }
+            };
+
+            workerRef.current.addEventListener('message', handler);
+            workerRef.current.postMessage({ type: 'CALCULATE_CHART', logs, exerciseId, metric });
+        });
+    }, []);
+
+    return { isWorkerReady, calculateOverview, calculateChartData };
+};

@@ -14,6 +14,17 @@ import { TRANSLATIONS } from './constants';
 import { ExerciseDef } from './types';
 import { Button } from './components/ui/Button';
 
+// Fix: Add type definition for View Transitions API
+declare global {
+  interface Document {
+    startViewTransition?: (callback: () => Promise<void> | void) => {
+      finished: Promise<void>;
+      ready: Promise<void>;
+      updateCallbackDone: Promise<void>;
+    };
+  }
+}
+
 // Lazy Load heavier views
 const HistoryView = React.lazy(() => import('./views/HistoryView').then(module => ({ default: module.HistoryView })));
 const StatsView = React.lazy(() => import('./views/StatsView').then(module => ({ default: module.StatsView })));
@@ -35,9 +46,23 @@ const AppContent = () => {
     const t = TRANSLATIONS[lang];
 
     // Extended view state
-    const [view, setView] = useState<'home' | 'workout' | 'history' | 'exercises' | 'program' | 'stats'>('home');
+    const [view, setViewState] = useState<'home' | 'workout' | 'history' | 'exercises' | 'program' | 'stats'>('home');
     const [showSettings, setShowSettings] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
+
+    // UX: Helper to trigger View Transitions if available
+    const setView = (newView: typeof view) => {
+        if (newView === view) return;
+        
+        // Check if browser supports View Transitions
+        if (document.startViewTransition) {
+            document.startViewTransition(() => {
+                setViewState(newView);
+            });
+        } else {
+            setViewState(newView);
+        }
+    };
 
     // History management for Android Back Button
     const isPopping = useRef(false);
@@ -55,8 +80,18 @@ const AppContent = () => {
         const handlePop = (e: PopStateEvent) => {
             isPopping.current = true;
             if (e.state) {
-                if (e.state.view) setView(e.state.view);
-                setShowSettings(!!e.state.settings);
+                // Determine if we should animate back? 
+                // For simplicity in this local router, we just set state.
+                // In a perfect world we would set a direction class for "slide right".
+                if (document.startViewTransition) {
+                    document.startViewTransition(() => {
+                        if (e.state.view) setViewState(e.state.view);
+                        setShowSettings(!!e.state.settings);
+                    });
+                } else {
+                    if (e.state.view) setViewState(e.state.view);
+                    setShowSettings(!!e.state.settings);
+                }
             } else {
                 setView('home');
                 setShowSettings(false);
@@ -519,6 +554,8 @@ const AppContent = () => {
 
 export default function App() {
     return (
-        <AppProvider children={<AppContent />} />
+        <AppProvider>
+            <AppContent />
+        </AppProvider>
     );
 }

@@ -234,12 +234,12 @@ export const TRANSLATIONS = {
             warmup: "Low fatigue preparation" 
         }, 
         muscle: { CHEST: "Chest", BACK: "Back", QUADS: "Quads", HAMSTRINGS: "Hamstrings", GLUTES: "Glutes", CALVES: "Calves", SHOULDERS: "Shoulders", BICEPS: "Biceps", TRICEPS: "Triceps", TRAPS: "Traps", ABS: "Abs", FOREARMS: "Forearms" },
-        rp: "RP Progression", rpEnabled: "RP suggestions", rpTargetRIR: "Target RIR", rpFeedbackTitle: "Muscle feedback", rpRatingHelp: "1=too little, 3=good, 5=too much", rpSave: "Save feedback", rpSuggestion: "Suggested", rpNoSuggestion: "No suggestion",
+        rp: "IronCoach Progression", rpEnabled: "IronCoach Suggestions", rpTargetRIR: "Target RIR", rpFeedbackTitle: "Muscle Feedback", rpRatingHelp: "1=too little, 3=good, 5=too much", rpSave: "Save feedback", rpSuggestion: "Suggested", rpNoSuggestion: "No suggestion",
         editTemplate: "Edit Program", resetTemplate: "Reset to Default", editDay: "Edit Day", addDay: "Add Day", addSlot: "Add Exercise Slot", save: "Save", swapTitle: "Swap Exercise", swapMsg: "How do you want to apply this change?", swapSession: "This Session Only", swapForever: "Update Plan (Forever)", programEditor: "Program Editor", selectExBtn: "Select Exercise", any: "Any",
         manageEx: "Manage Exercises", addEx: "Add New Exercise", exName: "Exercise Name", selectMuscle: "Select Muscle", deleteConfirm: "Delete this exercise?",
         setsCount: "Sets", notes: "Notes", addNote: "Add Note...", volumeStatus: { low: "Low", maintenance: "Maint.", optimal: "Optimal", high: "High" }, showRIR: "Show RIR Column", install: "Install App", unitToggle: "Weight Unit", addExercise: "Add Exercise", updateTemplate: "Update Routine Template", selectMuscleToAdd: "Select Muscle to Add",
-        appearance: "Appearance", database: "Base de Datos", dangerZone: "Danger Zone", factoryReset: "Factory Reset App", workoutConfig: "Workout Config",
-        completeWeek: "Complete Week", completeWeekConfirm: "Advance to next week?", autoRegulate: "Auto-regulate volume?", autoRegulateDesc: "Based on your sore/pump feedback, we will adjust set counts for next week.", applyingChanges: "Applying Changes:", setsAdded: "sets added", setsRemoved: "sets removed", noChanges: "No volume changes needed.",
+        appearance: "Appearance", database: "Database", dangerZone: "Danger Zone", factoryReset: "Factory Reset App", workoutConfig: "Workout Config",
+        completeWeek: "Complete Week", completeWeekConfirm: "Advance to next week?", autoRegulate: "Auto-regulate volume?", autoRegulateDesc: "IronCoach will adjust volume based on your feedback.", applyingChanges: "Applying IronCoach Changes:", setsAdded: "sets added", setsRemoved: "sets removed", noChanges: "No volume changes needed.",
         finishMesoConfirm: "Finish this mesocycle? This will archive your current progress and let you start a fresh cycle.",
         deleteDataConfirm: "Delete ALL data? This cannot be undone.",
         importSuccess: "Import successful!", invalidFile: "Invalid file format",
@@ -262,7 +262,7 @@ export const TRANSLATIONS = {
             hyp_2: "Base Hypertrophy 2",
             metabolite: "Metabolite Phase",
             resensitization: "Resensitization",
-            full_body: "Aesthetic V-Taper (Dr. Mike)"
+            full_body: "Aesthetic V-Taper"
         },
         phaseDesc: {
             hyp_1: "Standard volume accumulation. RIR 3->1.",
@@ -273,6 +273,7 @@ export const TRANSLATIONS = {
         },
         targetRIR: "Target RIR",
         recoveryWeek: "Recovery Week",
+        focusMode: "Focus Mode",
         
         // Plates & Units
         units: {
@@ -309,19 +310,19 @@ export const TRANSLATIONS = {
         // Onboarding
         onb: {
             skip: "Skip", next: "Next", start: "Start",
-            s1_title: "Welcome to IronLog", s1_desc: "The ultimate tool for hypertrophy training, designed with RP principles.",
-            s2_title: "Mesocycles", s2_desc: "Organize training into weeks. We auto-regulate volume based on your feedback.",
+            s1_title: "Welcome to IronLog", s1_desc: "The ultimate tool for hypertrophy training, powered by IronCoach logic.",
+            s2_title: "Mesocycles", s2_desc: "Organize training into weeks. IronCoach auto-regulates volume based on your feedback.",
             s3_title: "Smart Tracking", s3_desc: "Track RIR, use our built-in rest timer, and get warmup sets calculated instantly.",
             s4_title: "Progress", s4_desc: "Visualize your volume landmarks (MEV/MRV) and ensure you are overloading progressively."
         },
         createAndSelect: "Create & Select",
-        overwriteTemplateConfirm: "This overwrites your current plan with Dr. Mike's Aesthetic Split (4 Days/Week).",
+        overwriteTemplateConfirm: "This overwrites your current plan with the Aesthetic Split (4 Days/Week).",
         newRecord: "New Record!",
         prMessage: "You beat your previous best estimates!",
         continue: "Continue"
     },
     es: { 
-        startMeso: "Iniciar Mesociclo", finishWorkout: "Terminar Sesión", finishConfirm: "¿Terminar entrenamiento?", cancel: "Cancelar", delete: "Borrar", skip: "Saltar Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Reemplazar Ejercicio", changeMuscle: "Cambiar músculo", chooseMuscle: "Elegir músculo", addSetBelow: "Añadir Serie Debajo", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Serie", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Progreso", settings: "Ajustes", rp: "Progresión RP", rpEnabled: "Sugerencias RP", rpTargetRIR: "RIR objetivo", volume: "Volumen Semanal", workouts: "Sesiones Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Volver", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar el mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No encontrado", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Ciclo", totalWorkouts: "Entrenamientos", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona para unir...", superset: "SUPERSERIE", workoutComplete: "¡ENTRENAMIENTO TERMINADO!", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "Esto sobrescribirá los datos. ¿Continuar?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Eliminar Slot", offline: "Modo Local", mesoAvg: "Promedio Mesociclo", routineGuide: "Guía de Rutina", executionInfo: "Ejecución & Objetivos",
+        startMeso: "Iniciar Mesociclo", finishWorkout: "Terminar Sesión", finishConfirm: "¿Terminar entrenamiento?", cancel: "Cancelar", delete: "Borrar", skip: "Saltar Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Reemplazar Ejercicio", changeMuscle: "Cambiar músculo", chooseMuscle: "Elegir músculo", addSetBelow: "Añadir Serie Debajo", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Serie", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Progreso", settings: "Ajustes", rp: "Progresión IronCoach", rpEnabled: "Sugerencias IronCoach", rpTargetRIR: "RIR objetivo", volume: "Volumen Semanal", workouts: "Sesiones Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Volver", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar el mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No encontrado", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Ciclo", totalWorkouts: "Entrenamientos", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona para unir...", superset: "SUPERSERIE", workoutComplete: "¡ENTRENAMIENTO TERMINADO!", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "Esto sobrescribirá los datos. ¿Continuar?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Eliminar Slot", offline: "Modo Local", mesoAvg: "Promedio Mesociclo", routineGuide: "Guía de Rutina", executionInfo: "Ejecución & Objetivos",
         types: { regular: "Regular", myorep: "Myorep", myorep_match: "Myorep Match", cluster: "Cluster", top: "Top Set", backoff: "Back-off Set", giant: "Giant Set", warmup: "Calentamiento" }, 
         typeDesc: { 
             regular: "Serie efectiva estándar", 
@@ -339,7 +340,7 @@ export const TRANSLATIONS = {
         manageEx: "Gestionar Ejercicios", addEx: "Añadir Nuevo Ejercicio", exName: "Nombre del Ejercicio", selectMuscle: "Seleccionar Músculo", deleteConfirm: "¿Borrar este ejercicio?",
         setsCount: "Series", notes: "Notas", addNote: "Añadir nota...", volumeStatus: { low: "Bajo", maintenance: "Mant.", optimal: "Óptimo", high: "Alto" }, showRIR: "Mostrar Columna RIR", install: "Instalar App", unitToggle: "Unidad Peso", addExercise: "Añadir Ejercicio", updateTemplate: "Actualizar Rutina Original", selectMuscleToAdd: "Elegir Músculo para el Slot",
         appearance: "Apariencia", database: "Base de Datos", dangerZone: "Zona de Peligro", factoryReset: "Restaurar Fábrica", workoutConfig: "Configuración Entreno",
-        completeWeek: "Completar Semana", completeWeekConfirm: "¿Avanzar a la siguiente semana?", autoRegulate: "¿Auto-regular volumen?", autoRegulateDesc: "Basado en tu feedback (dolor/congestión), ajustaremos las series para la próxima semana.", applyingChanges: "Aplicando Cambios:", setsAdded: "series añadidas", setsRemoved: "series quitadas", noChanges: "Sin cambios de volumen.",
+        completeWeek: "Completar Semana", completeWeekConfirm: "¿Avanzar a la siguiente semana?", autoRegulate: "¿Auto-regular volumen?", autoRegulateDesc: "IronCoach ajustará las series según tu feedback.", applyingChanges: "Aplicando Cambios:", setsAdded: "series añadidas", setsRemoved: "series quitadas", noChanges: "Sin cambios de volumen.",
         finishMesoConfirm: "¿Terminar este mesociclo? Esto archivará el progreso actual y podrás iniciar uno nuevo.",
         deleteDataConfirm: "¿Borrar TODOS los datos? No se puede deshacer.",
         importSuccess: "¡Importación exitosa!", invalidFile: "Formato inválido",
@@ -362,7 +363,7 @@ export const TRANSLATIONS = {
             hyp_2: "Hipertrofia Base 2",
             metabolite: "Fase Metabolitos",
             resensitization: "Resensibilización",
-            full_body: "Estética / V-Taper (Dr. Mike)"
+            full_body: "Estética / V-Taper"
         },
         phaseDesc: {
             hyp_1: "Acumulación estándar. RIR 3->1.",
@@ -373,6 +374,7 @@ export const TRANSLATIONS = {
         },
         targetRIR: "RIR Objetivo",
         recoveryWeek: "Semana Recuperación",
+        focusMode: "Modo Focus",
 
         // Plates & Units
         units: {
@@ -409,13 +411,13 @@ export const TRANSLATIONS = {
         // Onboarding
         onb: {
             skip: "Omitir", next: "Siguiente", start: "Empezar",
-            s1_title: "Bienvenido a IronLog", s1_desc: "La herramienta definitiva para hipertrofia, diseñada con principios RP.",
-            s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. Auto-regulamos el volumen según tu feedback.",
+            s1_title: "Bienvenido a IronLog", s1_desc: "La herramienta definitiva para hipertrofia, impulsada por IronCoach.",
+            s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. IronCoach auto-regula el volumen según tu feedback.",
             s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.",
             s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva."
         },
         createAndSelect: "Crear y Seleccionar",
-        overwriteTemplateConfirm: "Esto sobrescribe tu rutina actual con el plan de Estética (4 días) de Dr. Mike.",
+        overwriteTemplateConfirm: "Esto sobrescribe tu rutina actual con el plan de Estética (4 días).",
         newRecord: "¡Nuevo Récord!",
         prMessage: "¡Superaste tus marcas anteriores!",
         continue: "Continuar"

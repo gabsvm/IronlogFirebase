@@ -1,11 +1,12 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
 import { MuscleGroup } from '../types';
-import { ProgressChart } from '../components/stats/ProgressChart';
+import { ProgressChart, ChartDataPoint } from '../components/stats/ProgressChart';
 import { getTranslated } from '../utils';
 import { Icon } from '../components/ui/Icon';
+import { useStatsWorker } from '../hooks/useStatsWorker';
 
 export const StatsView: React.FC = () => {
     const { logs, lang, activeMeso, exercises } = useApp();
@@ -16,44 +17,62 @@ export const StatsView: React.FC = () => {
     const [chartMetric, setChartMetric] = useState<'1rm' | 'volume'>('1rm');
     const [showPicker, setShowPicker] = useState(false);
     const [pickerSearch, setPickerSearch] = useState('');
+
+    // Async Data State
+    const [volumeData, setVolumeData] = useState<[string, number][]>([]);
+    const [availableExercises, setAvailableExercises] = useState<any[]>([]);
+    const [chartPoints, setChartPoints] = useState<ChartDataPoint[]>([]);
+    const [loadingOverview, setLoadingOverview] = useState(true);
+    const [loadingChart, setLoadingChart] = useState(false);
+
+    // Worker Hook
+    const { isWorkerReady, calculateOverview, calculateChartData } = useStatsWorker();
     
-    // Calculate volume (sets) per muscle group for the current week/meso
-    const data = useMemo(() => {
-        const counts: Record<string, number> = {};
-        Object.values(MUSCLE_GROUPS).forEach(m => counts[m] = 0);
+    const safeLogs = useMemo(() => Array.isArray(logs) ? logs : [], [logs]);
 
-        const safeLogs = Array.isArray(logs) ? logs : [];
+    // 1. Load Overview (Volume + Exercise List)
+    useEffect(() => {
+        if (!isWorkerReady) return;
 
-        safeLogs.forEach(log => {
-            // If active meso exists, filter by it. Otherwise show all recent.
-            if (activeMeso && log.mesoId !== activeMeso.id) return;
+        const loadOverview = async () => {
+            setLoadingOverview(true);
+            const { volumeData, exerciseFrequency } = await calculateOverview(safeLogs, activeMeso?.id);
             
-            (log.exercises || []).forEach(ex => {
-                const setsDone = (ex.sets || []).filter(s => s.completed).length;
-                if (counts[ex.muscle] !== undefined) {
-                    counts[ex.muscle] += setsDone;
-                }
-            });
-        });
-        return Object.entries(counts).sort((a,b) => b[1] - a[1]);
-    }, [logs, activeMeso]);
+            setVolumeData(volumeData);
+            
+            // Transform frequency map to sorted exercise objects
+            const sortedExs = Object.entries(exerciseFrequency)
+                .sort((a, b) => (b[1] as number) - (a[1] as number)) // Most frequent first
+                .map(([id]) => exercises.find(e => e.id === id))
+                .filter(Boolean);
+            
+            setAvailableExercises(sortedExs);
+            
+            // Auto-select first exercise if none selected
+            if (!selectedExId && sortedExs.length > 0) {
+                setSelectedExId(sortedExs[0]!.id);
+            }
+            
+            setLoadingOverview(false);
+        };
 
-    // Get list of exercises that actually have data in logs, sorted by frequency
-    const availableExercises = useMemo(() => {
-        const counts: Record<string, number> = {};
-        const safeLogs = Array.isArray(logs) ? logs : [];
-        
-        safeLogs.forEach(log => {
-            (log.exercises || []).forEach(ex => {
-                counts[ex.id] = (counts[ex.id] || 0) + 1;
-            });
-        });
-        
-        return Object.entries(counts)
-            .sort((a, b) => b[1] - a[1]) // Most frequent first
-            .map(([id]) => exercises.find(e => e.id === id))
-            .filter(Boolean);
-    }, [logs, exercises]);
+        loadOverview();
+    }, [isWorkerReady, safeLogs, activeMeso?.id, exercises, calculateOverview]); // Removed selectedExId dependency to avoid reset loop
+
+    // 2. Load Chart Data (When Exercise or Metric Changes)
+    useEffect(() => {
+        if (!isWorkerReady || !selectedExId) return;
+
+        const loadChart = async () => {
+            setLoadingChart(true);
+            const points = await calculateChartData(safeLogs, selectedExId, chartMetric);
+            setChartPoints(points);
+            setLoadingChart(false);
+        };
+
+        loadChart();
+    }, [isWorkerReady, selectedExId, chartMetric, safeLogs, calculateChartData]);
+
 
     // Filter for the picker modal
     const filteredExercises = useMemo(() => {
@@ -62,14 +81,7 @@ export const StatsView: React.FC = () => {
         );
     }, [availableExercises, pickerSearch, lang]);
 
-    // Set default exercise if none selected
-    React.useEffect(() => {
-        if (!selectedExId && availableExercises.length > 0) {
-            setSelectedExId(availableExercises[0]!.id);
-        }
-    }, [availableExercises, selectedExId]);
-
-    const maxVal = Math.max(...data.map(d => d[1]), 10); // Scale
+    const maxVal = Math.max(...volumeData.map(d => d[1]), 10); // Scale
     const currentEx = exercises.find(e => e.id === selectedExId);
 
     return (
@@ -108,16 +120,20 @@ export const StatsView: React.FC = () => {
                         onClick={() => { setPickerSearch(''); setShowPicker(true); }}
                         className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm font-bold rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500 flex justify-between items-center active:bg-zinc-100 dark:active:bg-white/10 transition-colors"
                     >
-                        <span className="truncate">{currentEx ? getTranslated(currentEx.name, lang) : t.selectEx}</span>
+                        <span className="truncate">
+                            {loadingOverview 
+                                ? "Loading exercises..." 
+                                : currentEx ? getTranslated(currentEx.name, lang) : t.selectEx}
+                        </span>
                         <Icon name="CornerDownRight" size={16} className="text-zinc-400" />
                     </button>
                 </div>
 
                 {selectedExId && (
                     <ProgressChart 
-                        exerciseId={selectedExId} 
-                        logs={Array.isArray(logs) ? logs : []} 
+                        dataPoints={chartPoints}
                         metric={chartMetric} 
+                        loading={loadingChart}
                     />
                 )}
             </div>
@@ -129,39 +145,51 @@ export const StatsView: React.FC = () => {
                     {t.volPerCycle}
                 </h3>
                 
-                <div className="space-y-4">
-                    {data.map(([muscle, count]) => (
-                        <div key={muscle} className="flex items-center gap-3">
-                            <div className="w-24 text-xs font-bold text-zinc-500 truncate text-right">
-                                {TRANSLATIONS[lang].muscle[muscle as MuscleGroup]}
+                {loadingOverview ? (
+                    <div className="space-y-4 animate-pulse">
+                        {[1,2,3,4].map(i => (
+                            <div key={i} className="flex gap-3 items-center">
+                                <div className="w-24 h-4 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+                                <div className="flex-1 h-4 bg-zinc-100 dark:bg-zinc-800 rounded-full"></div>
+                                <div className="w-6 h-4 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
                             </div>
-                            <div className="flex-1 h-2 bg-zinc-100 dark:bg-white/5 rounded-full overflow-hidden relative">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full" 
-                                    style={{ width: `${(count / maxVal) * 100}%` }}
-                                ></div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {volumeData.map(([muscle, count]) => (
+                            <div key={muscle} className="flex items-center gap-3">
+                                <div className="w-24 text-xs font-bold text-zinc-500 truncate text-right">
+                                    {TRANSLATIONS[lang].muscle[muscle as MuscleGroup]}
+                                </div>
+                                <div className="flex-1 h-2 bg-zinc-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-1000" 
+                                        style={{ width: `${(count / maxVal) * 100}%` }}
+                                    ></div>
+                                </div>
+                                <div className="w-6 text-xs font-mono font-bold text-zinc-900 dark:text-white text-right">
+                                    {count}
+                                </div>
                             </div>
-                            <div className="w-6 text-xs font-mono font-bold text-zinc-900 dark:text-white text-right">
-                                {count}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* --- Summary Cards --- */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-white/5">
                     <div className="text-3xl font-black text-zinc-900 dark:text-white mb-1">
-                        {(Array.isArray(logs) ? logs : []).length}
+                        {safeLogs.length}
                     </div>
                     <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{t.totalWorkouts}</div>
                 </div>
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-white/5">
                     <div className="text-3xl font-black text-zinc-900 dark:text-white mb-1">
                         {
-                            (Array.isArray(logs) ? logs : []).length > 0
-                            ? Math.round(((Array.isArray(logs) ? logs : []).reduce((acc, l) => acc + l.duration, 0) / 60) / (Array.isArray(logs) ? logs : []).length)
+                            safeLogs.length > 0
+                            ? Math.round((safeLogs.reduce((acc, l) => acc + l.duration, 0) / 60) / safeLogs.length)
                             : 0
                         }m
                     </div>

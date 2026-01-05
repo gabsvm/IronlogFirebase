@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
 import { Icon } from '../components/ui/Icon';
@@ -47,6 +47,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     // Use the Custom Controller Hook
     const ctrl = useWorkoutController(onFinish);
 
+    // View State for Focus Mode
+    const [viewMode, setViewMode] = useState<'list' | 'focus'>('list');
+    const [focusedIndex, setFocusedIndex] = useState(0);
+
     // Derived State
     const stageConfig = activeMeso ? getMesoStageConfig(activeMeso.mesoType || 'hyp_1', activeMeso.week, !!activeMeso.isDeload) : null;
     const sessionExercises = ctrl.sessionExercises as SessionExercise[];
@@ -56,8 +60,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         useSensor(PointerSensor),
         useSensor(KeyboardSensor),
         useSensor(TouchSensor, {
-            // Updated: Explicitly set delay to 0 to satisfy the DelayConstraint type definition while keeping it snappy.
-            // Alternatively could use { distance: 5 } but delay: 0 with tolerance works for handle-based dragging.
             activationConstraint: {
                 delay: 0,
                 tolerance: 5,
@@ -142,6 +144,22 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
     const finishedSets = sessionExercises.reduce((acc, ex) => acc + (ex.sets || []).filter(s => s.completed).length, 0);
 
+    // Focus Mode Navigation
+    const focusedExercise = sessionExercises[focusedIndex];
+    const goToNext = () => setFocusedIndex(prev => Math.min(prev + 1, sessionExercises.length - 1));
+    const goToPrev = () => setFocusedIndex(prev => Math.max(prev - 1, 0));
+
+    // Helper to toggle view mode
+    const toggleViewMode = () => {
+        if (document.startViewTransition) {
+            document.startViewTransition(() => {
+                setViewMode(prev => prev === 'list' ? 'focus' : 'list');
+            });
+        } else {
+             setViewMode(prev => prev === 'list' ? 'focus' : 'list');
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-40 flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans" onClick={() => ctrl.setOpenMenuId(null)}>
             
@@ -156,20 +174,20 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                     {stageConfig && (
                         <div className="inline-flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                              {stageConfig.label === 'recovery' ? (
-                                <><Icon name="Activity" size={10} className="text-blue-500" /> RECOVERY / DELOAD</>
+                                <><Icon name="Activity" size={10} className="text-blue-500" /> DELOAD</>
                              ) : (
-                                <><Icon name="Zap" size={10} className="text-yellow-500" /> TARGET: {stageConfig.label} ({stageConfig.rir} RIR)</>
+                                <><Icon name="Zap" size={10} className="text-yellow-500" /> {stageConfig.label} ({stageConfig.rir} RIR)</>
                              )}
                         </div>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* Plate Calculator Button */}
-                    <button 
-                         onClick={(e) => { e.stopPropagation(); ctrl.setShowPlateCalc({ weight: 20 }); }}
-                         className="w-9 h-9 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                    {/* View Toggle */}
+                     <button 
+                         onClick={(e) => { e.stopPropagation(); toggleViewMode(); }}
+                         className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${viewMode === 'focus' ? 'bg-zinc-900 text-white dark:bg-white dark:text-black' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}
                     >
-                        <Icon name="Dumbbell" size={18} />
+                        <Icon name={viewMode === 'focus' ? 'Layout' : 'Eye'} size={18} />
                     </button>
                     
                     <button onClick={(e) => { e.stopPropagation(); ctrl.setShowFinishModal(true); }} className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg shadow-red-900/20 transition-transform active:scale-95 flex items-center justify-center">
@@ -186,55 +204,137 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 </div>
             )}
 
-            {/* --- Main Content (Exercises List) --- */}
-            <div className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
+            {/* --- Main Content --- */}
+            <div className="flex-1 overflow-hidden flex flex-col">
                 
-                {stageConfig?.note && (
-                    <div className="p-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                {stageConfig?.note && viewMode === 'list' && (
+                    <div className="mx-4 mt-4 p-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 shrink-0">
                         {stageConfig.note}
                     </div>
                 )}
 
-                <DndContext 
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext 
-                        items={sessionExercises.map(ex => ex.instanceId)}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        {sessionExercises.map((ex) => {
-                            const ssStyle = ex.supersetId ? supersetStyles[ex.supersetId] : null;
-                            const isLinkingTarget = ctrl.linkingId && ctrl.linkingId !== ex.instanceId;
+                {viewMode === 'list' ? (
+                    // LIST MODE (With DnD)
+                    <div className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
+                        <DndContext 
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext 
+                                items={sessionExercises.map(ex => ex.instanceId)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                {sessionExercises.map((ex) => {
+                                    const ssStyle = ex.supersetId ? supersetStyles[ex.supersetId] : null;
+                                    const isLinkingTarget = ctrl.linkingId && ctrl.linkingId !== ex.instanceId;
 
-                            return (
-                                <SortableExerciseCard
-                                    key={ex.instanceId}
-                                    exercise={ex}
-                                    ctrl={ctrl}
-                                    t={t}
-                                    lang={lang}
-                                    supersetStyle={ssStyle}
-                                    isLinkingTarget={!!isLinkingTarget}
-                                    config={config}
-                                    stageConfig={stageConfig}
-                                    onAddSet={onAddSet}
-                                    onDeleteSet={onDeleteSet}
-                                />
-                            );
-                        })}
-                    </SortableContext>
-                </DndContext>
+                                    return (
+                                        <SortableExerciseCard
+                                            key={ex.instanceId}
+                                            exercise={ex}
+                                            ctrl={ctrl}
+                                            t={t}
+                                            lang={lang}
+                                            supersetStyle={ssStyle}
+                                            isLinkingTarget={!!isLinkingTarget}
+                                            config={config}
+                                            stageConfig={stageConfig}
+                                            onAddSet={onAddSet}
+                                            onDeleteSet={onDeleteSet}
+                                            viewMode="list"
+                                        />
+                                    );
+                                })}
+                            </SortableContext>
+                        </DndContext>
 
-                <Button variant="secondary" onClick={() => ctrl.setAddingExercise(true)} fullWidth className="border-dashed py-3">
-                    <Icon name="Plus" size={16} /> {t.addExercise}
-                </Button>
-                <div className="h-4"></div>
-                <Button onClick={(e) => { e.stopPropagation(); ctrl.setShowFinishModal(true); }} size="lg" fullWidth className="py-4 text-base shadow-xl shadow-red-600/20 bg-gradient-to-r from-red-600 to-red-500 border-none">
-                    {t.finishWorkout}
-                </Button>
+                        <Button variant="secondary" onClick={() => ctrl.setAddingExercise(true)} fullWidth className="border-dashed py-3">
+                            <Icon name="Plus" size={16} /> {t.addExercise}
+                        </Button>
+                        <div className="h-4"></div>
+                        <Button onClick={(e) => { e.stopPropagation(); ctrl.setShowFinishModal(true); }} size="lg" fullWidth className="py-4 text-base shadow-xl shadow-red-600/20 bg-gradient-to-r from-red-600 to-red-500 border-none">
+                            {t.finishWorkout}
+                        </Button>
+                    </div>
+                ) : (
+                    // FOCUS MODE (Carousel Style)
+                    <div className="flex-1 flex flex-col p-4 pb-24 h-full relative">
+                         {/* Progress Bar */}
+                         <div className="flex items-center gap-2 mb-4 shrink-0">
+                            {sessionExercises.map((_, idx) => (
+                                <div 
+                                    key={idx} 
+                                    className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${idx === focusedIndex ? 'bg-red-600' : idx < focusedIndex ? 'bg-red-200 dark:bg-red-900/30' : 'bg-zinc-200 dark:bg-zinc-800'}`}
+                                ></div>
+                            ))}
+                        </div>
+
+                        {/* Navigation Buttons (Top) */}
+                        <div className="flex justify-between items-center mb-4 shrink-0">
+                            <button 
+                                onClick={goToPrev} 
+                                disabled={focusedIndex === 0}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                <Icon name="ChevronLeft" size={20} />
+                            </button>
+                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                                {focusedIndex + 1} / {sessionExercises.length}
+                            </span>
+                            <button 
+                                onClick={goToNext} 
+                                disabled={focusedIndex === sessionExercises.length - 1}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                <Icon name="SkipForward" size={20} />
+                            </button>
+                        </div>
+
+                        {/* The Card */}
+                        <div className="flex-1 overflow-hidden relative">
+                             {focusedExercise ? (
+                                <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300" key={focusedExercise.instanceId}>
+                                     <SortableExerciseCard
+                                        exercise={focusedExercise}
+                                        ctrl={ctrl}
+                                        t={t}
+                                        lang={lang}
+                                        supersetStyle={focusedExercise.supersetId ? supersetStyles[focusedExercise.supersetId] : null}
+                                        isLinkingTarget={false}
+                                        config={config}
+                                        stageConfig={stageConfig}
+                                        onAddSet={onAddSet}
+                                        onDeleteSet={onDeleteSet}
+                                        viewMode="focus"
+                                    />
+                                    
+                                    {/* Action Shortcuts for Focus Mode */}
+                                    <div className="mt-4 flex gap-3 shrink-0">
+                                         <button 
+                                             onClick={(e) => { e.stopPropagation(); ctrl.setShowPlateCalc({ weight: 20 }); }}
+                                             className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl font-bold text-sm text-zinc-600 dark:text-zinc-300 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="Dumbbell" size={16} /> Calc
+                                        </button>
+                                         <button 
+                                             onClick={(e) => { e.stopPropagation(); ctrl.setWarmupExId(focusedExercise.instanceId); }}
+                                             className="flex-1 py-3 bg-orange-50 dark:bg-orange-900/10 rounded-xl font-bold text-sm text-orange-600 dark:text-orange-400 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="Zap" size={16} /> Warmup
+                                        </button>
+                                    </div>
+                                </div>
+                             ) : (
+                                 <div className="flex flex-col items-center justify-center h-full text-zinc-400">
+                                     <p>No exercises yet.</p>
+                                     <Button onClick={() => ctrl.setAddingExercise(true)} className="mt-4">{t.addExercise}</Button>
+                                 </div>
+                             )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* --- Modals (Rendered conditionally) --- */}

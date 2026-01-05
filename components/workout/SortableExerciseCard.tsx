@@ -19,6 +19,7 @@ interface SortableExerciseCardProps {
     stageConfig: any;
     onAddSet: (id: number) => void;
     onDeleteSet: (exId: number, setId: number) => void;
+    viewMode?: 'list' | 'focus'; // NEW PROP
 }
 
 export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({ 
@@ -31,7 +32,8 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
     config, 
     stageConfig,
     onAddSet,
-    onDeleteSet
+    onDeleteSet,
+    viewMode = 'list'
 }) => {
     const {
         attributes,
@@ -42,13 +44,14 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
         isDragging
     } = useSortable({ id: ex.instanceId });
 
-    const style = {
+    // Only apply transforms if sorting is relevant (List mode)
+    const style = viewMode === 'list' ? {
         transform: CSS.Transform.toString(transform),
         transition,
         zIndex: isDragging ? 100 : 1,
         opacity: isDragging ? 0.8 : 1,
         position: 'relative' as const,
-    };
+    } : { position: 'relative' as const };
 
     const sets = ex.sets || [];
     const ssStyle = supersetStyle;
@@ -57,7 +60,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
 
     return (
         <div 
-            ref={setNodeRef} 
+            ref={viewMode === 'list' ? setNodeRef : null} 
             style={style}
             onClick={() => {
                 if (isLinkingTarget) {
@@ -75,6 +78,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 ${isLinkingTarget ? 'ring-2 ring-orange-500 cursor-pointer opacity-80 hover:opacity-100' : ''}
                 ${ctrl.linkingId === ex.instanceId ? 'ring-2 ring-orange-500' : ''}
                 ${isDragging ? 'shadow-2xl ring-2 ring-red-500/20 scale-[1.02]' : ''}
+                ${viewMode === 'focus' ? 'h-full flex-1' : ''} 
             `}
         >
             {/* Exercise Header */}
@@ -82,14 +86,16 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            {/* Drag Handle - Made larger and more obvious */}
-                            <div 
-                                className="touch-none cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-200 p-3 -ml-3 mr-1" 
-                                {...attributes} 
-                                {...listeners}
-                            >
-                                <Icon name="GripVertical" size={22} />
-                            </div>
+                            {/* Drag Handle - Only show in LIST mode */}
+                            {viewMode === 'list' && (
+                                <div 
+                                    className="touch-none cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-200 p-3 -ml-3 mr-1" 
+                                    {...attributes} 
+                                    {...listeners}
+                                >
+                                    <Icon name="GripVertical" size={22} />
+                                </div>
+                            )}
 
                             {ssStyle && <span className={`${ssStyle.badge} text-[9px] font-bold px-1.5 py-0.5 rounded`}>SS</span>}
                             <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
@@ -103,7 +109,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                                 </button>
                             )}
                         </div>
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight tracking-tight pl-6">
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight tracking-tight pl-1">
                             {getTranslated(ex.name, lang)}
                         </h3>
                     </div>
@@ -159,7 +165,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                     placeholder={t.addNote}
                     value={ex.note || ''}
                     onChange={(e) => ctrl.handleNoteUpdate(ex.instanceId, e.target.value)}
-                    className="w-full bg-transparent text-xs text-zinc-500 placeholder-zinc-300 dark:placeholder-zinc-700 outline-none border-b border-transparent focus:border-red-500/50 transition-colors pb-1 ml-6"
+                    className="w-full bg-transparent text-xs text-zinc-500 placeholder-zinc-300 dark:placeholder-zinc-700 outline-none border-b border-transparent focus:border-red-500/50 transition-colors pb-1 ml-1"
                 />
             </div>
 
@@ -172,8 +178,8 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 <div className="col-span-1"></div>
             </div>
 
-            {/* Sets List */}
-            <div className="divide-y divide-zinc-100 dark:divide-white/5">
+            {/* Sets List - Allow Scrolling in Focus Mode if sets list is long */}
+            <div className={`divide-y divide-zinc-100 dark:divide-white/5 ${viewMode === 'focus' ? 'overflow-y-auto flex-1' : ''}`}>
                 {sets.map((set) => (
                     <SetRow
                         key={set.id}
@@ -193,7 +199,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
             </div>
 
             {/* Footer Actions */}
-            <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 grid grid-cols-2 divide-x divide-zinc-200 dark:divide-white/10">
+            <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 grid grid-cols-2 divide-x divide-zinc-200 dark:divide-white/10 shrink-0">
                 <button onClick={() => sets.length > 0 && onDeleteSet(ex.instanceId, sets[sets.length - 1].id)} disabled={sets.length <= 1} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-red-500 disabled:opacity-30">
                     <Icon name="Minus" size={14} /> {t.removeSetBtn}
                 </button>

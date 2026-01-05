@@ -6,6 +6,8 @@ import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { getTranslated, formatDate } from '../utils';
 import { MesoType, FeedbackEntry } from '../types';
+import { ActivityHeatmap } from '../components/stats/ActivityHeatmap';
+import { IronCoachChat } from '../components/ai/IronCoachChat';
 
 interface HomeViewProps {
     startSession: (dayIdx: number) => void;
@@ -24,6 +26,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     const [showStartWizard, setShowStartWizard] = useState(false);
     const [showRoutineGuide, setShowRoutineGuide] = useState(false);
     const [skipConfirmationId, setSkipConfirmationId] = useState<number | null>(null);
+    const [showAIChat, setShowAIChat] = useState(false);
 
     // New Meso State
     const [newMesoType, setNewMesoType] = useState<MesoType>('hyp_1');
@@ -219,7 +222,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                 <div>
                     <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-2">{t.rp}</h2>
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed max-w-[250px] mx-auto">
-                        Start a new mesocycle to unlock RP-style progression and analytics.
+                        Start a new mesocycle to unlock IronCoach progression and analytics.
                     </p>
                 </div>
                 <Button onClick={() => setShowStartWizard(true)} size="lg" className="w-full max-w-xs shadow-xl shadow-red-500/20 py-3">
@@ -288,7 +291,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     const isDeload = !!activeMeso.isDeload;
 
     return (
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-6 relative">
             {/* Status Header */}
             <div className="flex flex-col items-center py-2 relative">
                 {activeMeso.name && (
@@ -323,6 +326,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                         <Icon name="Settings" size={16} />
                     </button>
                 </div>
+            </div>
+
+            {/* Activity Heatmap - Visual Consistency Motivation */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-white/5 shadow-sm">
+                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Icon name="TrendingUp" size={14} /> Consistency
+                </h3>
+                <ActivityHeatmap logs={safeLogs} />
             </div>
 
             <div className="space-y-4 pb-safe">
@@ -423,6 +434,19 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                     </Button>
                 </div>
             </div>
+
+            {/* IronCoach FAB - Using a Portal-like placement (Fixed on screen) */}
+            <div className="fixed bottom-24 right-4 z-30">
+                <button
+                    onClick={() => setShowAIChat(true)}
+                    className="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-2xl shadow-indigo-600/40 flex items-center justify-center animate-in zoom-in duration-300 hover:scale-110 transition-transform"
+                >
+                    <Icon name="Zap" size={24} fill="currentColor" />
+                </button>
+            </div>
+
+            {/* AI Chat Modal */}
+            {showAIChat && <IronCoachChat onClose={() => setShowAIChat(false)} />}
 
              {/* Routine Guide Modal */}
              {showRoutineGuide && activeMeso && (

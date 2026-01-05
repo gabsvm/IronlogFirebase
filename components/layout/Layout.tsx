@@ -53,7 +53,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, onOpenS
 
             {/* Bottom Nav with Safe Area Bottom padding handled by pb-safe in styles */}
             {view !== 'workout' && (
-                <div className="fixed bottom-0 left-0 right-0 glass flex z-30 pb-safe">
+                <div className="nav-bar fixed bottom-0 left-0 right-0 glass flex z-30 pb-safe">
                     <NavBtn id="home" label={t.active} icon="Layout" />
                     <NavBtn id="history" label={t.history} icon="FileText" />
                     <NavBtn id="stats" label="Stats" icon="BarChart2" />

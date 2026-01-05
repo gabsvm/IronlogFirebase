@@ -43,15 +43,28 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
         calculatedKg = Number(set.weight) * plateWeight;
     }
 
+    // UX: Auto-select content on focus for quick overwrite
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+        e.target.select();
+    };
+
+    // UX: Pressing Enter toggles completion (Power User feature)
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.currentTarget.blur(); // Hide keyboard
+            if (!isDone) onToggleComplete(exInstanceId, set.id);
+        }
+    };
+
     return (
         <div className={`grid grid-cols-12 gap-2 px-4 py-3 items-center transition-colors duration-300 relative group ${isDone ? 'bg-green-50/50 dark:bg-green-500/5' : ''}`}>
             {/* Type Indicator */}
             <div className="col-span-1 flex justify-center relative">
                 <button 
                     onClick={(e) => { e.stopPropagation(); if (!isDone) onChangeType(exInstanceId, set.id, setType); }}
-                    className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold cursor-pointer transition-all active:scale-95 ${isDone ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : `${getTypeColor(setType)} ring-1 ring-inset ring-black/5 dark:ring-white/10 hover:ring-red-500`}`}
+                    className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all active:scale-95 ${isDone ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : `${getTypeColor(setType)} ring-1 ring-inset ring-black/5 dark:ring-white/10 hover:ring-red-500`}`}
                 >
-                   {isDone ? <Icon name="Check" size={10} /> : getTypeLabel(setType)}
+                   {isDone ? <Icon name="Check" size={12} /> : getTypeLabel(setType)}
                 </button>
             </div>
             
@@ -63,7 +76,9 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
                     className={`w-full bg-transparent text-lg font-bold p-0 border-0 focus:ring-0 text-center transition-colors ${isDone ? 'text-green-800 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`} 
                     placeholder={set.hintWeight ? String(set.hintWeight) : "0"} 
                     value={set.weight} 
-                    onChange={(e) => onUpdate(exInstanceId, set.id, 'weight', e.target.value)} 
+                    onChange={(e) => onUpdate(exInstanceId, set.id, 'weight', e.target.value)}
+                    onFocus={handleFocus}
+                    onKeyDown={(e) => { if(e.key === 'Enter') { (e.currentTarget.parentElement?.nextElementSibling?.querySelector('input') as HTMLInputElement)?.focus(); } }}
                 />
                 <div className="flex flex-col items-center">
                     <div className="text-[9px] text-zinc-400 font-medium -mt-1 leading-none">{set.hintWeight ? `${t.prev}: ${set.hintWeight}` : unitLabel}</div>
@@ -79,7 +94,9 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
                     className={`w-full bg-transparent text-lg font-bold p-0 border-0 focus:ring-0 text-center transition-colors ${isDone ? 'text-green-800 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`} 
                     placeholder={set.hintReps ? String(set.hintReps) : "0"} 
                     value={set.reps} 
-                    onChange={(e) => onUpdate(exInstanceId, set.id, 'reps', e.target.value)} 
+                    onChange={(e) => onUpdate(exInstanceId, set.id, 'reps', e.target.value)}
+                    onFocus={handleFocus}
+                    onKeyDown={handleKeyDown}
                 />
                 <div className="text-[9px] text-zinc-400 text-center font-medium -mt-1">{set.hintReps ? `${t.prev}: ${set.hintReps}` : 'reps'}</div>
             </div>
@@ -90,10 +107,12 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
                     <input 
                         type="number" 
                         inputMode="numeric" 
-                        className={`w-12 bg-zinc-100 dark:bg-white/5 rounded text-sm font-bold py-1 border-0 focus:ring-1 focus:ring-zinc-500 text-center text-zinc-600 dark:text-zinc-300 ${isDone ? 'opacity-50' : ''}`} 
+                        className={`w-12 bg-zinc-100 dark:bg-white/5 rounded text-sm font-bold py-2 border-0 focus:ring-1 focus:ring-zinc-500 text-center text-zinc-600 dark:text-zinc-300 ${isDone ? 'opacity-50' : ''}`} 
                         placeholder={stageRIR}
                         value={set.rpe} 
-                        onChange={(e) => onUpdate(exInstanceId, set.id, 'rpe', e.target.value)} 
+                        onChange={(e) => onUpdate(exInstanceId, set.id, 'rpe', e.target.value)}
+                        onFocus={handleFocus}
+                        onKeyDown={handleKeyDown}
                     />
                 </div>
             )}
@@ -102,9 +121,9 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
             <div className="col-span-1 flex justify-end">
                 <button 
                     onClick={() => onToggleComplete(exInstanceId, set.id)} 
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-90 ${isDone ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 rotate-0' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-300 dark:text-zinc-600 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-90 ${isDone ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 rotate-0' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-300 dark:text-zinc-600 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                 >
-                    <Icon name="Check" size={18} strokeWidth={3} />
+                    <Icon name="Check" size={20} strokeWidth={3} />
                 </button>
             </div>
         </div>
