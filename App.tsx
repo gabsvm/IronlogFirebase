@@ -9,7 +9,7 @@ import { ExercisesView } from './views/ExercisesView';
 import { ProgramEditView } from './views/ProgramEditView';
 import { RestTimerOverlay } from './components/ui/RestTimerOverlay';
 import { OnboardingModal } from './components/ui/OnboardingModal';
-import { getLastLogForExercise } from './utils';
+import { getLastLogForExercise, parseTargetReps } from './utils';
 import { Icon } from './components/ui/Icon';
 import { TRANSLATIONS } from './constants';
 import { ExerciseDef } from './types';
@@ -248,6 +248,28 @@ const AppContent = () => {
 
             const initialSets = Array(setTarget).fill(null).map((_, i) => {
                 const historySet = lastSets && lastSets[i] ? lastSets[i] : null;
+                
+                // Separate History from Suggestion
+                const prevWeight = historySet ? historySet.weight : undefined;
+                const prevReps = historySet ? historySet.reps : undefined;
+                
+                let hintWeight = prevWeight;
+                let hintReps = prevReps;
+
+                // Simple Double Progression Logic (if RP Disabled)
+                if (!config.rpEnabled && historySet && historySet.completed && slotDef.reps) {
+                    const range = parseTargetReps(slotDef.reps);
+                    // If range found and user hit upper bound (Max Reps)
+                    if (range && Number(historySet.reps) >= range.max) {
+                        const currentWeight = Number(historySet.weight);
+                        if (!isNaN(currentWeight) && currentWeight > 0) {
+                            // Suggest smallest increment (2.5kg is standard plate jump)
+                            hintWeight = currentWeight + 2.5; 
+                            hintReps = range.min; 
+                        }
+                    }
+                }
+
                 return {
                     id: Date.now() + Math.random() + i,
                     weight: '', 
@@ -255,8 +277,10 @@ const AppContent = () => {
                     rpe: '', 
                     completed: false, 
                     type: 'regular',
-                    hintWeight: historySet ? historySet.weight : undefined,
-                    hintReps: historySet ? historySet.reps : undefined
+                    hintWeight: hintWeight,
+                    hintReps: hintReps,
+                    prevWeight: prevWeight,
+                    prevReps: prevReps
                 };
             });
 
@@ -315,7 +339,9 @@ const AppContent = () => {
                         completed: false,
                         type: 'regular',
                         hintWeight: lastSet ? lastSet.weight : undefined,
-                        hintReps: lastSet ? lastSet.reps : undefined
+                        hintReps: lastSet ? lastSet.reps : undefined,
+                        prevWeight: lastSet ? lastSet.prevWeight : undefined,
+                        prevReps: lastSet ? lastSet.prevReps : undefined
                     };
                     return { ...ex, sets: [...sets, newSet as any] };
                 })

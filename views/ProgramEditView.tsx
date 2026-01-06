@@ -137,46 +137,60 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
                         
                         <div className="divide-y divide-zinc-100 dark:divide-white/5">
                             {(day.slots || []).map((slot, idx) => (
-                                <div key={idx} className="p-3 flex items-center gap-3">
-                                    <div className="flex-1 space-y-2">
-                                        <div className="flex gap-2">
-                                            {/* Muscle Select */}
-                                            <select 
-                                                className="bg-zinc-100 dark:bg-zinc-800 text-xs font-bold rounded-lg px-2 py-1.5 border-none outline-none text-zinc-700 dark:text-zinc-300"
-                                                value={slot.muscle}
-                                                onChange={(e) => handleUpdateSlot(day.id, idx, 'muscle', e.target.value)}
-                                            >
-                                                {Object.values(MUSCLE_GROUPS).map(m => (
-                                                    <option key={m} value={m}>{TRANSLATIONS[lang].muscle[m]}</option>
-                                                ))}
-                                            </select>
+                                <div key={idx} className="p-3 flex flex-col gap-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex-1 space-y-2">
+                                            <div className="flex gap-2 items-center">
+                                                {/* Muscle Select */}
+                                                <select 
+                                                    className="bg-zinc-100 dark:bg-zinc-800 text-xs font-bold rounded-lg px-2 py-1.5 border-none outline-none text-zinc-700 dark:text-zinc-300 max-w-[100px]"
+                                                    value={slot.muscle}
+                                                    onChange={(e) => handleUpdateSlot(day.id, idx, 'muscle', e.target.value)}
+                                                >
+                                                    {Object.values(MUSCLE_GROUPS).map(m => (
+                                                        <option key={m} value={m}>{TRANSLATIONS[lang].muscle[m]}</option>
+                                                    ))}
+                                                </select>
 
-                                            {/* Sets Input */}
-                                            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2">
-                                                <span className="text-[9px] font-bold text-zinc-400">SETS</span>
-                                                <input 
-                                                    type="number" 
-                                                    className="w-6 bg-transparent text-xs font-bold text-center outline-none"
-                                                    value={slot.setTarget || ''}
-                                                    onChange={e => handleUpdateSlot(day.id, idx, 'setTarget', Number(e.target.value))}
-                                                />
+                                                {/* Sets Input */}
+                                                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1">
+                                                    <span className="text-[9px] font-bold text-zinc-400">SETS</span>
+                                                    <input 
+                                                        type="number" 
+                                                        className="w-6 bg-transparent text-xs font-bold text-center outline-none text-zinc-900 dark:text-white"
+                                                        value={slot.setTarget || ''}
+                                                        onChange={e => handleUpdateSlot(day.id, idx, 'setTarget', Number(e.target.value))}
+                                                    />
+                                                </div>
+
+                                                {/* Reps Input */}
+                                                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1 flex-1">
+                                                    <span className="text-[9px] font-bold text-zinc-400 whitespace-nowrap">REPS</span>
+                                                    <input 
+                                                        type="text" 
+                                                        className="w-full bg-transparent text-xs font-bold text-center outline-none text-zinc-900 dark:text-white"
+                                                        value={slot.reps || ''}
+                                                        placeholder="8-12"
+                                                        onChange={e => handleUpdateSlot(day.id, idx, 'reps', e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* Specific Exercise (Optional Override) */}
-                                        <button 
-                                            onClick={() => setPickingForSlot({dayId: day.id, slotIdx: idx})}
-                                            className={`text-sm font-medium w-full text-left truncate ${slot.exerciseId ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 italic'}`}
-                                        >
-                                            {slot.exerciseId 
-                                                ? getTranslated(useApp().exercises.find(e => e.id === slot.exerciseId)?.name, lang)
-                                                : t.selectExBtn
-                                            }
+                                            {/* Specific Exercise (Optional Override) */}
+                                            <button 
+                                                onClick={() => setPickingForSlot({dayId: day.id, slotIdx: idx})}
+                                                className={`text-sm font-medium w-full text-left truncate ${slot.exerciseId ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 italic'}`}
+                                            >
+                                                {slot.exerciseId 
+                                                    ? getTranslated(useApp().exercises.find(e => e.id === slot.exerciseId)?.name, lang)
+                                                    : t.selectExBtn
+                                                }
+                                            </button>
+                                        </div>
+                                        <button onClick={() => handleRemoveSlot(day.id, idx)} className="text-zinc-300 hover:text-red-500 p-2">
+                                            <Icon name="X" size={16} />
                                         </button>
                                     </div>
-                                    <button onClick={() => handleRemoveSlot(day.id, idx)} className="text-zinc-300 hover:text-red-500 p-2">
-                                        <Icon name="X" size={16} />
-                                    </button>
                                 </div>
                             ))}
                         </div>

@@ -50,6 +50,29 @@ export const getLastLogForExercise = (exerciseId: string, logs: Log[]): WorkoutS
 };
 
 /**
+ * Parses a rep range string like "8-12" or "10" into min/max numbers.
+ * Returns null if invalid or non-numeric (e.g. "Myo").
+ */
+export const parseTargetReps = (str?: string): { min: number, max: number } | null => {
+    if (!str) return null;
+    const clean = str.replace(/\s/g, ''); // Remove spaces
+    
+    // Check for range "8-12"
+    if (clean.includes('-')) {
+        const parts = clean.split('-');
+        const min = Number(parts[0]);
+        const max = Number(parts[1]);
+        if (!isNaN(min) && !isNaN(max)) return { min, max };
+    }
+    
+    // Check for single number "10"
+    const val = parseInt(clean);
+    if (!isNaN(val)) return { min: val, max: val };
+    
+    return null;
+};
+
+/**
  * Calculates RIR and phase notes based on Meso Type and Week
  * RP Logic: W1: 3RIR, W2: 2RIR, W3: 1RIR, W4+: 0-1RIR
  */

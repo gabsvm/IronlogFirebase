@@ -149,7 +149,14 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
 
                             {ssStyle && <span className={`${ssStyle.badge} text-[9px] font-bold px-1.5 py-0.5 rounded`}>SS</span>}
                             <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
-                            {ex.targetReps && <span className="text-[10px] font-bold text-zinc-400 tracking-wide">{t.target}: {ex.targetReps}</span>}
+                            
+                            {/* Reps Target Badge */}
+                            {ex.targetReps && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                                    {ex.targetReps} Reps
+                                </span>
+                            )}
+
                             {unit === 'pl' && (
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); ctrl.setConfigPlateExId(ex.instanceId); }}
@@ -180,6 +187,19 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                                     <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-full text-left px-4 py-3 text-sm font-bold text-orange-600 dark:text-orange-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="Zap" size={16} /> Add Warmup Sets
                                     </button>
+                                    
+                                    <button onClick={(e) => { 
+                                        e.stopPropagation();
+                                        const newUnit = unit === 'kg' ? 'pl' : 'kg';
+                                        ctrl.updateSession((prev: any) => !prev ? null : {
+                                            ...prev,
+                                            exercises: prev.exercises.map((e: any) => e.instanceId === ex.instanceId ? { ...e, weightUnit: newUnit } : e)
+                                        });
+                                        ctrl.setOpenMenuId(null);
+                                    }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                        <Icon name="Settings" size={16} /> {t.units.toggle}
+                                    </button>
+
                                     <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                     <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="RefreshCw" size={16} /> {t.replaceEx}

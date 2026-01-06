@@ -179,6 +179,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         }
     };
 
+    // Determine if we should show RIR info in header
+    // Only show if config.showRIR is true OR if it is a deload (which is structural)
+    const showStageInfo = stageConfig && (config.showRIR || stageConfig.label === 'recovery');
+
     return (
         <div className="fixed inset-0 z-40 flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans" onClick={() => ctrl.setOpenMenuId(null)}>
             
@@ -190,7 +194,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 <div className="text-center">
                     <div className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-0.5">{t.active}</div>
                     <div className="text-base font-black text-zinc-900 dark:text-zinc-100 leading-none mb-1">{activeSession.name}</div>
-                    {stageConfig && (
+                    {showStageInfo && (
                         <div className="inline-flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                              {stageConfig.label === 'recovery' ? (
                                 <><Icon name="Activity" size={10} className="text-blue-500" /> DELOAD</>
@@ -226,7 +230,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
             {/* --- Main Content --- */}
             <div className="flex-1 overflow-hidden flex flex-col">
                 
-                {stageConfig?.note && viewMode === 'list' && (
+                {stageConfig?.note && viewMode === 'list' && showStageInfo && (
                     <div className="mx-4 mt-4 p-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 shrink-0">
                         {stageConfig.note}
                     </div>

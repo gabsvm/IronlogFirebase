@@ -3,6 +3,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { TRANSLATIONS } from '../../constants';
 import { Icon } from '../ui/Icon';
+import { Logo } from '../ui/Logo';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -48,8 +49,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, onOpenS
             {view !== 'workout' && (
                 <div className="glass sticky top-0 z-20 shrink-0 pt-safe">
                     <div className="px-4 h-14 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-gradient-to-br from-red-600 to-red-700 rounded flex items-center justify-center text-white font-black italic text-xs shadow-md shadow-red-600/20">RP</div>
+                        <div className="flex items-center gap-3">
+                            <Logo className="w-8 h-8 rounded-lg shadow-md" />
                             <h1 className="text-zinc-900 dark:text-white font-bold tracking-tight text-lg">IronLog <span className="text-red-500 text-xs align-top font-black">PRO</span></h1>
                         </div>
                         <button onClick={onOpenSettings} className="p-2 -mr-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">

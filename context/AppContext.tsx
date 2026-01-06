@@ -5,6 +5,7 @@ import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { usePersistedState } from '../hooks/usePersistedState';
 import { Icon } from '../components/ui/Icon';
+import { Logo } from '../components/ui/Logo';
 import { TimerProvider } from './TimerContext';
 
 // Removed restTimer from AppContextType to decouple high-frequency updates
@@ -124,9 +125,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
     if (isAppLoading) {
         return (
             <div className="fixed inset-0 bg-gray-50 dark:bg-zinc-950 flex flex-col items-center justify-center z-[9999]">
-                <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-red-600/40 animate-pulse">
-                     <Icon name="Dumbbell" size={32} />
-                </div>
+                <Logo className="w-20 h-20 animate-pulse shadow-2xl shadow-red-600/40 rounded-3xl" />
                 <div className="mt-6 flex flex-col items-center gap-2">
                     <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">IronLog <span className="text-red-600">PRO</span></h1>
                     <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">

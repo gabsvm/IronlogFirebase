@@ -24,8 +24,10 @@ export interface WorkoutSet {
   completed: boolean;
   type: SetType;
   skipped?: boolean;
-  hintWeight?: string | number;
-  hintReps?: string | number;
+  hintWeight?: string | number; // The suggestion for today
+  hintReps?: string | number;   // The suggestion for today
+  prevWeight?: string | number; // Actual historical data
+  prevReps?: string | number;   // Actual historical data
 }
 
 export type WeightUnit = 'kg' | 'lb' | 'pl';

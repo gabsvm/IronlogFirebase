@@ -70,6 +70,10 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
         }
     };
 
+    // Calculate progression indicator
+    const isProgress = set.hintWeight && set.prevWeight && Number(set.hintWeight) > Number(set.prevWeight);
+    const diff = isProgress ? `+${Number(set.hintWeight) - Number(set.prevWeight)}` : null;
+
     // Input Styles - Makes inputs look like actual interactive zones
     const inputBaseClass = `
         w-full text-lg font-bold text-center border-0 outline-none tabular-nums rounded-lg py-1.5 transition-all
@@ -100,20 +104,28 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
             
             {/* Weight Input */}
             <div className="col-span-4 relative flex flex-col items-center">
-                <input 
-                    type="number" 
-                    inputMode="decimal" 
-                    className={`${inputBaseClass} ${isDone ? doneInputClass : activeInputClass}`}
-                    placeholder={set.hintWeight ? String(set.hintWeight) : "-"} 
-                    value={localWeight} 
-                    onChange={(e) => setLocalWeight(e.target.value)}
-                    onBlur={() => commitChange('weight', localWeight)}
-                    onFocus={handleFocus}
-                    onKeyDown={(e) => handleKeyDown(e, 'weight', localWeight)}
-                />
+                <div className="relative w-full">
+                    {/* Progression Badge inside Input area if hint exists */}
+                    {isProgress && !localWeight && !isDone && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-green-600 bg-green-100 dark:bg-green-900/30 px-1 rounded pointer-events-none">
+                            {diff}
+                        </div>
+                    )}
+                    <input 
+                        type="number" 
+                        inputMode="decimal" 
+                        className={`${inputBaseClass} ${isDone ? doneInputClass : activeInputClass}`}
+                        placeholder={set.hintWeight ? String(set.hintWeight) : "-"} 
+                        value={localWeight} 
+                        onChange={(e) => setLocalWeight(e.target.value)}
+                        onBlur={() => commitChange('weight', localWeight)}
+                        onFocus={handleFocus}
+                        onKeyDown={(e) => handleKeyDown(e, 'weight', localWeight)}
+                    />
+                </div>
                 <div className="flex items-center gap-1 mt-1 opacity-70">
                     <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-tight">
-                        {set.hintWeight ? `${t.prev}: ${set.hintWeight}` : unitLabel}
+                        {set.prevWeight ? `${t.prev}: ${set.prevWeight}` : unitLabel}
                     </span>
                     {calculatedKg !== null && !isDone && <span className="text-[9px] text-blue-500 font-bold">≈{calculatedKg}</span>}
                 </div>
@@ -133,7 +145,7 @@ export const SetRow = React.memo(({ set, exInstanceId, unit, unitLabel, plateWei
                     onKeyDown={(e) => handleKeyDown(e, 'reps', localReps)}
                 />
                 <div className="text-[9px] font-semibold text-zinc-400 uppercase tracking-tight mt-1">
-                    {set.hintReps ? `${t.prev}: ${set.hintReps}` : 'reps'}
+                    {set.prevReps ? `${t.prev}: ${set.prevReps}` : 'reps'}
                 </div>
             </div>
 

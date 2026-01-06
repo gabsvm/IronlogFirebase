@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { getTranslated, formatDate } from '../utils';
 import { MesoType, FeedbackEntry } from '../types';
 import { ActivityHeatmap } from '../components/stats/ActivityHeatmap';
+import { Logo } from '../components/ui/Logo';
 
 // Lazy load the AI Chat component to save bundle size
 const IronCoachChat = React.lazy(() => import('../components/ai/IronCoachChat').then(module => ({ default: module.IronCoachChat })));
@@ -218,9 +219,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     if (!activeMeso) {
         return (
             <div className="p-8 flex flex-col items-center justify-center h-full text-center space-y-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 rounded-3xl flex items-center justify-center text-zinc-400 shadow-inner">
-                    <Icon name="Dumbbell" size={48} />
-                </div>
+                <Logo className="w-24 h-24 shadow-2xl shadow-red-500/20 rounded-3xl" />
                 <div>
                     <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-2">{t.rp}</h2>
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed max-w-[250px] mx-auto">

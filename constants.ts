@@ -175,46 +175,46 @@ export const FULL_BODY_TEMPLATE: ProgramDay[] = [
         id: 'aes1', 
         dayName: { en: "Day 1: Back Width & Upper Chest", es: "Día 1: Amplitud Espalda & Pecho Alto" }, 
         slots: [
-            { muscle: 'BACK', setTarget: 3, exerciseId: 'pullup' },        // Strict Technique
-            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_pull' },      // Varied Grip
-            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc_bar' },   // Control descent
-            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc' },       // DB Volume
-            { muscle: 'QUADS', setTarget: 2, exerciseId: 'leg_press' }     // Maintenance Legs
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'pullup', reps: '5-10' },        // Strict Technique
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_pull', reps: '10-15' },      // Varied Grip
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc_bar', reps: '6-10' },   // Control descent
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc', reps: '8-12' },       // DB Volume
+            { muscle: 'QUADS', setTarget: 2, exerciseId: 'leg_press', reps: '10-15' }     // Maintenance Legs
         ] 
     },
     { 
         id: 'aes2', 
         dayName: { en: "Day 2: Arms & Delts (Tri Focus)", es: "Día 2: Brazos & Hombros (Énfasis Tríceps)" }, 
         slots: [
-            { muscle: 'TRICEPS', setTarget: 4, exerciseId: 'skull_crusher' }, // Elbows tucked
-            { muscle: 'TRICEPS', setTarget: 3, exerciseId: 'tri_ext' },       // Long head (Overhead)
-            { muscle: 'SHOULDERS', setTarget: 4, exerciseId: 'lat_raise' },   // Side Delts
-            { muscle: 'SHOULDERS', setTarget: 3, exerciseId: 'lat_raise_cable' }, // Constant Tension
-            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_bar' },       // Myo-reps suggested
-            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'wrist_curl' }    // High reps (50-60)
+            { muscle: 'TRICEPS', setTarget: 4, exerciseId: 'skull_crusher', reps: '8-12' }, // Elbows tucked
+            { muscle: 'TRICEPS', setTarget: 3, exerciseId: 'tri_ext', reps: '10-15' },       // Long head (Overhead)
+            { muscle: 'SHOULDERS', setTarget: 4, exerciseId: 'lat_raise', reps: '10-15' },   // Side Delts
+            { muscle: 'SHOULDERS', setTarget: 3, exerciseId: 'lat_raise_cable', reps: '12-20' }, // Constant Tension
+            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_bar', reps: 'Myo' },       // Myo-reps suggested
+            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'wrist_curl', reps: '20+' }    // High reps (50-60)
         ] 
     },
     { 
         id: 'aes3', 
         dayName: { en: "Day 3: Chest & Back (Chest Focus)", es: "Día 3: Pecho & Espalda (Énfasis Pecho)" }, 
         slots: [
-            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc_wide' },    // Wide Grip, Pause at bottom
-            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_flat' },        // Machine Press Volume
-            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_pull_supine' }, // Supine/Chin Grip
-            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_prayer' },      // Isolation Width
-            { muscle: 'QUADS', setTarget: 2, exerciseId: 'leg_ext' }         // Maintenance Legs
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_inc_wide', reps: '8-12' },    // Wide Grip, Pause at bottom
+            { muscle: 'CHEST', setTarget: 3, exerciseId: 'bp_flat', reps: '10-15' },        // Machine Press Volume
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_pull_supine', reps: '8-12' }, // Supine/Chin Grip
+            { muscle: 'BACK', setTarget: 3, exerciseId: 'lat_prayer', reps: '12-15' },      // Isolation Width
+            { muscle: 'QUADS', setTarget: 2, exerciseId: 'leg_ext', reps: '15-20' }         // Maintenance Legs
         ] 
     },
     { 
         id: 'aes4', 
         dayName: { en: "Day 4: Arms & Delts (Bi Focus)", es: "Día 4: Brazos & Hombros (Énfasis Bíceps)" }, 
         slots: [
-            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_ez' },          // 5-10 or 10-15 range
-            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_cable' },       // High rep 15-20
-            { muscle: 'SHOULDERS', setTarget: 4, exerciseId: 'lat_raise_mach' },// Machine
-            { muscle: 'SHOULDERS', setTarget: 3, exerciseId: 'lat_raise_seat' },// Seated DB
-            { muscle: 'TRICEPS', setTarget: 3, exerciseId: 'jm_press' },        // Giant set style (50-60 total)
-            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'forearm_pushup' }  // Forearm pushups
+            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_ez', reps: '8-12' },          // 5-10 or 10-15 range
+            { muscle: 'BICEPS', setTarget: 4, exerciseId: 'curl_cable', reps: '12-20' },       // High rep 15-20
+            { muscle: 'SHOULDERS', setTarget: 4, exerciseId: 'lat_raise_mach', reps: '12-15' },// Machine
+            { muscle: 'SHOULDERS', setTarget: 3, exerciseId: 'lat_raise_seat', reps: '10-15' },// Seated DB
+            { muscle: 'TRICEPS', setTarget: 3, exerciseId: 'jm_press', reps: 'Giant' },        // Giant set style (50-60 total)
+            { muscle: 'FOREARMS', setTarget: 3, exerciseId: 'forearm_pushup', reps: 'Fail' }  // Forearm pushups
         ] 
     }
 ];
@@ -274,6 +274,7 @@ export const TRANSLATIONS = {
         targetRIR: "Target RIR",
         recoveryWeek: "Recovery Week",
         focusMode: "Focus Mode",
+        repsRange: "Reps Range",
         
         // New keys for Save & Start Flow
         startNow: "Start Cycle Now",
@@ -380,6 +381,7 @@ export const TRANSLATIONS = {
         targetRIR: "RIR Objetivo",
         recoveryWeek: "Semana Recuperación",
         focusMode: "Modo Focus",
+        repsRange: "Rango Reps",
         
         // New keys for Save & Start Flow
         startNow: "Empezar Ciclo Ahora",
