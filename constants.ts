@@ -247,7 +247,7 @@ export const TRANSLATIONS = {
         replaceEx: "Replace Exercise", removeEx: "Remove Exercise", moveUp: "Move Up", moveDown: "Move Down",
         emptyWorkoutTitle: "Empty Workout?", emptyWorkoutMsg: "You haven't completed any sets yet. Are you sure?",
         completedSetsMsg: "You've completed {0} sets. Save progress?", confirmRemoveEx: "Remove this exercise from current session?",
-        volPerCycle: "Volume (Sets) / Cycle", avgDuration: "Duration", addSetBtn: "ADD SET", removeSetBtn: "REMOVE SET",
+        volPerCycle: "Avg. Weekly Volume", avgDuration: "Duration", addSetBtn: "ADD SET", removeSetBtn: "REMOVE SET",
         prev: "Prev", target: "TARGET",
         warmup: "Smart Warmup", warmupTitle: "Warmup Protocol", potentiation: "Potentiation", workingWeight: "Working Weight",
         warmupSets: { light: "Light", moderate: "Moderate", potentiation: "Potentiation" },
@@ -274,6 +274,11 @@ export const TRANSLATIONS = {
         targetRIR: "Target RIR",
         recoveryWeek: "Recovery Week",
         focusMode: "Focus Mode",
+        
+        // New keys for Save & Start Flow
+        startNow: "Start Cycle Now",
+        setupCycle: "Setup & Start Cycle",
+        saveAsMeso: "Use this program to create a new active mesocycle immediately.",
         
         // Plates & Units
         units: {
@@ -348,7 +353,7 @@ export const TRANSLATIONS = {
         replaceEx: "Reemplazar Ejercicio", removeEx: "Eliminar Ejercicio", moveUp: "Mover Arriba", moveDown: "Mover Abajo",
         emptyWorkoutTitle: "¿Entreno vacío?", emptyWorkoutMsg: "No has completado ninguna serie. ¿Estás seguro?",
         completedSetsMsg: "Has completado {0} series. ¿Guardar progreso?", confirmRemoveEx: "¿Eliminar este ejercicio de la sesión actual?",
-        volPerCycle: "Volumen (Series) / Ciclo", avgDuration: "Duración Media", addSetBtn: "AÑADIR SERIE", removeSetBtn: "QUITAR SERIE",
+        volPerCycle: "Volumen Semanal Promedio", avgDuration: "Duración Media", addSetBtn: "AÑADIR SERIE", removeSetBtn: "QUITAR SERIE",
         prev: "Prev", target: "OBJETIVO",
         warmup: "Calentamiento", warmupTitle: "Protocolo Calentamiento", potentiation: "Potenciación", workingWeight: "Peso de Trabajo",
         warmupSets: { light: "Ligero", moderate: "Moderado", potentiation: "Potenciación" },
@@ -375,6 +380,11 @@ export const TRANSLATIONS = {
         targetRIR: "RIR Objetivo",
         recoveryWeek: "Semana Recuperación",
         focusMode: "Modo Focus",
+        
+        // New keys for Save & Start Flow
+        startNow: "Empezar Ciclo Ahora",
+        setupCycle: "Configurar y Empezar",
+        saveAsMeso: "Usa este programa para crear un nuevo mesociclo activo inmediatamente.",
 
         // Plates & Units
         units: {

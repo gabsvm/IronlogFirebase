@@ -67,14 +67,15 @@ const HistoryCard = memo(({ log, isExpanded, onToggle, lang }: HistoryCardProps)
                 <div className="bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 p-4 space-y-6 animate-slideUp">
                     {(log.exercises || []).map((ex, i) => (
                         <div key={i}>
-                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white mb-2">
-                                {getTranslated(ex.name, lang)}
+                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white mb-2 flex items-center justify-between">
+                                <span>{getTranslated(ex.name, lang)}</span>
+                                {ex.note && <span className="text-[10px] text-zinc-400 italic font-normal max-w-[150px] truncate">{ex.note}</span>}
                             </h4>
                             <div className="space-y-1">
                                 {(ex.sets || []).filter(s => s.completed).map((s, idx) => (
                                     <div key={idx} className="flex items-center text-xs">
-                                        <div className="w-6 h-6 rounded bg-zinc-200 dark:bg-white/10 flex items-center justify-center font-bold text-zinc-500 mr-3">
-                                            {idx + 1}
+                                        <div className={`w-6 h-6 rounded flex items-center justify-center font-bold mr-3 ${s.type === 'warmup' ? 'bg-yellow-100 text-yellow-600' : 'bg-zinc-200 dark:bg-white/10 text-zinc-500'}`}>
+                                            {s.type === 'warmup' ? 'W' : idx + 1}
                                         </div>
                                         <div className="flex-1 font-mono text-zinc-700 dark:text-zinc-300">
                                             <span className="font-bold">{s.weight}</span> <span className="text-zinc-400 text-[10px]">KG</span>

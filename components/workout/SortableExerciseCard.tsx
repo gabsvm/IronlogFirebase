@@ -1,16 +1,17 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SessionExercise } from '../../types';
+import { SessionExercise, WorkoutSet } from '../../types';
 import { Icon } from '../ui/Icon';
 import { MuscleTag } from './MuscleTag';
 import { SetRow } from './SetRow';
-import { getTranslated } from '../../utils';
+import { getTranslated, roundWeight } from '../../utils';
+import { useApp } from '../../context/AppContext';
 
 interface SortableExerciseCardProps {
     exercise: SessionExercise;
-    ctrl: any; // Using any to avoid circular dependency complex types for now, allows for quick refactor
+    ctrl: any; 
     t: any;
     lang: 'en' | 'es';
     supersetStyle: any;
@@ -19,7 +20,7 @@ interface SortableExerciseCardProps {
     stageConfig: any;
     onAddSet: (id: number) => void;
     onDeleteSet: (exId: number, setId: number) => void;
-    viewMode?: 'list' | 'focus'; // NEW PROP
+    viewMode?: 'list' | 'focus';
 }
 
 export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({ 
@@ -35,6 +36,8 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
     onDeleteSet,
     viewMode = 'list'
 }) => {
+    const { logs } = useApp();
+    
     const {
         attributes,
         listeners,
@@ -44,7 +47,6 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
         isDragging
     } = useSortable({ id: ex.instanceId });
 
-    // Only apply transforms if sorting is relevant (List mode)
     const style = viewMode === 'list' ? {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -57,6 +59,54 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
     const ssStyle = supersetStyle;
     const unit = ex.weightUnit || 'kg';
     const unitLabel = unit === 'pl' ? t.units.pl : t.units.kg;
+
+    // 1. Get Last Note for Context
+    const lastNote = useMemo(() => {
+        if (!logs) return null;
+        for (const log of logs) {
+             if (log.skipped) continue;
+             const found = log.exercises?.find(e => e.id === ex.id);
+             if (found && found.note) return found.note;
+        }
+        return null;
+    }, [logs, ex.id]);
+
+    // 2. Smart Warmup Injection Logic
+    const handleInjectWarmup = () => {
+        // Find a target weight (User input > Hint > 0)
+        const firstRegularSet = sets.find(s => s.type === 'regular');
+        const targetWeight = Number(firstRegularSet?.weight) || Number(firstRegularSet?.hintWeight) || 0;
+
+        if (targetWeight === 0) {
+            alert(lang === 'es' ? "Introduce un peso objetivo en la primera serie para calcular." : "Enter a target weight in the first set to calculate.");
+            return;
+        }
+
+        const newSets: WorkoutSet[] = [
+            { pct: 0.5, reps: 12 },
+            { pct: 0.75, reps: 5 },
+            { pct: 0.9, reps: 1 }
+        ].map((step, i) => ({
+            id: Date.now() + i,
+            type: 'warmup',
+            weight: roundWeight(targetWeight * step.pct),
+            reps: step.reps,
+            rpe: '',
+            completed: false
+        }));
+
+        // Prepend to existing sets
+        ctrl.updateSession((prev: any) => !prev ? null : {
+            ...prev,
+            exercises: prev.exercises.map((e: any) => 
+                e.instanceId === ex.instanceId 
+                ? { ...e, sets: [...newSets, ...e.sets] } 
+                : e
+            )
+        });
+        
+        ctrl.setOpenMenuId(null);
+    };
 
     return (
         <div 
@@ -114,9 +164,11 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                         </h3>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); ctrl.setWarmupExId(ex.instanceId); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-orange-500">
-                            <Icon name="Zap" size={16} fill="currentColor" />
+                        {/* Quick Warmup Button */}
+                        <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-orange-500 hover:scale-110 transition-transform" title="Auto Warmup">
+                             <Icon name="Zap" size={16} fill="currentColor" />
                         </button>
+
                         <div className="relative">
                             <button onClick={(e) => { e.stopPropagation(); ctrl.setOpenMenuId(ctrl.openMenuId === ex.instanceId ? null : ex.instanceId); }} className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                                 <Icon name="MoreVertical" size={20} />
@@ -125,6 +177,10 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             {/* Dropdown Menu */}
                             {ctrl.openMenuId === ex.instanceId && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                    <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-full text-left px-4 py-3 text-sm font-bold text-orange-600 dark:text-orange-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                        <Icon name="Zap" size={16} /> Add Warmup Sets
+                                    </button>
+                                    <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                     <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="RefreshCw" size={16} /> {t.replaceEx}
                                     </button>
@@ -160,6 +216,17 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                         </div>
                     </div>
                 </div>
+
+                {/* Historical Note Display */}
+                {lastNote && (
+                    <div className="flex items-start gap-2 mb-1 px-1 opacity-70">
+                         <Icon name="FileText" size={12} className="mt-0.5 text-zinc-400" />
+                         <p className="text-[10px] text-zinc-500 italic leading-tight line-clamp-2">
+                             Last: "{lastNote}"
+                         </p>
+                    </div>
+                )}
+
                 <input 
                     type="text"
                     placeholder={t.addNote}

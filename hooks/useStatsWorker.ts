@@ -25,6 +25,7 @@ export const useStatsWorker = () => {
                 if (type === 'CALCULATE_OVERVIEW') {
                     const muscleCounts = {};
                     const exFreq = {};
+                    const weeksFound = new Set();
                     
                     // Initialize muscles
                     const muscles = ['CHEST', 'BACK', 'QUADS', 'HAMSTRINGS', 'GLUTES', 'CALVES', 'SHOULDERS', 'BICEPS', 'TRICEPS', 'TRAPS', 'ABS', 'FOREARMS'];
@@ -34,6 +35,9 @@ export const useStatsWorker = () => {
                         logs.forEach(log => {
                             // Filter by active meso if provided
                             if (activeMesoId && log.mesoId !== activeMesoId) return;
+                            
+                            // Track weeks to calculate average later
+                            if (log.week) weeksFound.add(log.week);
 
                             if (log.exercises && Array.isArray(log.exercises)) {
                                 log.exercises.forEach(ex => {
@@ -49,6 +53,16 @@ export const useStatsWorker = () => {
                             }
                         });
                     }
+                    
+                    // Calculate Average Weekly Volume
+                    // If no weeks found (e.g. new cycle), divisor is 1 to show raw count (likely 0 or current session)
+                    const numWeeks = Math.max(1, weeksFound.size);
+                    
+                    // Update counts to be averages
+                    Object.keys(muscleCounts).forEach(key => {
+                        // Round to nearest integer for cleaner UI
+                        muscleCounts[key] = Math.round(muscleCounts[key] / numWeeks);
+                    });
 
                     const sortedVolume = Object.entries(muscleCounts).sort((a, b) => b[1] - a[1]);
                     self.postMessage({ type: 'OVERVIEW_READY', volumeData: sortedVolume, exerciseFrequency: exFreq });

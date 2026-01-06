@@ -282,7 +282,7 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 <div className="p-4 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                            <Icon name="Zap" size={20} fill="currentColor" />
+                            <Icon name="Bot" size={24} fill="currentColor" />
                         </div>
                         <div>
                             <h3 className="font-black text-zinc-900 dark:text-white leading-none">IronCoach AI</h3>

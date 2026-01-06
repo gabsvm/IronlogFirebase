@@ -10,7 +10,7 @@ import { WarmupModal } from '../components/ui/WarmupModal';
 import { PlateCalculatorModal } from '../components/ui/PlateCalculatorModal'; 
 import { PRCelebrationOverlay } from '../components/ui/PRCelebrationOverlay'; 
 import { ExerciseDef, SessionExercise, SetType } from '../types';
-import { getTranslated, getMesoStageConfig } from '../utils';
+import { getTranslated, getMesoStageConfig, getLastLogForExercise } from '../utils';
 import { useWorkoutController } from '../hooks/useWorkoutController';
 import { SortableExerciseCard } from '../components/workout/SortableExerciseCard';
 import { triggerHaptic } from '../utils/audio';
@@ -41,7 +41,7 @@ interface WorkoutViewProps {
 
 // Container Component
 export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAddSet, onDeleteSet }) => {
-    const { activeSession, activeMeso, lang, config, exercises } = useApp();
+    const { activeSession, activeMeso, lang, config, exercises, logs } = useApp();
     const t = TRANSLATIONS[lang];
     
     // Use the Custom Controller Hook
@@ -130,11 +130,30 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
          if (!ctrl.replacingExId) return;
          const newDef = customDef || exercises.find(e => e.id === newExId);
          if (!newDef) return;
+
+         // Fetch history for the NEW exercise
+         const safeLogs = Array.isArray(logs) ? logs : [];
+         const lastSets = getLastLogForExercise(newExId, safeLogs);
+
          ctrl.updateSession(prev => !prev ? null : {
              ...prev,
              exercises: (prev.exercises || []).map(ex => {
                  if (ex.instanceId !== ctrl.replacingExId) return ex;
-                 const resetSets = (ex.sets || []).map(s => ({ ...s, weight: '', reps: '', rpe: '', completed: false }));
+                 
+                 // Map sets to reset values AND update hints with new exercise history
+                 const resetSets = (ex.sets || []).map((s, i) => {
+                     const historySet = lastSets && lastSets[i] ? lastSets[i] : null;
+                     return { 
+                         ...s, 
+                         weight: '', 
+                         reps: '', 
+                         rpe: '', 
+                         completed: false,
+                         hintWeight: historySet ? historySet.weight : undefined,
+                         hintReps: historySet ? historySet.reps : undefined
+                     };
+                 });
+
                  return { ...ex, ...newDef, sets: resetSets };
              })
          });

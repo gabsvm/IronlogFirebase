@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
-import { MuscleGroup } from '../types';
+import { MuscleGroup, MesoType } from '../types';
 import { ExerciseSelector } from '../components/ui/ExerciseSelector';
 import { getTranslated } from '../utils';
 
@@ -12,11 +13,22 @@ interface ProgramEditViewProps {
 }
 
 export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
-    const { program, setProgram, lang } = useApp();
+    const { program, setProgram, lang, setActiveMeso } = useApp();
     const t = TRANSLATIONS[lang];
     
-    const [editingDayId, setEditingDayId] = useState<string | null>(null);
     const [pickingForSlot, setPickingForSlot] = useState<{dayId: string, slotIdx: number} | null>(null);
+    const [showStartModal, setShowStartModal] = useState(false);
+    
+    // New Meso Config State
+    const [mesoConfig, setMesoConfig] = useState<{
+        name: string,
+        type: MesoType,
+        weeks: number
+    }>({
+        name: lang === 'en' ? "Custom Cycle" : "Ciclo Personalizado",
+        type: 'hyp_1',
+        weeks: 4
+    });
 
     const handleUpdateDayName = (id: string, name: string) => {
         setProgram(prev => prev.map(d => d.id === id ? { ...d, dayName: { en: name, es: name } } : d));
@@ -71,16 +83,41 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
         setPickingForSlot(null);
     };
 
+    // --- Start Mesocycle Logic ---
+    const handleStartMeso = () => {
+        // Create plan from current program state
+        const plan = program.map(day => (day.slots || []).map(slot => slot.exerciseId || null));
+        
+        setActiveMeso({
+            id: Date.now(),
+            name: mesoConfig.name,
+            mesoType: mesoConfig.type,
+            week: 1,
+            targetWeeks: mesoConfig.weeks,
+            plan: plan,
+            isDeload: false
+        });
+        
+        // Return to home (which will now show the active meso)
+        onBack();
+    };
+
     return (
-        <div className="h-full flex flex-col bg-gray-50 dark:bg-zinc-950">
+        <div className="h-full flex flex-col bg-gray-50 dark:bg-zinc-950 relative">
              {/* Header */}
              <div className="glass px-4 h-14 shrink-0 flex items-center justify-between z-10">
                 <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
                     <Icon name="ChevronLeft" size={20} />
                     <span className="font-bold text-sm">{t.back}</span>
                 </button>
-                <h1 className="font-bold text-zinc-900 dark:text-white">{t.editTemplate}</h1>
-                <div className="w-8"></div>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => setShowStartModal(true)}
+                        className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-zinc-500/20 active:scale-95 transition-all"
+                    >
+                        <Icon name="Play" size={12} fill="currentColor" /> {t.startNow}
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 scroll-container space-y-6 pb-24">
@@ -89,8 +126,9 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
                         <div className="bg-zinc-50 dark:bg-white/5 p-4 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center">
                             <input 
                                 className="bg-transparent font-bold text-zinc-900 dark:text-white outline-none w-full"
-                                value={getTranslated(day.dayName, lang)}
+                                value={day.dayName[lang]}
                                 onChange={e => handleUpdateDayName(day.id, e.target.value)}
+                                placeholder="Day Name"
                             />
                             <button onClick={() => handleDeleteDay(day.id)} className="text-zinc-400 hover:text-red-500 ml-2">
                                 <Icon name="Trash2" size={18} />
@@ -119,7 +157,7 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
                                                 <input 
                                                     type="number" 
                                                     className="w-6 bg-transparent text-xs font-bold text-center outline-none"
-                                                    value={slot.setTarget}
+                                                    value={slot.setTarget || ''}
                                                     onChange={e => handleUpdateSlot(day.id, idx, 'setTarget', Number(e.target.value))}
                                                 />
                                             </div>
@@ -155,11 +193,81 @@ export const ProgramEditView: React.FC<ProgramEditViewProps> = ({ onBack }) => {
                 </Button>
             </div>
 
+            {/* Exercise Selector Modal */}
             {pickingForSlot && (
                 <ExerciseSelector 
                     onClose={() => setPickingForSlot(null)}
                     onSelect={handleSelectExercise}
                 />
+            )}
+
+            {/* Start Mesocycle Config Modal */}
+            {showStartModal && (
+                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setShowStartModal(false)}>
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6 border-b border-zinc-100 dark:border-white/5 pb-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{t.setupCycle}</h3>
+                                <p className="text-xs text-zinc-500 mt-1">{t.saveAsMeso}</p>
+                            </div>
+                            <button onClick={() => setShowStartModal(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><Icon name="X" size={20} /></button>
+                        </div>
+
+                        <div className="space-y-6">
+                            {/* Rename */}
+                            <div>
+                                <label className="text-xs font-bold uppercase text-zinc-400 tracking-wider block mb-2">{t.mesoName}</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl p-3 font-bold outline-none focus:ring-2 focus:ring-red-500"
+                                    value={mesoConfig.name}
+                                    onChange={(e) => setMesoConfig({ ...mesoConfig, name: e.target.value })}
+                                />
+                            </div>
+                            
+                            {/* Type */}
+                            <div>
+                                <label className="text-xs font-bold uppercase text-zinc-400 tracking-wider block mb-2">{t.mesoType}</label>
+                                <select 
+                                    className="w-full bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl p-3 font-bold outline-none focus:ring-2 focus:ring-red-500"
+                                    value={mesoConfig.type}
+                                    onChange={(e) => setMesoConfig({ ...mesoConfig, type: e.target.value as MesoType })}
+                                >
+                                    {Object.entries(t.phases).map(([key, label]) => (
+                                        <option key={key} value={key}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Duration */}
+                            <div>
+                                <label className="text-xs font-bold uppercase text-zinc-400 tracking-wider block mb-2">{t.targetWeeks}</label>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => setMesoConfig(prev => ({ ...prev, weeks: Math.max(1, prev.weeks - 1) }))}
+                                        className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200"
+                                    >
+                                        <Icon name="Minus" size={16} />
+                                    </button>
+                                    <span className="font-mono text-2xl font-bold w-12 text-center text-zinc-900 dark:text-white">{mesoConfig.weeks}</span>
+                                    <button 
+                                        onClick={() => setMesoConfig(prev => ({ ...prev, weeks: prev.weeks + 1 }))}
+                                        className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200"
+                                    >
+                                        <Icon name="Plus" size={16} />
+                                    </button>
+                                    <span className="text-sm font-bold text-zinc-500">{t.weeks}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8">
+                            <Button fullWidth onClick={handleStartMeso} size="lg" className="shadow-red-500/20">
+                                {t.startNow}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

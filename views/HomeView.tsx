@@ -240,7 +240,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                 {/* Meso Start Wizard */}
                 {showStartWizard && (
                     <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in">
-                        <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-between items-center mb-6 shrink-0">
                                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{t.startMeso}</h3>
                                 <button onClick={() => setShowStartWizard(false)} className="text-zinc-400"><Icon name="X" size={24} /></button>
@@ -356,7 +356,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                                     ? 'bg-zinc-50 dark:bg-zinc-900/50 border-green-500/30' 
                                     : isSkipped
                                         ? 'bg-zinc-100 dark:bg-white/5 border-transparent opacity-60'
-                                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/5 hover:border-red-500/50 dark:hover:border-red-500/50 shadow-sm hover:shadow-lg hover:shadow-red-900/10 cursor-pointer active:scale-[0.98]'
+                                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/5 hover:border-red-500/30 dark:hover:border-red-500/30 shadow-sm hover:shadow-xl hover:shadow-red-900/5 cursor-pointer active:scale-[0.98]'
                                 }
                             `}
                         >
@@ -387,7 +387,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                                             >
                                                 <Icon name="SkipForward" size={14} />
                                             </button>
-                                            <div className="w-8 h-8 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center">
+                                            <div className="w-8 h-8 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center shadow-sm">
                                                 <Icon name="Play" size={14} fill="currentColor" />
                                             </div>
                                         </div>
@@ -443,7 +443,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                     onClick={() => setShowAIChat(true)}
                     className="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-2xl shadow-indigo-600/40 flex items-center justify-center animate-in zoom-in duration-300 hover:scale-110 transition-transform"
                 >
-                    <Icon name="Zap" size={24} fill="currentColor" />
+                    <Icon name="Bot" size={24} fill="currentColor" />
                 </button>
             </div>
 

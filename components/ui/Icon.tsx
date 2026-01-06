@@ -6,7 +6,8 @@ import {
     RefreshCw, X, Moon, Sun, SkipForward, Plus, CloudOff, 
     CheckCircle, Zap, Link, Unlink, Share2, Minus, Upload, 
     Download, Activity, Edit, Save, Layout, Dumbbell, FileText, 
-    Eye, EyeOff, DownloadCloud, GripVertical
+    Eye, EyeOff, DownloadCloud, GripVertical, Layers,
+    Bot, BrainCircuit, Sparkles
 } from 'lucide-react';
 
 const icons = {
@@ -15,7 +16,8 @@ const icons = {
     RefreshCw, X, Moon, Sun, SkipForward, Plus, CloudOff,
     CheckCircle, Zap, Link, Unlink, Share2, Minus, Upload,
     Download, Activity, Edit, Save, Layout, Dumbbell, FileText,
-    Eye, EyeOff, DownloadCloud, GripVertical
+    Eye, EyeOff, DownloadCloud, GripVertical, Layers,
+    Bot, BrainCircuit, Sparkles
 };
 
 export type IconName = keyof typeof icons;
