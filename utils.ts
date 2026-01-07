@@ -74,7 +74,7 @@ export const parseTargetReps = (str?: string): { min: number, max: number } | nu
 
 /**
  * Calculates RIR and phase notes based on Meso Type and Week
- * RP Logic: W1: 3RIR, W2: 2RIR, W3: 1RIR, W4+: 0-1RIR
+ * RP MPT 2.0 Logic: W1-2: 3RIR, W3-5: 2RIR, W6+: 1RIR
  */
 export const getMesoStageConfig = (type: MesoType, week: number, isDeload: boolean) => {
     if (isDeload) {
@@ -93,34 +93,51 @@ export const getMesoStageConfig = (type: MesoType, week: number, isDeload: boole
         return { rir: 0, label: 'FAILURE', note: 'Maximum Pump. Go to failure.' };
     }
 
-    // Standard Hypertrophy
-    if (week === 1) return { rir: 3, label: '3/fail', note: 'Week 1: Stop 3 reps before failure.' };
-    if (week === 2) return { rir: 2, label: '2/fail', note: 'Week 2: Stop 2 reps before failure.' };
-    if (week === 3) return { rir: 1, label: '1/fail', note: 'Week 3: Stop 1 rep before failure.' };
+    // Standard Hypertrophy / Full Body 2.0
+    // Slower RIR ramp up to avoid early burnout
+    if (week <= 2) return { rir: 3, label: '3/fail', note: `Week ${week}: Stop 3 reps before failure (Intro).` };
+    if (week <= 5) return { rir: 2, label: '2/fail', note: `Week ${week}: Stop 2 reps before failure (Work).` };
     
-    return { rir: 0, label: '0-1/fail', note: 'Accumulation: Train near failure.' };
+    // Week 6+ Overreaching
+    return { rir: 1, label: '1/fail', note: 'Overreaching: Train hard (1 RIR).' };
 };
 
 /**
- * RP-Style Algorithm for volume adjustment
- * Returns: -1 (reduce), 0 (maintain), 1 (increase)
+ * RP-Style Algorithm for volume adjustment (Updated for MPT 2.0 Conservative Logic)
+ * 
+ * Soreness Inputs (mapped from UI 1-3):
+ * 1 (None/Healed Early) -> Equivalent to Rating 1 or 2
+ * 2 (Recovered on Time) -> Equivalent to Rating 0
+ * 3 (Still Sore)        -> Equivalent to Rating -1 or -2
+ * 
+ * Performance Inputs (mapped from UI 1-3):
+ * 1 (Bad)   -> Used to confirm negative rating
+ * 2 (Good)  -> Normal
+ * 3 (Great) -> Used to distinguish Rating 1 vs 2 (e.g., No pump vs Good pump)
  */
 export const calculateVolumeAdjustment = (soreness: number, performance: number): number => {
-    // Soreness: 1=None, 2=Recovered(Ideal), 3=Sore/Pain
-    // Performance: 1=Bad, 2=Expected, 3=Great/Pump
-
-    // 1. If still sore -> Reduce volume immediately
+    // 1. NEGATIVE RATING (-1 / -2)
+    // If user is still sore (UI Soreness 3), we MUST reduce.
     if (soreness === 3) return -1;
 
-    // 2. If recovered perfectly (2) or healed early (1)
-    if (soreness <= 2) {
-        // If performance was bad, maybe fatigue is masking it, or just bad day. Usually maintain or reduce.
-        if (performance === 1) return 0; // Maintain (give another chance) or could be -1
-        
-        // If healed early (1) AND performance was Good/Great (2/3) -> Increase
-        if (soreness === 1 && performance >= 2) return 1;
-        
-        // If recovered just in time (2) -> Maintain (Sweet spot)
+    // 2. BASELINE RATING (0) - THE SWEET SPOT
+    // If user recovered "On Time" (UI Soreness 2), we MAINTAIN.
+    // This stops the aggressive accumulation. You are at MEV/MAV.
+    if (soreness === 2) return 0;
+
+    // 3. POSITIVE RATING (+1 / +2)
+    // If user recovered "Early" (UI Soreness 1)... we check performance/pump.
+    if (soreness === 1) {
+        // UI Perf 3 (Great/Too Easy/No Pump feeling): 
+        // Logic: "No soreness at all, felt like nothing" -> +2 sets
+        if (performance === 3) return 2;
+
+        // UI Perf 2 (Good/Target Pump):
+        // Logic: "No soreness, but felt the work" -> +1 set
+        if (performance === 2) return 1;
+
+        // UI Perf 1 (Bad):
+        // Recovered early but workout sucked? Weird case. Usually maintain or +0.
         return 0;
     }
 

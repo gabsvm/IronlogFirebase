@@ -169,7 +169,6 @@ export const DEFAULT_TEMPLATE: ProgramDay[] = [
     { id: 'd4', dayName: { en: "Lower 2", es: "Pierna 2" }, slots: [{ muscle: 'HAMSTRINGS', setTarget: 3 }, { muscle: 'HAMSTRINGS', setTarget: 3 }, { muscle: 'GLUTES', setTarget: 3 }, { muscle: 'QUADS', setTarget: 3 }, { muscle: 'CALVES', setTarget: 3 }] } 
 ];
 
-// Dr. Mike's "Pure Bodybuilding / Aesthetic Focus" Routine (4 Days)
 export const FULL_BODY_TEMPLATE: ProgramDay[] = [
     { 
         id: 'aes1', 
@@ -234,7 +233,7 @@ export const TRANSLATIONS = {
             warmup: "Low fatigue preparation" 
         }, 
         muscle: { CHEST: "Chest", BACK: "Back", QUADS: "Quads", HAMSTRINGS: "Hamstrings", GLUTES: "Glutes", CALVES: "Calves", SHOULDERS: "Shoulders", BICEPS: "Biceps", TRICEPS: "Triceps", TRAPS: "Traps", ABS: "Abs", FOREARMS: "Forearms" },
-        rp: "IronCoach Progression", rpEnabled: "IronCoach Suggestions", rpTargetRIR: "Target RIR", rpFeedbackTitle: "Muscle Feedback", rpRatingHelp: "1=too little, 3=good, 5=too much", rpSave: "Save feedback", rpSuggestion: "Suggested", rpNoSuggestion: "No suggestion",
+        rp: "IronCoach Progression", rpEnabled: "IronCoach Suggestions", rpTargetRIR: "Target RIR", rpFeedbackTitle: "Muscle Feedback", rpRatingHelp: "Rate to auto-regulate volume (RP Logic)", rpSave: "Save feedback", rpSuggestion: "Suggested", rpNoSuggestion: "No suggestion",
         editTemplate: "Edit Program", resetTemplate: "Reset to Default", editDay: "Edit Day", addDay: "Add Day", addSlot: "Add Exercise Slot", save: "Save", swapTitle: "Swap Exercise", swapMsg: "How do you want to apply this change?", swapSession: "This Session Only", swapForever: "Update Plan (Forever)", programEditor: "Program Editor", selectExBtn: "Select Exercise", any: "Any",
         manageEx: "Manage Exercises", addEx: "Add New Exercise", exName: "Exercise Name", selectMuscle: "Select Muscle", deleteConfirm: "Delete this exercise?",
         setsCount: "Sets", notes: "Notes", addNote: "Add Note...", volumeStatus: { low: "Low", maintenance: "Maint.", optimal: "Optimal", high: "High" }, showRIR: "Show RIR Column", install: "Install App", unitToggle: "Weight Unit", addExercise: "Add Exercise", updateTemplate: "Update Routine Template", selectMuscleToAdd: "Select Muscle to Add",
@@ -269,7 +268,7 @@ export const TRANSLATIONS = {
             hyp_2: "Higher initial volume. Aggressive overload.",
             metabolite: "High reps (20-30), short rests, the 'burn'.",
             resensitization: "Low volume, heavy weight (3-6 reps) to reset fatigue.",
-            full_body: "Focus on V-Taper (Lats/Side Delts) & Arms. Maintenance Legs."
+            full_body: "Focus on V-Taper (Lats/Side Delts) y Arms. Maintenance Legs."
         },
         targetRIR: "Target RIR",
         recoveryWeek: "Recovery Week",
@@ -292,24 +291,24 @@ export const TRANSLATIONS = {
             enterWeight: "e.g. 5, 10..."
         },
         
-        // Feedback Matrix
+        // Feedback Matrix - UPDATED FOR CONSERVATIVE LOGIC
         fb: {
             sorenessLabel: "Soreness / Recovery",
-            performanceLabel: "Performance / Pump",
+            performanceLabel: "Pump / Capacity",
             soreness: {
-                1: "None / Healed Early",
-                2: "Healed on Time",
+                1: "Healed Early / Fresh",
+                2: "Healed on Time (Ideal)",
                 3: "Still Sore / Ouch"
             },
             performance: {
-                1: "Bad / Weak",
+                1: "Bad / Grind",
                 2: "Good / Target",
-                3: "Great / Strong"
+                3: "Great / Too Easy"
             },
             adjust: {
-                add: "+1 Set",
+                add: "+1/2 Sets",
                 sub: "-1 Set",
-                keep: "Keep Volume"
+                keep: "Keep (Optimal)"
             }
         },
         
@@ -341,7 +340,7 @@ export const TRANSLATIONS = {
             warmup: "Preparación con baja fatiga" 
         }, 
         muscle: { CHEST: "Pecho", BACK: "Espalda", QUADS: "Cuádriceps", HAMSTRINGS: "Isquios", GLUTES: "Glúteos", CALVES: "Gemelos", SHOULDERS: "Hombros", BICEPS: "Bíceps", TRICEPS: "Tríceps", TRAPS: "Trapecios", ABS: "Abdominales", FOREARMS: "Antebrazos" },
-        rpFeedbackTitle: "Valoración Muscular", rpRatingHelp: "1=fácil/sin dolor, 3=bien, 5=excesivo/dolor",
+        rpFeedbackTitle: "Valoración Muscular", rpRatingHelp: "Valora para auto-regular volumen (Lógica RP)",
         editTemplate: "Editar Programa", resetTemplate: "Restaurar Defecto", editDay: "Editar Día", addDay: "Añadir Día", addSlot: "Añadir Slot", save: "Guardar", swapTitle: "Reemplazar Ejercicio", swapMsg: "¿Cómo quieres aplicar este cambio?", swapSession: "Solo esta Sesión", swapForever: "Actualizar Plan (Para siempre)", programEditor: "Editor de Programa", selectExBtn: "Elegir Ejercicio", any: "Cualquiera",
         manageEx: "Gestionar Ejercicios", addEx: "Añadir Nuevo Ejercicio", exName: "Nombre del Ejercicio", selectMuscle: "Seleccionar Músculo", deleteConfirm: "¿Borrar este ejercicio?",
         setsCount: "Series", notes: "Notas", addNote: "Añadir nota...", volumeStatus: { low: "Bajo", maintenance: "Mant.", optimal: "Óptimo", high: "Alto" }, showRIR: "Mostrar Columna RIR", install: "Instalar App", unitToggle: "Unidad Peso", addExercise: "Añadir Ejercicio", updateTemplate: "Actualizar Rutina Original", selectMuscleToAdd: "Elegir Músculo para el Slot",
@@ -399,24 +398,24 @@ export const TRANSLATIONS = {
             enterWeight: "ej. 5, 10..."
         },
         
-        // Feedback Matrix
+        // Feedback Matrix - UPDATED FOR CONSERVATIVE LOGIC
         fb: {
             sorenessLabel: "Agujetas / Recuperación",
-            performanceLabel: "Rendimiento / Pump",
+            performanceLabel: "Pump / Capacidad",
             soreness: {
-                1: "Nada / Recuperado Antes",
-                2: "Recuperado a Tiempo",
+                1: "Recuperado Antes / Fresco",
+                2: "Recuperado a Tiempo (Ideal)",
                 3: "Con Agujetas / Dolor"
             },
             performance: {
-                1: "Malo / Débil",
+                1: "Malo / Grind",
                 2: "Bueno / Objetivo",
-                3: "Genial / Fuerte"
+                3: "Genial / Sobrado"
             },
             adjust: {
-                add: "+1 Serie",
+                add: "+1/2 Series",
                 sub: "-1 Serie",
-                keep: "Mantener Vol."
+                keep: "Mantener (Óptimo)"
             }
         },
 

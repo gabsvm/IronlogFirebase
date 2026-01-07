@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { TRANSLATIONS, MUSCLE_GROUPS } from '../../constants';
@@ -5,6 +6,7 @@ import { Icon } from './Icon';
 import { MuscleGroup, ExerciseDef } from '../../types';
 import { Button } from './Button';
 import { getTranslated } from '../../utils';
+import { Virtuoso } from 'react-virtuoso';
 
 interface ExerciseSelectorProps {
     onSelect: (exId: string, exercise?: ExerciseDef) => void;
@@ -60,6 +62,28 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ onSelect, on
         // Pass newEx directly because local state update might not be reflected in 'exercises' yet in parent
         onSelect(newId, newEx); 
     };
+
+    // Render Row for Virtualization
+    const Row = (index: number, ex: ExerciseDef) => (
+        <div className="px-2 py-1">
+            <button
+                onClick={() => onSelect(ex.id, ex)}
+                className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99] transition-all flex items-center justify-between group bg-transparent"
+            >
+                <div>
+                    <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+                        {getTranslated(ex.name, lang)}
+                    </div>
+                    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5">
+                        {TRANSLATIONS[lang].muscle[ex.muscle]}
+                    </div>
+                </div>
+                <div className="text-zinc-300 dark:text-zinc-700 group-hover:text-red-500">
+                    <Icon name="Plus" size={20} />
+                </div>
+            </button>
+        </div>
+    );
 
     return (
         <div className="fixed inset-0 z-[60] bg-gray-50 dark:bg-zinc-950 flex flex-col animate-in slide-in-from-bottom duration-200">
@@ -150,8 +174,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ onSelect, on
                         ))}
                     </div>
 
-                    {/* List */}
-                    <div className="flex-1 overflow-y-auto p-2 scroll-container">
+                    {/* Virtualized List */}
+                    <div className="flex-1 overflow-hidden">
                         {filtered.length === 0 ? (
                             <div className="text-center py-12 text-zinc-400 text-sm flex flex-col items-center">
                                 <div className="mb-4">{t.noExFound}</div>
@@ -160,36 +184,20 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ onSelect, on
                                 </Button>
                             </div>
                         ) : (
-                            <div className="space-y-1">
-                                {filtered.map(ex => (
-                                    <button
-                                        key={ex.id}
-                                        onClick={() => onSelect(ex.id, ex)}
-                                        className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99] transition-all flex items-center justify-between group"
-                                    >
-                                        <div>
-                                            <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                                                {getTranslated(ex.name, lang)}
-                                            </div>
-                                            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5">
-                                                {TRANSLATIONS[lang].muscle[ex.muscle]}
-                                            </div>
+                            <Virtuoso
+                                style={{ height: '100%' }}
+                                data={filtered}
+                                itemContent={Row}
+                                components={{
+                                    Footer: () => (
+                                        <div className="pt-4 pb-12 px-4">
+                                            <Button variant="secondary" onClick={handleCreateStart} fullWidth className="border-dashed">
+                                                <Icon name="Plus" size={14} /> {t.createEx} {search ? `"${search}"` : ''}
+                                            </Button>
                                         </div>
-                                        <div className="text-zinc-300 dark:text-zinc-700 group-hover:text-red-500">
-                                            <Icon name="Plus" size={20} />
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        
-                        {/* Always show create button at bottom if list is not empty */}
-                        {filtered.length > 0 && (
-                            <div className="pt-4 pb-12 px-2">
-                                <Button variant="secondary" onClick={handleCreateStart} fullWidth className="border-dashed">
-                                    <Icon name="Plus" size={14} /> {t.createEx} {search ? `"${search}"` : ''}
-                                </Button>
-                            </div>
+                                    )
+                                }}
+                            />
                         )}
                     </div>
                 </>

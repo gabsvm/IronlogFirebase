@@ -114,11 +114,28 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     const handleAddExercise = (newExId: string, customDef?: ExerciseDef) => {
         const newDef = customDef || exercises.find(e => e.id === newExId);
         if (!newDef) return;
+
+        // Fetch history for added exercise
+        const safeLogs = Array.isArray(logs) ? logs : [];
+        const lastSets = getLastLogForExercise(newExId, safeLogs);
+
         const newInstanceId = Date.now();
-        const initialSets = Array(3).fill(null).map((_, i) => ({
-            id: newInstanceId + i + 1,
-            weight: '', reps: '', rpe: '', completed: false, type: 'regular'
-        }));
+        const initialSets = Array(3).fill(null).map((_, i) => {
+            const historySet = lastSets && lastSets[i] ? lastSets[i] : null;
+            return {
+                id: newInstanceId + i + 1,
+                weight: '', 
+                reps: '', 
+                rpe: '', 
+                completed: false, 
+                type: 'regular',
+                hintWeight: historySet ? historySet.weight : undefined,
+                hintReps: historySet ? historySet.reps : undefined,
+                prevWeight: historySet ? historySet.weight : undefined,
+                prevReps: historySet ? historySet.reps : undefined
+            };
+        });
+
         ctrl.updateSession(prev => !prev ? null : {
             ...prev,
             exercises: [...(prev.exercises || []), { ...newDef, instanceId: newInstanceId, slotLabel: newDef.muscle, sets: initialSets as any }]
@@ -150,7 +167,9 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                          rpe: '', 
                          completed: false,
                          hintWeight: historySet ? historySet.weight : undefined,
-                         hintReps: historySet ? historySet.reps : undefined
+                         hintReps: historySet ? historySet.reps : undefined,
+                         prevWeight: historySet ? historySet.weight : undefined,
+                         prevReps: historySet ? historySet.reps : undefined
                      };
                  });
 

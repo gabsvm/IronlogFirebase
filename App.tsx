@@ -12,7 +12,7 @@ import { OnboardingModal } from './components/ui/OnboardingModal';
 import { getLastLogForExercise, parseTargetReps } from './utils';
 import { Icon } from './components/ui/Icon';
 import { TRANSLATIONS } from './constants';
-import { ExerciseDef } from './types';
+import { ExerciseDef, ColorTheme } from './types';
 import { Button } from './components/ui/Button';
 
 // Lazy Load heavier views
@@ -25,11 +25,22 @@ const LoadingSpinner = () => (
     </div>
 );
 
+// Define View Hierarchy for Directional Animations
+// Lower number = Root level, Higher number = Deep level
+const VIEW_DEPTH: Record<string, number> = {
+    'home': 1,
+    'history': 1,
+    'stats': 1,
+    'workout': 2,
+    'exercises': 2,
+    'program': 2
+};
+
 const AppContent = () => {
     const { 
         activeSession, activeMeso, setActiveSession, 
         program, exercises, lang, setLang, logs, setLogs,
-        theme, setTheme, setExercises, setProgram, setActiveMeso,
+        theme, setTheme, colorTheme, setColorTheme, setExercises, setProgram, setActiveMeso,
         config, setConfig, hasSeenOnboarding, setHasSeenOnboarding
     } = useApp();
     
@@ -43,14 +54,30 @@ const AppContent = () => {
     const [showSettings, setShowSettings] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
 
-    // UX: Helper to trigger View Transitions if available
+    // UX: Helper to trigger View Transitions with Direction
     const setView = (newView: typeof view) => {
         if (newView === view) return;
         
+        // Calculate Direction
+        const currentDepth = VIEW_DEPTH[view] || 1;
+        const nextDepth = VIEW_DEPTH[newView] || 1;
+        
+        let direction = 'fade';
+        if (nextDepth > currentDepth) direction = 'forward';
+        else if (nextDepth < currentDepth) direction = 'back';
+        
+        // Set transition type on root
+        document.documentElement.dataset.transition = direction;
+
         // Check if browser supports View Transitions
         if ((document as any).startViewTransition) {
-            (document as any).startViewTransition(() => {
+            const transition = (document as any).startViewTransition(() => {
                 setViewState(newView);
+            });
+            
+            // Clean up attribute after transition
+            transition.finished.finally(() => {
+                document.documentElement.dataset.transition = '';
             });
         } else {
             setViewState(newView);
@@ -61,26 +88,25 @@ const AppContent = () => {
     const isPopping = useRef(false);
 
     useEffect(() => {
-        // Wrap in try-catch for environments where History API is restricted (e.g. some previews)
         try {
             if (typeof window !== 'undefined' && window.history) {
                 window.history.replaceState({ view: 'home', settings: false }, '', '#home');
             }
-        } catch (e) {
-            // Ignore history errors
-        }
+        } catch (e) {}
 
         const handlePop = (e: PopStateEvent) => {
             isPopping.current = true;
             if (e.state) {
-                // Determine if we should animate back? 
-                // For simplicity in this local router, we just set state.
-                // In a perfect world we would set a direction class for "slide right".
+                // If popping state, usually implies "Back" or neutral
+                // We'll treat history pops as 'back' transitions usually, or just fade
+                document.documentElement.dataset.transition = 'back';
+
                 if ((document as any).startViewTransition) {
-                    (document as any).startViewTransition(() => {
+                    const t = (document as any).startViewTransition(() => {
                         if (e.state.view) setViewState(e.state.view);
                         setShowSettings(!!e.state.settings);
                     });
+                    t.finished.finally(() => { document.documentElement.dataset.transition = ''; });
                 } else {
                     if (e.state.view) setViewState(e.state.view);
                     setShowSettings(!!e.state.settings);
@@ -107,9 +133,7 @@ const AppContent = () => {
             if (typeof window !== 'undefined' && window.history) {
                 window.history.pushState(state, '', `#${hash}`);
             }
-        } catch (e) {
-            // Ignore history errors
-        }
+        } catch (e) {}
     }, [view, showSettings]);
 
     // PWA Install Prompt State
@@ -366,6 +390,16 @@ const AppContent = () => {
         });
     };
 
+    const ColorPill = ({ color, active, onClick, label }: { color: string, active: boolean, onClick: () => void, label: string }) => (
+        <button 
+            onClick={onClick}
+            className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 group`}
+        >
+            <div className={`w-10 h-10 rounded-full ${color} shadow-sm border-2 transition-all ${active ? 'border-zinc-900 dark:border-white scale-110' : 'border-transparent opacity-80 group-hover:opacity-100'}`} />
+            <span className={`text-[9px] font-bold uppercase tracking-wide ${active ? 'text-zinc-900 dark:text-white' : 'text-zinc-400'}`}>{label}</span>
+        </button>
+    );
+
     return (
         <>
             {view === 'workout' && activeSession ? (
@@ -420,6 +454,39 @@ const AppContent = () => {
                             )}
 
                             <div>
+                                <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.appearance}</label>
+                                
+                                {/* Theme Toggles */}
+                                <div className="grid grid-cols-2 gap-3 mb-6">
+                                    <button 
+                                        onClick={() => setTheme('dark')}
+                                        className={`py-3 rounded-xl text-sm font-bold transition-all border flex items-center justify-center gap-2 ${theme === 'dark' ? 'bg-zinc-800 text-white border-zinc-600' : 'bg-zinc-50 text-zinc-500 border-transparent'}`}
+                                    >
+                                        <Icon name="Moon" size={16} /> Dark
+                                    </button>
+                                    <button 
+                                        onClick={() => setTheme('light')}
+                                        className={`py-3 rounded-xl text-sm font-bold transition-all border flex items-center justify-center gap-2 ${theme === 'light' ? 'bg-white text-zinc-900 border-zinc-300 shadow-sm' : 'bg-zinc-800/50 text-zinc-500 border-transparent'}`}
+                                    >
+                                        <Icon name="Sun" size={16} /> Light
+                                    </button>
+                                </div>
+
+                                {/* Color Palette Selector */}
+                                <div className="bg-zinc-50 dark:bg-white/5 p-4 rounded-2xl">
+                                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3 block">Accent Color</label>
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <ColorPill color="bg-red-600" label="Iron" active={colorTheme === 'iron'} onClick={() => setColorTheme('iron')} />
+                                        <ColorPill color="bg-blue-600" label="Ocean" active={colorTheme === 'ocean'} onClick={() => setColorTheme('ocean')} />
+                                        <ColorPill color="bg-emerald-600" label="Forest" active={colorTheme === 'forest'} onClick={() => setColorTheme('forest')} />
+                                        <ColorPill color="bg-purple-600" label="Royal" active={colorTheme === 'royal'} onClick={() => setColorTheme('royal')} />
+                                        <ColorPill color="bg-orange-500" label="Sunset" active={colorTheme === 'sunset'} onClick={() => setColorTheme('sunset')} />
+                                        <ColorPill color="bg-zinc-600" label="System" active={colorTheme === 'monochrome'} onClick={() => setColorTheme('monochrome')} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
                                 <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.workoutConfig}</label>
                                 <button 
                                     onClick={() => { setShowSettings(false); setView('program'); }}
@@ -458,40 +525,22 @@ const AppContent = () => {
                                             <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${config.keepScreenOn ? 'left-7' : 'left-1'}`} />
                                         </button>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 block">{t.appearance}</label>
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button 
-                                            onClick={() => setTheme('dark')}
-                                            className={`py-3 rounded-xl text-sm font-bold transition-all border ${theme === 'dark' ? 'bg-zinc-800 text-white border-zinc-600' : 'bg-zinc-50 text-zinc-500 border-transparent'}`}
-                                        >
-                                            Dark
-                                        </button>
-                                        <button 
-                                            onClick={() => setTheme('light')}
-                                            className={`py-3 rounded-xl text-sm font-bold transition-all border ${theme === 'light' ? 'bg-white text-zinc-900 border-zinc-300 shadow-sm' : 'bg-zinc-800/50 text-zinc-500 border-transparent'}`}
-                                        >
-                                            Light
-                                        </button>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button 
-                                            onClick={() => setLang('en')}
-                                            className={`py-3 rounded-xl text-sm font-bold transition-all border ${lang === 'en' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900' : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-500 border-transparent'}`}
-                                        >
-                                            English
-                                        </button>
-                                        <button 
-                                            onClick={() => setLang('es')}
-                                            className={`py-3 rounded-xl text-sm font-bold transition-all border ${lang === 'es' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900' : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-500 border-transparent'}`}
-                                        >
-                                            Español
-                                        </button>
+                                    <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-white/5 rounded-xl">
+                                        <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">{t.language}</span>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => setLang('en')}
+                                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${lang === 'en' ? 'bg-red-600 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}
+                                            >
+                                                EN
+                                            </button>
+                                            <button 
+                                                onClick={() => setLang('es')}
+                                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${lang === 'es' ? 'bg-red-600 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}
+                                            >
+                                                ES
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -530,7 +579,7 @@ const AppContent = () => {
                         </div>
 
                         <div className="text-center pt-6 border-t border-zinc-100 dark:border-white/5">
-                            <p className="text-xs font-medium text-zinc-400">IronLog Pro v2.1.3</p>
+                            <p className="text-xs font-medium text-zinc-400">IronLog Pro v2.2.0</p>
                         </div>
                     </div>
                 </div>

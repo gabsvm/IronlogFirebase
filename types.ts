@@ -1,6 +1,7 @@
 
 export type Lang = 'en' | 'es';
 export type Theme = 'light' | 'dark' | 'system';
+export type ColorTheme = 'iron' | 'ocean' | 'forest' | 'royal' | 'sunset' | 'monochrome';
 
 export type MuscleGroup = 
   | 'CHEST' | 'BACK' | 'QUADS' | 'HAMSTRINGS' 

@@ -1,19 +1,22 @@
 
 import React, { createContext, useContext, useEffect, useRef, ReactNode, useState, PropsWithChildren, useMemo, useCallback } from 'react';
-import { AppState, Lang, Theme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay } from '../types';
+import { AppState, Lang, Theme, ColorTheme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay } from '../types';
 import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { usePersistedState } from '../hooks/usePersistedState';
 import { Icon } from '../components/ui/Icon';
 import { Logo } from '../components/ui/Logo';
 import { TimerProvider } from './TimerContext';
+import { HomeSkeleton } from '../components/ui/SkeletonLoader';
 
 // Removed restTimer from AppContextType to decouple high-frequency updates
 interface AppContextType extends AppState {
     lang: Lang;
     theme: Theme;
+    colorTheme: ColorTheme;
     setLang: (l: Lang) => void;
     setTheme: (t: Theme) => void;
+    setColorTheme: (t: ColorTheme) => void;
     
     setProgram: (val: ProgramDay[] | ((prev: ProgramDay[]) => ProgramDay[])) => void;
     setActiveMeso: (val: MesoCycle | null | ((prev: MesoCycle | null) => MesoCycle | null)) => void;
@@ -33,6 +36,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
     // --- Synchronous Config ---
     const [lang, setLang] = useLocalStorage<Lang>('il_lang_v1', 'en');
     const [theme, setTheme] = useLocalStorage<Theme>('il_theme_v1', 'dark');
+    const [colorTheme, setColorTheme] = useLocalStorage<ColorTheme>('il_color_theme_v1', 'iron');
     
     const [showRIR, setShowRIR] = useLocalStorage('il_cfg_rir', true);
     const [rpEnabled, setRpEnabled] = useLocalStorage('il_cfg_rp', true);
@@ -52,7 +56,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
     const isAppLoading = programLoading || mesoLoading || sessionLoading || exLoading || logsLoading || fbLoading || onboardingLoading;
     const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-    // Theme Effect
+    // Theme (Light/Dark) Effect
     useEffect(() => {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
@@ -63,6 +67,12 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
             root.classList.add(theme);
         }
     }, [theme]);
+
+    // Color Theme Effect (CSS Variables)
+    useEffect(() => {
+        const root = window.document.documentElement;
+        root.setAttribute('data-theme', colorTheme);
+    }, [colorTheme]);
 
     // Wake Lock Effect
     useEffect(() => {
@@ -99,7 +109,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
     const config = useMemo(() => ({ showRIR, rpEnabled, rpTargetRIR, keepScreenOn }), [showRIR, rpEnabled, rpTargetRIR, keepScreenOn]);
 
     const contextValue = useMemo(() => ({
-        lang, setLang, theme, setTheme,
+        lang, setLang, theme, setTheme, colorTheme, setColorTheme,
         program, setProgram,
         activeMeso, setActiveMeso,
         activeSession, setActiveSession,
@@ -110,7 +120,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         hasSeenOnboarding, setHasSeenOnboarding,
         isAppLoading
     }), [
-        lang, setLang, theme, setTheme,
+        lang, setLang, theme, setTheme, colorTheme, setColorTheme,
         program, setProgram,
         activeMeso, setActiveMeso,
         activeSession, setActiveSession,
@@ -122,19 +132,9 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         isAppLoading
     ]);
 
+    // Use SkeletonLoader instead of spinner for better perceived performance
     if (isAppLoading) {
-        return (
-            <div className="fixed inset-0 bg-gray-50 dark:bg-zinc-950 flex flex-col items-center justify-center z-[9999]">
-                <Logo className="w-20 h-20 animate-pulse shadow-2xl shadow-red-600/40 rounded-3xl" />
-                <div className="mt-6 flex flex-col items-center gap-2">
-                    <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">IronLog <span className="text-red-600">PRO</span></h1>
-                    <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                        <Icon name="RefreshCw" size={12} className="animate-spin" />
-                        Loading Database...
-                    </div>
-                </div>
-            </div>
-        );
+        return <HomeSkeleton />;
     }
 
     return (
