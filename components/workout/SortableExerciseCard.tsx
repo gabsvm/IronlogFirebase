@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SessionExercise, WorkoutSet } from '../../types';
+import { SessionExercise, WorkoutSet, CardioType } from '../../types';
 import { Icon } from '../ui/Icon';
 import { MuscleTag } from './MuscleTag';
 import { SetRow } from './SetRow';
@@ -59,6 +59,11 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
     const ssStyle = supersetStyle;
     const unit = ex.weightUnit || 'kg';
     const unitLabel = unit === 'pl' ? t.units.pl : t.units.kg;
+    
+    // Check if it is a cardio exercise
+    const isCardio = ex.muscle === 'CARDIO';
+    const cardioMode: CardioType = ex.cardioType || ex.defaultCardioType || 'steady';
+    const isInterval = cardioMode === 'hiit' || cardioMode === 'tabata';
 
     // 1. Get Last Note for Context
     const lastNote = useMemo(() => {
@@ -73,7 +78,6 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
 
     // 2. Smart Warmup Injection Logic
     const handleInjectWarmup = () => {
-        // Find a target weight (User input > Hint > 0)
         const firstRegularSet = sets.find(s => s.type === 'regular');
         const targetWeight = Number(firstRegularSet?.weight) || Number(firstRegularSet?.hintWeight) || 0;
 
@@ -95,7 +99,6 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
             completed: false
         }));
 
-        // Prepend to existing sets
         ctrl.updateSession((prev: any) => !prev ? null : {
             ...prev,
             exercises: prev.exercises.map((e: any) => 
@@ -104,7 +107,19 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 : e
             )
         });
-        
+        ctrl.setOpenMenuId(null);
+    };
+
+    // 3. Switch Cardio Mode
+    const handleCardioModeChange = (mode: CardioType) => {
+        ctrl.updateSession((prev: any) => !prev ? null : {
+            ...prev,
+            exercises: prev.exercises.map((e: any) => 
+                e.instanceId === ex.instanceId 
+                ? { ...e, cardioType: mode } 
+                : e
+            )
+        });
         ctrl.setOpenMenuId(null);
     };
 
@@ -150,14 +165,20 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             {ssStyle && <span className={`${ssStyle.badge} text-[9px] font-bold px-1.5 py-0.5 rounded`}>SS</span>}
                             <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
                             
-                            {/* Reps Target Badge */}
-                            {ex.targetReps && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-                                    {ex.targetReps} Reps
+                            {/* Reps/Mode Target Badge */}
+                            {isCardio ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
+                                    {t.cardioModes[cardioMode]}
                                 </span>
+                            ) : (
+                                ex.targetReps && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                                        {ex.targetReps} Reps
+                                    </span>
+                                )
                             )}
 
-                            {unit === 'pl' && (
+                            {!isCardio && unit === 'pl' && (
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); ctrl.setConfigPlateExId(ex.instanceId); }}
                                     className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[9px] font-bold px-2 py-0.5 rounded hover:bg-blue-200"
@@ -171,10 +192,12 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                         </h3>
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* Quick Warmup Button */}
-                        <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-orange-500 hover:scale-110 transition-transform" title="Auto Warmup">
-                             <Icon name="Zap" size={16} fill="currentColor" />
-                        </button>
+                        {/* Quick Warmup Button (Hide for Cardio) */}
+                        {!isCardio && (
+                            <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-orange-500 hover:scale-110 transition-transform" title="Auto Warmup">
+                                <Icon name="Zap" size={16} />
+                            </button>
+                        )}
 
                         <div className="relative">
                             <button onClick={(e) => { e.stopPropagation(); ctrl.setOpenMenuId(ctrl.openMenuId === ex.instanceId ? null : ex.instanceId); }} className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
@@ -184,21 +207,41 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             {/* Dropdown Menu */}
                             {ctrl.openMenuId === ex.instanceId && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                    <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-full text-left px-4 py-3 text-sm font-bold text-orange-600 dark:text-orange-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
-                                        <Icon name="Zap" size={16} /> Add Warmup Sets
-                                    </button>
+                                    {isCardio && (
+                                        <>
+                                            <div className="px-4 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{t.changeCardioMode}</div>
+                                            <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('steady'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'steady' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                                                {cardioMode === 'steady' && <Icon name="Check" size={14} />} {t.cardioModes.steady}
+                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('hiit'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'hiit' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                                                {cardioMode === 'hiit' && <Icon name="Check" size={14} />} {t.cardioModes.hiit}
+                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('tabata'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'tabata' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                                                {cardioMode === 'tabata' && <Icon name="Check" size={14} />} {t.cardioModes.tabata}
+                                            </button>
+                                            <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
+                                        </>
+                                    )}
+
+                                    {!isCardio && (
+                                        <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-full text-left px-4 py-3 text-sm font-bold text-orange-600 dark:text-orange-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                            <Icon name="Zap" size={16} /> Add Warmup Sets
+                                        </button>
+                                    )}
                                     
-                                    <button onClick={(e) => { 
-                                        e.stopPropagation();
-                                        const newUnit = unit === 'kg' ? 'pl' : 'kg';
-                                        ctrl.updateSession((prev: any) => !prev ? null : {
-                                            ...prev,
-                                            exercises: prev.exercises.map((e: any) => e.instanceId === ex.instanceId ? { ...e, weightUnit: newUnit } : e)
-                                        });
-                                        ctrl.setOpenMenuId(null);
-                                    }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
-                                        <Icon name="Settings" size={16} /> {t.units.toggle}
-                                    </button>
+                                    {!isCardio && (
+                                        <button onClick={(e) => { 
+                                            e.stopPropagation();
+                                            const newUnit = unit === 'kg' ? 'pl' : 'kg';
+                                            ctrl.updateSession((prev: any) => !prev ? null : {
+                                                ...prev,
+                                                exercises: prev.exercises.map((e: any) => e.instanceId === ex.instanceId ? { ...e, weightUnit: newUnit } : e)
+                                            });
+                                            ctrl.setOpenMenuId(null);
+                                        }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                            <Icon name="Settings" size={16} /> {t.units.toggle}
+                                        </button>
+                                    )}
 
                                     <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                     <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
@@ -256,12 +299,34 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 />
             </div>
 
-            {/* Sets Header */}
+            {/* Sets Header - Conditional for Cardio Mode */}
             <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-zinc-50 dark:bg-black/20 border-b border-zinc-100 dark:border-white/5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
                 <div className="col-span-1">#</div>
-                <div className="col-span-4 text-left pl-4">{t.weight} ({unit === 'pl' ? 'PL' : 'KG'})</div>
-                <div className="col-span-4">{t.reps}</div>
-                {config.showRIR && <div className="col-span-2">{t.rir}</div>}
+                {isCardio ? (
+                    isInterval ? (
+                        // HIIT / Tabata Headers
+                        <>
+                            <div className="col-span-4 pl-2 text-left text-green-600 dark:text-green-400">{t.cardioWork}</div>
+                            <div className="col-span-4 text-blue-500 dark:text-blue-400">{t.cardioRest}</div>
+                            <div className="col-span-2">{t.cardioRounds}</div>
+                        </>
+                    ) : (
+                        // Steady State Headers
+                        <>
+                            <div className="col-span-4 text-left pl-4">{t.cardioTime}</div>
+                            <div className="col-span-4">{t.cardioDist}</div>
+                            <div className="col-span-2">{t.cardioSpeed}</div>
+                        </>
+                    )
+                ) : (
+                    // Weightlifting Headers
+                    <>
+                        <div className="col-span-4 text-left pl-4">{t.weight} ({unit === 'pl' ? 'PL' : 'KG'})</div>
+                        <div className="col-span-4">{t.reps}</div>
+                        {config.showRIR && <div className="col-span-2">{t.rir}</div>}
+                        {!config.showRIR && <div className="col-span-2"></div>}
+                    </>
+                )}
                 <div className="col-span-1"></div>
             </div>
 
@@ -275,12 +340,14 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                         unit={unit}
                         unitLabel={unitLabel}
                         plateWeight={ex.plateWeight}
-                        showRIR={config.showRIR}
+                        showRIR={config.showRIR || isCardio} 
                         stageRIR={stageConfig?.rir !== null ? String(stageConfig?.rir) : "-"}
                         onUpdate={ctrl.handleSetUpdate}
                         onToggleComplete={ctrl.toggleSetComplete}
                         onChangeType={(exId, setId, type) => ctrl.setChangingSetType({ exId, setId, currentType: type })}
                         lang={lang}
+                        isCardio={isCardio}
+                        cardioMode={cardioMode}
                     />
                 ))}
             </div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { playTimerFinishSound } from '../utils/audio';
 
@@ -43,7 +44,7 @@ export const useTimer = () => {
 
     const handleTick = useCallback(() => {
         setTimer(prev => {
-            if (!prev.active) return prev;
+            if (!prev || !prev.active) return prev;
             
             const now = Date.now();
             const remainingMs = Math.max(0, (prev.endAt || 0) - now);

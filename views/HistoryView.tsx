@@ -7,20 +7,59 @@ import { Icon } from '../components/ui/Icon';
 import { Log } from '../types';
 import { Virtuoso } from 'react-virtuoso';
 
+// Helper to parse duration string "mm:ss" or number to string format
+const formatDurationDisplay = (val: string | number) => {
+    if (typeof val === 'number') return `${val}m`;
+    if (!val) return '-';
+    return val.includes(':') ? val : `${val}m`;
+};
+
 // 1. Extract and Memoize the Card Component for Performance
 interface HistoryCardProps {
     log: Log;
     isExpanded: boolean;
     onToggle: (id: number) => void;
     lang: 'en' | 'es';
+    t: any;
 }
 
-const HistoryCard = memo(({ log, isExpanded, onToggle, lang }: HistoryCardProps) => {
+const HistoryCard = memo(({ log, isExpanded, onToggle, lang, t }: HistoryCardProps) => {
+    
+    // Process "Best Sets" for preview
     const bestSets = (log.exercises || []).map(ex => {
-        const validSets = (ex.sets || []).filter(s => s.completed && s.weight && s.reps);
+        const isCardio = ex.muscle === 'CARDIO';
+        const validSets = (ex.sets || []).filter(s => s.completed);
+        
         if (validSets.length === 0) return null;
-        const best = validSets.reduce((prev, current) => (Number(prev.weight) > Number(current.weight)) ? prev : current);
-        return { name: getTranslated(ex.name, lang), ...best };
+
+        if (isCardio) {
+            // For cardio, summarize total time or distance
+            const totalDist = validSets.reduce((acc, s) => acc + Number(s.distance || 0), 0);
+            const totalTime = validSets.reduce((acc, s) => {
+                // Parse duration potentially
+                let mins = 0;
+                if(typeof s.duration === 'string' && s.duration.includes(':')) {
+                    const [m, sec] = s.duration.split(':').map(Number);
+                    mins = m + (sec/60);
+                } else {
+                    mins = Number(s.duration || 0);
+                }
+                return acc + mins;
+            }, 0);
+            
+            return { 
+                name: getTranslated(ex.name, lang), 
+                isCardio: true,
+                summary: `${Math.round(totalTime)} min ${totalDist > 0 ? `/ ${totalDist.toFixed(1)} km` : ''}`
+            };
+        }
+
+        // Weightlifting logic
+        const validLifts = validSets.filter(s => s.weight && s.reps);
+        if (validLifts.length === 0) return null;
+        
+        const best = validLifts.reduce((prev, current) => (Number(prev.weight) > Number(current.weight)) ? prev : current);
+        return { name: getTranslated(ex.name, lang), ...best, isCardio: false };
     }).filter(Boolean);
 
     return (
@@ -54,7 +93,7 @@ const HistoryCard = memo(({ log, isExpanded, onToggle, lang }: HistoryCardProps)
                             <div key={i} className="flex justify-between items-center text-xs text-zinc-500">
                                 <span className="truncate pr-4 max-w-[200px]">{s.name}</span>
                                 <span className="font-mono font-bold text-zinc-700 dark:text-zinc-300">
-                                    {s.weight}kg x {s.reps}
+                                    {s.isCardio ? s.summary : `${s.weight}kg x ${s.reps}`}
                                 </span>
                             </div>
                         ))}
@@ -65,34 +104,57 @@ const HistoryCard = memo(({ log, isExpanded, onToggle, lang }: HistoryCardProps)
 
             {isExpanded && (
                 <div className="bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 p-4 space-y-6 animate-slideUp">
-                    {(log.exercises || []).map((ex, i) => (
-                        <div key={i}>
-                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white mb-2 flex items-center justify-between">
-                                <span>{getTranslated(ex.name, lang)}</span>
-                                {ex.note && <span className="text-[10px] text-zinc-400 italic font-normal max-w-[150px] truncate">{ex.note}</span>}
-                            </h4>
-                            <div className="space-y-1">
-                                {(ex.sets || []).filter(s => s.completed).map((s, idx) => (
-                                    <div key={idx} className="flex items-center text-xs">
-                                        <div className={`w-6 h-6 rounded flex items-center justify-center font-bold mr-3 ${s.type === 'warmup' ? 'bg-yellow-100 text-yellow-600' : 'bg-zinc-200 dark:bg-white/10 text-zinc-500'}`}>
-                                            {s.type === 'warmup' ? 'W' : idx + 1}
+                    {(log.exercises || []).map((ex, i) => {
+                        const isCardio = ex.muscle === 'CARDIO';
+                        return (
+                            <div key={i}>
+                                <h4 className="font-bold text-sm text-zinc-900 dark:text-white mb-2 flex items-center justify-between">
+                                    <span>{getTranslated(ex.name, lang)}</span>
+                                    {ex.note && <span className="text-[10px] text-zinc-400 italic font-normal max-w-[150px] truncate">{ex.note}</span>}
+                                </h4>
+                                <div className="space-y-1">
+                                    {(ex.sets || []).filter(s => s.completed).map((s, idx) => (
+                                        <div key={idx} className="flex items-center text-xs">
+                                            <div className={`w-6 h-6 rounded flex items-center justify-center font-bold mr-3 ${s.type === 'warmup' ? 'bg-yellow-100 text-yellow-600' : 'bg-zinc-200 dark:bg-white/10 text-zinc-500'}`}>
+                                                {s.type === 'warmup' ? 'W' : idx + 1}
+                                            </div>
+                                            <div className="flex-1 font-mono text-zinc-700 dark:text-zinc-300">
+                                                {isCardio ? (
+                                                    <>
+                                                        <span className="font-bold">{formatDurationDisplay(s.duration || 0)}</span>
+                                                        {s.distance && (
+                                                            <>
+                                                                <span className="mx-2 text-zinc-300">|</span>
+                                                                <span className="font-bold">{s.distance}</span> <span className="text-zinc-400 text-[10px]">KM</span>
+                                                            </>
+                                                        )}
+                                                        {s.rpe && (
+                                                            <>
+                                                                <span className="mx-2 text-zinc-300">|</span>
+                                                                <span className="text-zinc-500">{t.cardioSpeed}: {s.rpe}</span>
+                                                            </>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="font-bold">{s.weight}</span> <span className="text-zinc-400 text-[10px]">KG</span>
+                                                        <span className="mx-2 text-zinc-300">|</span>
+                                                        <span className="font-bold">{s.reps}</span> <span className="text-zinc-400 text-[10px]">REPS</span>
+                                                        {s.rpe && (
+                                                            <>
+                                                                <span className="mx-2 text-zinc-300">|</span>
+                                                                <span className="text-zinc-500">RIR {s.rpe}</span>
+                                                            </>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex-1 font-mono text-zinc-700 dark:text-zinc-300">
-                                            <span className="font-bold">{s.weight}</span> <span className="text-zinc-400 text-[10px]">KG</span>
-                                            <span className="mx-2 text-zinc-300">|</span>
-                                            <span className="font-bold">{s.reps}</span> <span className="text-zinc-400 text-[10px]">REPS</span>
-                                            {s.rpe && (
-                                                <>
-                                                    <span className="mx-2 text-zinc-300">|</span>
-                                                    <span className="text-zinc-500">RIR {s.rpe}</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>
@@ -166,6 +228,7 @@ export const HistoryView: React.FC = () => {
                             isExpanded={expandedId === log.id}
                             onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                             lang={lang}
+                            t={t}
                         />
                     )}
                 />

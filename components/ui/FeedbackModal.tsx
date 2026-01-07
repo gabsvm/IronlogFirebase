@@ -73,7 +73,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ muscles, onConfirm
                                     )}
                                 </div>
 
-                                {/* Soreness Row */}
+                                {/* Soreness Row (UI Order: 1, 2, 3) -> Matches Best to Worst */}
                                 <div className="space-y-1">
                                     <div className="text-[10px] font-bold text-zinc-400 uppercase">{t.fb.sorenessLabel}</div>
                                     <div className="grid grid-cols-3 gap-2">
@@ -89,18 +89,18 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ muscles, onConfirm
                                     </div>
                                 </div>
 
-                                {/* Performance Row */}
+                                {/* Performance Row (UI Order: 3, 2, 1) -> Matches Best (3) to Worst (1) */}
                                 <div className="space-y-1">
                                     <div className="text-[10px] font-bold text-zinc-400 uppercase">{t.fb.performanceLabel}</div>
                                     <div className="grid grid-cols-3 gap-2">
-                                        <button onClick={() => handleInput(m, 'p', 1)} className={`p-2 rounded-lg border text-xs font-bold transition-all ${p === 1 ? 'bg-red-600 text-white border-red-600' : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 border-zinc-200 dark:border-zinc-700'}`}>
-                                            {t.fb.performance[1]}
+                                        <button onClick={() => handleInput(m, 'p', 3)} className={`p-2 rounded-lg border text-xs font-bold transition-all ${p === 3 ? 'bg-green-600 text-white border-green-600' : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 border-zinc-200 dark:border-zinc-700'}`}>
+                                            {t.fb.performance[3]}
                                         </button>
                                         <button onClick={() => handleInput(m, 'p', 2)} className={`p-2 rounded-lg border text-xs font-bold transition-all ${p === 2 ? 'bg-zinc-800 text-white border-zinc-800' : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 border-zinc-200 dark:border-zinc-700'}`}>
                                             {t.fb.performance[2]}
                                         </button>
-                                        <button onClick={() => handleInput(m, 'p', 3)} className={`p-2 rounded-lg border text-xs font-bold transition-all ${p === 3 ? 'bg-green-600 text-white border-green-600' : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 border-zinc-200 dark:border-zinc-700'}`}>
-                                            {t.fb.performance[3]}
+                                        <button onClick={() => handleInput(m, 'p', 1)} className={`p-2 rounded-lg border text-xs font-bold transition-all ${p === 1 ? 'bg-red-600 text-white border-red-600' : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 border-zinc-200 dark:border-zinc-700'}`}>
+                                            {t.fb.performance[1]}
                                         </button>
                                     </div>
                                 </div>

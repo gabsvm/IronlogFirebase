@@ -8,10 +8,10 @@ import { Icon } from './Icon';
 export const RestTimerOverlay: React.FC = () => {
     const { restTimer, setRestTimer } = useTimerContext(); // Use isolated context
     const { lang } = useApp();
-    const t = TRANSLATIONS[lang];
+    const t = TRANSLATIONS[lang] || TRANSLATIONS['en']; // Fallback safety
     const [minimized, setMinimized] = useState(false);
 
-    if (!restTimer.active) return null;
+    if (!restTimer || !restTimer.active) return null;
 
     const formatSeconds = (s: number) => {
         const sec = Math.max(0, Math.floor(Number(s) || 0));

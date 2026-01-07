@@ -1,23 +1,18 @@
-
-import React, { ReactNode, Component } from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+import React, { Component, StrictMode, ReactNode } from 'react';
+import { createRoot } from 'react-dom/client';
 import './index.css';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import App from './App';
 
-// Register Service Worker for PWA capabilities
+console.log("Starting App Initialization...");
+
+// Register Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('SW registered: ', registration);
-      })
-      .catch(registrationError => {
-        console.log('SW registration failed: ', registrationError);
-      });
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
 
+// ERROR BOUNDARY
 interface ErrorBoundaryProps {
   children?: ReactNode;
 }
@@ -27,42 +22,61 @@ interface ErrorBoundaryState {
   error: any;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false, error: null };
-  declare props: Readonly<ErrorBoundaryProps>;
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState;
 
-  static getDerivedStateFromError(error: any) {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any): ErrorBoundaryState {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught error:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-center font-sans">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-3xl p-8 shadow-2xl border border-zinc-200 dark:border-white/10">
-            <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                <AlertTriangle size={40} strokeWidth={2} />
-            </div>
+        <div style={{ 
+            minHeight: '100vh', 
+            backgroundColor: '#09090b', 
+            color: '#fff', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            padding: '20px', 
+            fontFamily: 'monospace',
+            textAlign: 'center',
+            zIndex: 99999
+        }}>
+            <h1 style={{ color: '#ef4444', fontSize: '24px', marginBottom: '16px' }}>CRITICAL ERROR</h1>
+            <p style={{ opacity: 0.8, marginBottom: '24px' }}>The application failed to initialize.</p>
             
-            <h1 className="text-2xl font-black text-zinc-900 dark:text-white mb-3 tracking-tight">Something went wrong</h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">
-              The application encountered an unexpected error. Try resetting the app data to fix this issue.
-            </p>
-
             <button 
               onClick={() => { localStorage.clear(); window.location.reload(); }}
-              className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  marginBottom: '32px'
+              }}
             >
-              <RefreshCw size={18} /> Factory Reset App
+              Factory Reset App
             </button>
             
-            <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-white/5">
-                <p className="text-[10px] uppercase font-bold text-zinc-400 mb-2 tracking-widest">Error Details</p>
-                <pre className="text-[10px] text-left bg-zinc-100 dark:bg-black/40 p-3 rounded-lg text-zinc-600 dark:text-zinc-500 overflow-x-auto font-mono">
+            <div style={{ width: '100%', maxWidth: '500px', textAlign: 'left', background: '#000', padding: '16px', borderRadius: '8px', overflowX: 'auto' }}>
+                <pre style={{ color: '#f87171', fontSize: '11px', margin: 0 }}>
                     {String(this.state.error)}
                 </pre>
             </div>
-          </div>
         </div>
       );
     }
@@ -71,10 +85,17 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </React.StrictMode>
-);
+const rootElement = document.getElementById('root');
+if (rootElement) {
+    const root = createRoot(rootElement);
+    root.render(
+      <StrictMode>
+        <ErrorBoundary>
+            <App />
+        </ErrorBoundary>
+      </StrictMode>
+    );
+} else {
+    console.error("Root element not found");
+    document.body.innerHTML = '<h1 style="color:red">FATAL: #root missing</h1>';
+}

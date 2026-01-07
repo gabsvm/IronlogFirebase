@@ -103,13 +103,13 @@ const AppContent = () => {
 
                 if ((document as any).startViewTransition) {
                     const t = (document as any).startViewTransition(() => {
-                        if (e.state.view) setViewState(e.state.view);
-                        setShowSettings(!!e.state.settings);
+                        if (e.state?.view) setViewState(e.state.view);
+                        setShowSettings(!!e.state?.settings);
                     });
                     t.finished.finally(() => { document.documentElement.dataset.transition = ''; });
                 } else {
-                    if (e.state.view) setViewState(e.state.view);
-                    setShowSettings(!!e.state.settings);
+                    if (e.state?.view) setViewState(e.state.view);
+                    setShowSettings(!!e.state?.settings);
                 }
             } else {
                 setView('home');

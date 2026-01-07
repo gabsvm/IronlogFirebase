@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, FunctionDeclaration, Type } from "@google/genai";
 import { useApp } from '../../context/AppContext';
 import { Icon } from '../ui/Icon';
 import { ProgramDay, MuscleGroup } from '../../types';
@@ -19,77 +18,9 @@ const QUICK_PROMPTS = [
     { label: "Analyze Progress", prompt: "Analyze my last 3 workouts. Am I progressing?" },
 ];
 
-// TOOL 1: Create Full Program
-const createProgramTool: FunctionDeclaration = {
-    name: "createWorkoutPlan",
-    description: "Overwrites the ENTIRE workout program. Use this for new routines.",
-    parameters: {
-        type: Type.OBJECT,
-        properties: {
-            programName: { type: Type.STRING },
-            days: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        dayName: { type: Type.STRING },
-                        exercises: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    exerciseId: { type: Type.STRING, description: "The exact ID of the exercise from the provided list (e.g., 'bp_bar'). If unknown, leave empty." },
-                                    muscle: { type: Type.STRING, description: "Target muscle enum (CHEST, BACK...)" },
-                                    sets: { type: Type.NUMBER }
-                                },
-                                required: ["muscle"]
-                            }
-                        }
-                    },
-                    required: ["dayName", "exercises"]
-                }
-            }
-        },
-        required: ["days"]
-    }
-};
-
-// TOOL 2: Modify Specific Day (Granular Editing)
-const modifyDayTool: FunctionDeclaration = {
-    name: "modifyWorkoutDay",
-    description: "Modifies a SINGLE day in the current program by index. Use this to tweak specific days.",
-    parameters: {
-        type: Type.OBJECT,
-        properties: {
-            dayIndex: { type: Type.NUMBER, description: "0-based index of the day to modify (e.g., 0 for Day 1)" },
-            newStructure: {
-                type: Type.OBJECT,
-                properties: {
-                    dayName: { type: Type.STRING },
-                    exercises: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                exerciseId: { type: Type.STRING, description: "The exact ID of the exercise (e.g., 'bp_bar')." },
-                                muscle: { type: Type.STRING, description: "Target muscle enum" },
-                                sets: { type: Type.NUMBER }
-                            },
-                            required: ["muscle"]
-                        }
-                    }
-                },
-                required: ["exercises"]
-            }
-        },
-        required: ["dayIndex", "newStructure"]
-    }
-};
-
 export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { activeMeso, logs, lang, config, setProgram, program, exercises } = useApp();
     
-    // PERSISTENCE: Use LocalStorage for chat history
     const [messages, setMessages] = useLocalStorage<Message[]>('il_chat_history_v1', [
         { id: 'init', role: 'model', text: lang === 'en' ? "I am IronCoach. I can analyze your data, create new routines, or modify your current plan." : "Soy IronCoach. Puedo analizar tus datos, crear rutinas nuevas o modificar tu plan actual." }
     ]);
@@ -116,8 +47,6 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             volume: l.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter(s => s.completed).length || 0), 0)
         }));
 
-        // Create a mini-map of available exercises for the AI to "Entity Link"
-        // We limit to top 100 to save context window if library is huge
         const exerciseMap = exercises.slice(0, 100).map(e => `- ID: "${e.id}", Name: "${getTranslated(e.name, 'en')}" (${e.muscle})`).join('\n');
 
         const currentProgramSummary = (program || []).map((d, i) => 
@@ -149,6 +78,76 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         setIsLoading(true);
 
         try {
+            // Dynamic import to prevent crash on initial load if SDK fails
+            const { GoogleGenAI, Type } = await import("@google/genai");
+
+            // TOOL 1: Create Full Program
+            const createProgramTool = {
+                name: "createWorkoutPlan",
+                description: "Overwrites the ENTIRE workout program. Use this for new routines.",
+                parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                        programName: { type: Type.STRING },
+                        days: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    dayName: { type: Type.STRING },
+                                    exercises: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                exerciseId: { type: Type.STRING, description: "The exact ID of the exercise from the provided list (e.g., 'bp_bar'). If unknown, leave empty." },
+                                                muscle: { type: Type.STRING, description: "Target muscle enum (CHEST, BACK...)" },
+                                                sets: { type: Type.NUMBER }
+                                            },
+                                            required: ["muscle"]
+                                        }
+                                    }
+                                },
+                                required: ["dayName", "exercises"]
+                            }
+                        }
+                    },
+                    required: ["days"]
+                }
+            };
+
+            // TOOL 2: Modify Specific Day
+            const modifyDayTool = {
+                name: "modifyWorkoutDay",
+                description: "Modifies a SINGLE day in the current program by index. Use this to tweak specific days.",
+                parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                        dayIndex: { type: Type.NUMBER, description: "0-based index of the day to modify (e.g., 0 for Day 1)" },
+                        newStructure: {
+                            type: Type.OBJECT,
+                            properties: {
+                                dayName: { type: Type.STRING },
+                                exercises: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            exerciseId: { type: Type.STRING, description: "The exact ID of the exercise (e.g., 'bp_bar')." },
+                                            muscle: { type: Type.STRING, description: "Target muscle enum" },
+                                            sets: { type: Type.NUMBER }
+                                        },
+                                        required: ["muscle"]
+                                    }
+                                }
+                            },
+                            required: ["exercises"]
+                        }
+                    },
+                    required: ["dayIndex", "newStructure"]
+                }
+            };
+
             const contextData = buildContext();
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
@@ -183,7 +182,7 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 ],
                 config: {
                     systemInstruction,
-                    temperature: 0.5, // Lower temp for more precision with tools
+                    temperature: 0.5,
                     tools: [{ functionDeclarations: [createProgramTool, modifyDayTool] }]
                 }
             });
@@ -193,8 +192,6 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             
             if (functionCalls && functionCalls.length > 0) {
                 for (const call of functionCalls) {
-                    
-                    // --- TOOL: Create Full Plan ---
                     if (call.name === 'createWorkoutPlan') {
                         const args = call.args as any;
                         const newProgram: ProgramDay[] = (args.days || []).map((day: any, idx: number) => ({
@@ -209,8 +206,6 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                         setProgram(newProgram);
                         aiResponseText += `\n\n✅ ${lang==='en' ? 'Created new routine:' : 'Nueva rutina creada:'} **${args.programName}**`;
                     }
-
-                    // --- TOOL: Modify Single Day ---
                     else if (call.name === 'modifyWorkoutDay') {
                         const args = call.args as any;
                         const idx = args.dayIndex;
@@ -226,7 +221,6 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                                     exerciseId: ex.exerciseId || undefined
                                 }))
                             };
-                            
                             setProgram(prev => {
                                 const newProg = [...prev];
                                 newProg[idx] = updatedDay;
@@ -248,13 +242,12 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
 
         } catch (error) {
             console.error(error);
-            setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Error connecting to IronCoach." }]);
+            setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Error connecting to IronCoach (or missing API Key)." }]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Custom simple formatter
     const formatMessage = (text: string) => {
         return text.split('\n').map((line, i) => {
             if (!line.trim()) return <div key={i} className="h-2"></div>;

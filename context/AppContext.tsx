@@ -34,7 +34,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: PropsWithChildren) => {
     // --- Synchronous Config ---
-    const [lang, setLang] = useLocalStorage<Lang>('il_lang_v1', 'en');
+    const [langStored, setLang] = useLocalStorage<Lang>('il_lang_v1', 'en');
+    // Sanitize lang to ensure it matches available translations
+    const lang: Lang = (langStored === 'en' || langStored === 'es') ? langStored : 'en';
+
     const [theme, setTheme] = useLocalStorage<Theme>('il_theme_v1', 'dark');
     const [colorTheme, setColorTheme] = useLocalStorage<ColorTheme>('il_color_theme_v1', 'iron');
     

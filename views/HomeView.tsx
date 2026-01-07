@@ -1,7 +1,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
-import { TRANSLATIONS, FULL_BODY_TEMPLATE } from '../constants';
+import { TRANSLATIONS, FULL_BODY_TEMPLATE, DEFAULT_TEMPLATE, METABOLITE_TEMPLATE, RESENS_TEMPLATE, UPPER_LOWER_TEMPLATE } from '../constants';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { getTranslated, formatDate } from '../utils';
@@ -41,11 +41,31 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
     const handleStartMeso = () => {
         let planToUse = safeProgram;
 
-        // If specific template logic required (Dr Mike 4x Full Body)
-        if (newMesoType === 'full_body') {
-            // Overwrite program with 4 day full body template
-            planToUse = FULL_BODY_TEMPLATE;
-            setProgram(FULL_BODY_TEMPLATE);
+        // Apply specific template based on selection
+        switch (newMesoType) {
+            case 'hyp_1':
+                planToUse = DEFAULT_TEMPLATE;
+                setProgram(DEFAULT_TEMPLATE);
+                break;
+            case 'hyp_2':
+                planToUse = UPPER_LOWER_TEMPLATE;
+                setProgram(UPPER_LOWER_TEMPLATE);
+                break;
+            case 'metabolite':
+                planToUse = METABOLITE_TEMPLATE;
+                setProgram(METABOLITE_TEMPLATE);
+                break;
+            case 'resensitization':
+                planToUse = RESENS_TEMPLATE;
+                setProgram(RESENS_TEMPLATE);
+                break;
+            case 'full_body':
+                planToUse = FULL_BODY_TEMPLATE;
+                setProgram(FULL_BODY_TEMPLATE);
+                break;
+            default:
+                // If it's a custom type or error, use existing
+                break;
         }
 
         const initialPlan = planToUse.map(day => (day?.slots || []).map(slot => slot.exerciseId || null)); 
@@ -218,19 +238,35 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
 
     if (!activeMeso) {
         return (
-            <div className="p-8 flex flex-col items-center justify-center h-full text-center space-y-6">
-                <Logo className="w-24 h-24 shadow-2xl shadow-red-500/20 rounded-3xl" />
+            <div className="p-8 flex flex-col items-center justify-center h-full text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                {/* Hero Image - Dual Man/Woman Figures */}
+                <div className="relative group cursor-pointer flex justify-center items-center -space-x-8" onClick={() => setShowStartWizard(true)}>
+                    {/* Woman */}
+                    <div className="relative z-10 w-32 h-32 rounded-full overflow-hidden border-4 border-zinc-100 dark:border-zinc-800 shadow-xl">
+                        <img src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover grayscale" />
+                    </div>
+                    {/* Man */}
+                    <div className="relative z-0 w-36 h-36 rounded-full overflow-hidden border-4 border-zinc-100 dark:border-zinc-800 shadow-2xl">
+                        <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover grayscale" />
+                    </div>
+                    {/* Plus Icon */}
+                    <div className="absolute -bottom-2 right-10 bg-red-600 text-white p-2 rounded-full shadow-lg z-20">
+                        <Icon name="Plus" size={20} />
+                    </div>
+                </div>
+
                 <div>
-                    <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-2">{t.rp}</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed max-w-[250px] mx-auto">
-                        Start a new mesocycle to unlock IronCoach progression and analytics.
+                    <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-3 tracking-tighter">IronCoach <span className="text-red-600">Pro</span></h2>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed max-w-[280px] mx-auto">
+                        {t.onb.s1_desc}
                     </p>
                 </div>
-                <Button onClick={() => setShowStartWizard(true)} size="lg" className="w-full max-w-xs shadow-xl shadow-red-500/20 py-3">
-                    {t.startMeso}
-                </Button>
-                
-                <div className="pt-8 w-full max-w-xs">
+
+                <div className="w-full max-w-xs space-y-4">
+                    <Button onClick={() => setShowStartWizard(true)} size="lg" fullWidth className="shadow-xl shadow-red-500/20 py-4 text-lg">
+                        {t.startMeso}
+                    </Button>
+                    
                     <Button variant="ghost" onClick={onEditProgram} size="sm" fullWidth className="text-zinc-400">
                         <Icon name="Edit" size={14} /> {t.editTemplate}
                     </Button>
@@ -264,14 +300,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                             </div>
 
                             <div className="shrink-0 space-y-4">
-                                {newMesoType === 'full_body' && (
-                                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-xl flex gap-3 items-start animate-in fade-in">
-                                        <div className="text-orange-500 shrink-0 mt-0.5"><Icon name="Activity" size={16} /></div>
-                                        <p className="text-xs text-orange-700 dark:text-orange-300 leading-tight font-medium">
-                                            {t.overwriteTemplateConfirm}
-                                        </p>
-                                    </div>
-                                )}
+                                <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-xl flex gap-3 items-start animate-in fade-in">
+                                    <div className="text-orange-500 shrink-0 mt-0.5"><Icon name="Activity" size={16} /></div>
+                                    <p className="text-xs text-orange-700 dark:text-orange-300 leading-tight font-medium">
+                                        {t.overwriteTemplateConfirm}
+                                    </p>
+                                </div>
 
                                 <Button onClick={handleStartMeso} fullWidth size="lg">
                                     {t.createAndSelect}

@@ -6,7 +6,7 @@ import { MUSCLE_GROUPS } from '../constants';
 // Types for Worker Messages
 type WorkerAction = 
     | { type: 'CALCULATE_OVERVIEW', logs: Log[], activeMesoId?: number }
-    | { type: 'CALCULATE_CHART', logs: Log[], exerciseId: string, metric: '1rm' | 'volume' };
+    | { type: 'CALCULATE_CHART', logs: Log[], exerciseId: string, metric: '1rm' | 'volume' | 'duration' | 'distance' };
 
 type WorkerResponse = 
     | { type: 'OVERVIEW_READY', volumeData: [string, number][], exerciseFrequency: Record<string, number> }
@@ -19,6 +19,17 @@ export const useStatsWorker = () => {
     useEffect(() => {
         // INLINE WORKER CODE
         const workerCode = `
+            // Helper to parse "mm:ss" to number (minutes)
+            const parseDuration = (val) => {
+                if (typeof val === 'number') return val;
+                if (!val) return 0;
+                if (val.includes(':')) {
+                    const parts = val.split(':').map(Number);
+                    return parts[0] + (parts[1] / 60);
+                }
+                return Number(val) || 0;
+            };
+
             self.onmessage = function(e) {
                 const { type, logs, activeMesoId, exerciseId, metric } = e.data;
 
@@ -28,7 +39,7 @@ export const useStatsWorker = () => {
                     const weeksFound = new Set();
                     
                     // Initialize muscles
-                    const muscles = ['CHEST', 'BACK', 'QUADS', 'HAMSTRINGS', 'GLUTES', 'CALVES', 'SHOULDERS', 'BICEPS', 'TRICEPS', 'TRAPS', 'ABS', 'FOREARMS'];
+                    const muscles = ['CHEST', 'BACK', 'QUADS', 'HAMSTRINGS', 'GLUTES', 'CALVES', 'SHOULDERS', 'BICEPS', 'TRICEPS', 'TRAPS', 'ABS', 'FOREARMS', 'CARDIO'];
                     muscles.forEach(m => muscleCounts[m] = 0);
 
                     if (Array.isArray(logs)) {
@@ -94,11 +105,27 @@ export const useStatsWorker = () => {
                                     }
                                 }
                             });
-                        } else {
-                            // Total Volume Calculation
+                        } else if (metric === 'volume') {
+                            // Total Tonnage
                             bestValue = (ex.sets || []).reduce((acc, s) => {
                                 if (s.completed && s.weight && s.reps) {
                                     return acc + (Number(s.weight) * Number(s.reps));
+                                }
+                                return acc;
+                            }, 0);
+                        } else if (metric === 'duration') {
+                            // Cardio: Total Time (Minutes)
+                            bestValue = (ex.sets || []).reduce((acc, s) => {
+                                if (s.completed && s.duration) {
+                                    return acc + parseDuration(s.duration);
+                                }
+                                return acc;
+                            }, 0);
+                        } else if (metric === 'distance') {
+                            // Cardio: Total Distance (KM)
+                            bestValue = (ex.sets || []).reduce((acc, s) => {
+                                if (s.completed && s.distance) {
+                                    return acc + Number(s.distance);
                                 }
                                 return acc;
                             }, 0);
@@ -107,7 +134,7 @@ export const useStatsWorker = () => {
                         if (bestValue > 0) {
                             dataPoints.push({
                                 date: log.endTime,
-                                value: Math.round(bestValue),
+                                value: Number(bestValue.toFixed(1)),
                                 weight: bestSetDetails.w,
                                 reps: bestSetDetails.r
                             });
@@ -144,7 +171,7 @@ export const useStatsWorker = () => {
         });
     }, []);
 
-    const calculateChartData = useCallback((logs: Log[], exerciseId: string, metric: '1rm' | 'volume'): Promise<{ date: number, value: number, weight: number, reps: number }[]> => {
+    const calculateChartData = useCallback((logs: Log[], exerciseId: string, metric: '1rm' | 'volume' | 'duration' | 'distance'): Promise<{ date: number, value: number, weight: number, reps: number }[]> => {
         return new Promise((resolve) => {
             if (!workerRef.current) return;
 

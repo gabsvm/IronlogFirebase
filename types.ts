@@ -6,13 +6,17 @@ export type ColorTheme = 'iron' | 'ocean' | 'forest' | 'royal' | 'sunset' | 'mon
 export type MuscleGroup = 
   | 'CHEST' | 'BACK' | 'QUADS' | 'HAMSTRINGS' 
   | 'GLUTES' | 'CALVES' | 'SHOULDERS' | 'BICEPS' 
-  | 'TRICEPS' | 'TRAPS' | 'ABS' | 'FOREARMS';
+  | 'TRICEPS' | 'TRAPS' | 'ABS' | 'FOREARMS'
+  | 'CARDIO'; 
+
+export type CardioType = 'steady' | 'hiit' | 'tabata';
 
 export interface ExerciseDef {
   id: string;
   name: string | { en: string; es: string };
   muscle: MuscleGroup;
-  instructions?: { en: string; es: string }; // New field for execution details
+  instructions?: { en: string; es: string };
+  defaultCardioType?: CardioType;
 }
 
 export type SetType = 'regular' | 'myorep' | 'myorep_match' | 'cluster' | 'top' | 'backoff' | 'giant' | 'warmup';
@@ -21,14 +25,20 @@ export interface WorkoutSet {
   id: number;
   weight: string | number;
   reps: string | number;
-  rpe: string | number; // RIR
+  rpe: string | number; // RIR or Intensity for cardio
   completed: boolean;
   type: SetType;
   skipped?: boolean;
-  hintWeight?: string | number; // The suggestion for today
-  hintReps?: string | number;   // The suggestion for today
-  prevWeight?: string | number; // Actual historical data
-  prevReps?: string | number;   // Actual historical data
+  hintWeight?: string | number;
+  hintReps?: string | number;
+  prevWeight?: string | number;
+  prevReps?: string | number;
+  // Cardio fields
+  distance?: string | number; // in km
+  duration?: string | number; // in minutes (steady state)
+  // Interval fields
+  workSeconds?: number;
+  restSeconds?: number;
 }
 
 export type WeightUnit = 'kg' | 'lb' | 'pl';
@@ -36,20 +46,21 @@ export type WeightUnit = 'kg' | 'lb' | 'pl';
 export interface SessionExercise extends ExerciseDef {
   instanceId: number;
   slotLabel?: string;
-  targetReps?: string; // e.g., "6-10"
+  targetReps?: string;
   note?: string;
   sets: WorkoutSet[];
-  weightUnit?: WeightUnit; // Changed from 'kg' | 'pl'
-  plateWeight?: number; // Weight per plate if unit is 'pl'
+  weightUnit?: WeightUnit;
+  plateWeight?: number;
   supersetId?: string;
   isPlaceholder?: boolean;
+  cardioType?: CardioType; // Current mode for this session
 }
 
 export interface ActiveSession {
   id: number;
   dayIdx: number;
   name: string;
-  startTime: number | null; // Timestamp
+  startTime: number | null;
   endTime?: number;
   mesoId: number;
   week: number;
@@ -73,12 +84,12 @@ export type MesoType = 'hyp_1' | 'hyp_2' | 'metabolite' | 'resensitization' | 'f
 
 export interface MesoCycle {
   id: number;
-  name?: string; // User defined name
-  mesoType: MesoType; // NEW: Phase type
+  name?: string;
+  mesoType: MesoType;
   week: number;
-  plan: (string | null)[][]; // Array of Day Plans (Array of Exercise IDs)
-  targetWeeks?: number; // How many weeks intended
-  isDeload?: boolean; // Is current week a deload?
+  plan: (string | null)[][];
+  targetWeeks?: number;
+  isDeload?: boolean;
 }
 
 export interface Log {
@@ -94,11 +105,10 @@ export interface Log {
   exercises: SessionExercise[];
 }
 
-// NEW: Structured feedback for advanced algorithm
 export interface FeedbackEntry {
-    soreness: number; // 1 (none) to 3 (hurt)
-    performance: number; // 1 (bad) to 3 (great)
-    adjustment: number; // Calculated change (-1, 0, +1)
+    soreness: number;
+    performance: number;
+    adjustment: number;
 }
 
 export interface AppState {
@@ -113,7 +123,6 @@ export interface AppState {
         rpTargetRIR: number;
         keepScreenOn: boolean;
     };
-    // Updated feedback structure: mesoId -> week -> muscle -> Entry
     rpFeedback: Record<string, Record<string, Record<string, FeedbackEntry>>>; 
     hasSeenOnboarding: boolean;
 }

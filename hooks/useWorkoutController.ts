@@ -1,16 +1,15 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
-import { useTimerContext } from '../context/TimerContext'; // New import
+import { useTimerContext } from '../context/TimerContext';
 import { SessionExercise, ExerciseDef, SetType, Log } from '../types';
 import { arrayMove } from '@dnd-kit/sortable';
 import { triggerHaptic } from '../utils/audio';
-import confetti from 'canvas-confetti';
 import { getLastLogForExercise } from '../utils';
 
 export const useWorkoutController = (onFinishCallback: () => void) => {
     const { activeSession, activeMeso, setActiveSession, exercises, rpFeedback, setRpFeedback, config, logs } = useApp();
-    const { setRestTimer } = useTimerContext(); // Use new context
+    const { setRestTimer } = useTimerContext();
     const [sessionElapsed, setSessionElapsed] = useState(0);
 
     // Local UI State
@@ -25,11 +24,9 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     const [configPlateExId, setConfigPlateExId] = useState<number | null>(null);
     const [plateWeightInput, setPlateWeightInput] = useState('');
     const [changingSetType, setChangingSetType] = useState<{ exId: number, setId: number, currentType: SetType } | null>(null);
-    
-    // New: Plate Calculator State
     const [showPlateCalc, setShowPlateCalc] = useState<{ weight: number } | null>(null);
     
-    // PR Logic: Track if PR found, and if we should show the success overlay
+    // PR Logic
     const [hasNewPR, setHasNewPR] = useState(false);
     const [showPRSuccess, setShowPRSuccess] = useState(false);
 
@@ -84,14 +81,12 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
 
         const completing = !set.completed;
         
-        // HAPTIC FEEDBACK
         if (completing) {
             triggerHaptic('success');
         } else {
             triggerHaptic('light');
         }
 
-        // Start session time if first set
         setActiveSession(prev => {
             if(!prev) return null;
             let startTime = prev.startTime;
@@ -107,7 +102,6 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
             }
         });
 
-        // Trigger Rest Timer
         if (completing) {
             const isMetabolite = activeMeso?.mesoType === 'metabolite';
             let dur = isMetabolite ? 60 : 120;
@@ -152,24 +146,32 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         return prFound;
     }, [sessionExercises, logs]);
 
-    const fireConfetti = useCallback(() => {
-        const count = 200;
-        const defaults = {
-            origin: { y: 0.7 },
-            zIndex: 9999 
-        };
-        function fire(particleRatio: number, opts: any) {
-            confetti({
-                ...defaults,
-                ...opts,
-                particleCount: Math.floor(count * particleRatio)
-            });
+    const fireConfetti = useCallback(async () => {
+        try {
+            // Dynamic import to prevent crash if library is missing
+            const confettiModule = await import('canvas-confetti');
+            const confetti = confettiModule.default || confettiModule;
+            
+            const count = 200;
+            const defaults = {
+                origin: { y: 0.7 },
+                zIndex: 9999 
+            };
+            function fire(particleRatio: number, opts: any) {
+                confetti({
+                    ...defaults,
+                    ...opts,
+                    particleCount: Math.floor(count * particleRatio)
+                });
+            }
+            fire(0.25, { spread: 26, startVelocity: 55 });
+            fire(0.2, { spread: 60 });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
+        } catch (e) {
+            console.warn("Confetti failed to load", e);
         }
-        fire(0.25, { spread: 26, startVelocity: 55 });
-        fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-        fire(0.1, { spread: 120, startVelocity: 45 });
     }, []);
 
     const handleConfirmFinish = useCallback(() => {
@@ -182,9 +184,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         if (config?.rpEnabled) {
             setShowFeedbackModal(true);
         } else {
-            // No feedback needed flow
             if (isPR) {
-                // Show celebration overlay, it will handle onFinish when dismissed
                 setShowPRSuccess(true);
                 fireConfetti();
             } else {
@@ -209,7 +209,6 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         
         setShowFeedbackModal(false);
         
-        // After feedback, check if we need to show PR screen or just finish
         if (hasNewPR) {
             setShowPRSuccess(true);
             fireConfetti();
@@ -246,7 +245,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         plateWeightInput, setPlateWeightInput,
         changingSetType, setChangingSetType,
         showPlateCalc, setShowPlateCalc,
-        showPRSuccess, dismissPRSuccess, // NEW: exposed state
+        showPRSuccess, dismissPRSuccess,
         handleSetUpdate,
         handleNoteUpdate,
         toggleSetComplete,

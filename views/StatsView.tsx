@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { TRANSLATIONS, MUSCLE_GROUPS } from '../constants';
+import { TRANSLATIONS } from '../constants';
 import { MuscleGroup } from '../types';
 import { ProgressChart, ChartDataPoint } from '../components/stats/ProgressChart';
 import { SymmetryRadar } from '../components/stats/SymmetryRadar';
@@ -22,18 +22,22 @@ import {
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
-// Register necessary ChartJS components globally for this view
-ChartJS.register(
-    RadialLinearScale, 
-    ArcElement, 
-    Tooltip, 
-    Legend, 
-    PointElement, 
-    LineElement, 
-    Filler,
-    CategoryScale,
-    LinearScale
-);
+// Safely register charts
+try {
+    ChartJS.register(
+        RadialLinearScale, 
+        ArcElement, 
+        Tooltip, 
+        Legend, 
+        PointElement, 
+        LineElement, 
+        Filler,
+        CategoryScale,
+        LinearScale
+    );
+} catch (e) {
+    console.error("Failed to register ChartJS components", e);
+}
 
 // --- HELPER: Volume Zones (Dr. Mike / RP Logic) ---
 const getVolumeZone = (sets: number) => {
@@ -50,7 +54,8 @@ export const StatsView: React.FC = () => {
     
     // UI State
     const [selectedExId, setSelectedExId] = useState<string | null>(null);
-    const [chartMetric, setChartMetric] = useState<'1rm' | 'volume'>('1rm');
+    // Expand metrics to include Cardio types
+    const [chartMetric, setChartMetric] = useState<'1rm' | 'volume' | 'duration' | 'distance'>('1rm');
     const [showPicker, setShowPicker] = useState(false);
     const [pickerSearch, setPickerSearch] = useState('');
 
@@ -68,6 +73,23 @@ export const StatsView: React.FC = () => {
     const { isWorkerReady, calculateOverview, calculateChartData } = useStatsWorker();
     
     const safeLogs = useMemo(() => Array.isArray(logs) ? logs : [], [logs]);
+    const currentEx = exercises.find(e => e.id === selectedExId);
+    const isCardio = currentEx?.muscle === 'CARDIO';
+
+    // Auto-switch metric when exercise type changes
+    useEffect(() => {
+        if (isCardio) {
+            // Default to Duration for cardio
+            if (chartMetric !== 'duration' && chartMetric !== 'distance') {
+                setChartMetric('duration');
+            }
+        } else {
+            // Default to 1RM for weights
+            if (chartMetric !== '1rm' && chartMetric !== 'volume') {
+                setChartMetric('1rm');
+            }
+        }
+    }, [isCardio]);
 
     // 1. Load Overview (Volume + Exercise List)
     useEffect(() => {
@@ -84,7 +106,7 @@ export const StatsView: React.FC = () => {
             volumeData.forEach(([m, v]) => counts[m] = v);
             setRawMuscleCounts(counts);
 
-            // Calculate Set Type Distribution (Simple enough to do main thread or move to worker later)
+            // Calculate Set Type Distribution
             const typeCounts: Record<string, number> = {};
             safeLogs.forEach(l => {
                 if(activeMeso?.id && l.mesoId !== activeMeso.id) return;
@@ -140,8 +162,7 @@ export const StatsView: React.FC = () => {
         );
     }, [availableExercises, pickerSearch, lang]);
 
-    const maxVal = Math.max(...volumeData.map(d => d[1]), 25); // Set max a bit higher for context
-    const currentEx = exercises.find(e => e.id === selectedExId);
+    const maxVal = Math.max(...volumeData.map(d => d[1]), 25); 
 
     // Doughnut Data Configuration
     const doughnutData = {
@@ -156,8 +177,6 @@ export const StatsView: React.FC = () => {
         }]
     };
 
-    // Explicitly casting Object.values to number[] ensures reduce treats 'b' as number, and initial '0' makes 'a' a number.
-    // This fixes "Operator '>' cannot be applied to types 'unknown' and 'number'" if type inference fails.
     const totalSets = (Object.values(setTypeDist) as number[]).reduce((a, b) => a + b, 0);
     const hasData = totalSets > 0;
 
@@ -177,18 +196,37 @@ export const StatsView: React.FC = () => {
                         </div>
                         
                         <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg">
-                            <button 
-                                onClick={() => setChartMetric('1rm')}
-                                className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartMetric === '1rm' ? 'bg-white dark:bg-zinc-700 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
-                            >
-                                1RM
-                            </button>
-                            <button 
-                                onClick={() => setChartMetric('volume')}
-                                className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartMetric === 'volume' ? 'bg-white dark:bg-zinc-700 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
-                            >
-                                VOL
-                            </button>
+                            {isCardio ? (
+                                <>
+                                    <button 
+                                        onClick={() => setChartMetric('duration')}
+                                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartMetric === 'duration' ? 'bg-white dark:bg-zinc-700 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+                                    >
+                                        TIME
+                                    </button>
+                                    <button 
+                                        onClick={() => setChartMetric('distance')}
+                                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartMetric === 'distance' ? 'bg-white dark:bg-zinc-700 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+                                    >
+                                        DIST
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button 
+                                        onClick={() => setChartMetric('1rm')}
+                                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartMetric === '1rm' ? 'bg-white dark:bg-zinc-700 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+                                    >
+                                        1RM
+                                    </button>
+                                    <button 
+                                        onClick={() => setChartMetric('volume')}
+                                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartMetric === 'volume' ? 'bg-white dark:bg-zinc-700 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+                                    >
+                                        VOL
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -208,7 +246,7 @@ export const StatsView: React.FC = () => {
                 {selectedExId && (
                     <ProgressChart 
                         dataPoints={chartPoints}
-                        metric={chartMetric} 
+                        metric={chartMetric as any} 
                         loading={loadingChart}
                     />
                 )}
