@@ -150,7 +150,8 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         try {
             // Dynamic import to prevent crash if library is missing
             const confettiModule = await import('canvas-confetti');
-            const confetti = confettiModule.default || confettiModule;
+            // Cast to any to avoid TS2349: This expression is not callable
+            const confetti = (confettiModule.default || confettiModule) as any;
             
             const count = 200;
             const defaults = {
