@@ -14,7 +14,7 @@ export interface ChartDataPoint {
 
 interface ProgressChartProps {
     dataPoints: ChartDataPoint[];
-    metric: '1rm' | 'volume';
+    metric: '1rm' | 'volume' | 'duration' | 'distance';
     loading?: boolean;
 }
 
@@ -22,11 +22,21 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({ dataPoints, metric
     const { lang, theme } = useApp();
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
+    const getLabel = (m: string) => {
+        switch(m) {
+            case '1rm': return 'Est. 1RM (kg)';
+            case 'volume': return 'Volume (kg)';
+            case 'duration': return 'Duration (min)';
+            case 'distance': return 'Distance (km)';
+            default: return 'Value';
+        }
+    };
+
     const data = {
         labels: dataPoints.map(d => formatDate(d.date, lang)),
         datasets: [
             {
-                label: metric === '1rm' ? 'Est. 1RM (kg)' : 'Volume (kg)',
+                label: getLabel(metric),
                 data: dataPoints.map(d => d.value),
                 borderColor: '#dc2626',
                 backgroundColor: (context: ScriptableContext<"line">) => {
@@ -68,6 +78,10 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({ dataPoints, metric
                         const point = dataPoints[item.dataIndex];
                         if (metric === '1rm') {
                              return `Est. 1RM: ${item.formattedValue}kg (${point.weight}x${point.reps})`;
+                        } else if (metric === 'duration') {
+                            return `Time: ${item.formattedValue} min`;
+                        } else if (metric === 'distance') {
+                            return `Dist: ${item.formattedValue} km`;
                         }
                         return `Volume: ${item.formattedValue}kg`;
                     }
