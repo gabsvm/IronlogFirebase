@@ -78,6 +78,14 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         setIsLoading(true);
 
         try {
+            // Safety Check for Environment Variable
+            // @ts-ignore
+            const apiKey = process.env.API_KEY;
+            
+            if (!apiKey) {
+                throw new Error("Missing API Key configuration.");
+            }
+
             // Dynamic import to prevent crash on initial load if SDK fails
             const { GoogleGenAI, Type } = await import("@google/genai");
 
@@ -149,7 +157,7 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             };
 
             const contextData = buildContext();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ apiKey });
             
             const systemInstruction = `
                 You are IronCoach, an elite hypertrophy coach agent.
@@ -240,9 +248,14 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Done." }]);
             }
 
-        } catch (error) {
-            console.error(error);
-            setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Error connecting to IronCoach (or missing API Key)." }]);
+        } catch (error: any) {
+            console.error("AI Error:", error);
+            const errorMsg = error.message || String(error);
+            setMessages(prev => [...prev, { 
+                id: Date.now().toString(), 
+                role: 'model', 
+                text: `⚠️ Error: ${errorMsg}. Please check connection or API Key.` 
+            }]);
         } finally {
             setIsLoading(false);
         }
