@@ -10,10 +10,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, cwd, '');
   
   // Robustly try to find the API Key from various potential sources
-  // 1. env.API_KEY (Loaded from .env files or system vars by Vite)
-  // 2. process.env.API_KEY (System vars directly, vital for some Vercel configs)
-  // 3. VITE_API_KEY variants (Common mistake fallback)
-  const apiKey = env.API_KEY || process.env.API_KEY || env.VITE_API_KEY || process.env.VITE_API_KEY;
+  // Added the specific key provided by user as a hard fallback
+  const apiKey = env.API_KEY || process.env.API_KEY || env.VITE_API_KEY || process.env.VITE_API_KEY || 'AIzaSyAnVhFr2GKNsH52RdUlxiZ8j1pZDlApsp8';
 
   if (mode === 'production' && !apiKey) {
       console.warn("⚠️ WARNING: API_KEY not found in environment variables. AI features will fail.");

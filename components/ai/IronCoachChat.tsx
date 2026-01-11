@@ -83,9 +83,13 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             const apiKey = process.env.API_KEY;
             
             // Debug Log (will show in browser console)
-            if (!apiKey) {
-                console.error("IronCoach Error: API Key is undefined. Check vite.config.ts define block.");
-                throw new Error("API Key is missing in configuration");
+            if (!apiKey || apiKey.includes("INSERT_KEY")) {
+                console.error("IronCoach Error: API Key is missing.");
+                const missingMsg = lang === 'en' 
+                    ? "⚠️ API Key Missing. Please create a .env file in the project root with: API_KEY=your_key_here"
+                    : "⚠️ Falta la API Key. Crea un archivo .env en la raíz del proyecto con: API_KEY=tu_clave_aqui";
+                
+                throw new Error(missingMsg);
             }
 
             // Dynamic import to prevent crash on initial load if SDK fails
@@ -252,11 +256,14 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
 
         } catch (error: any) {
             console.error("AI Error:", error);
-            const errorMsg = error.message || String(error);
+            // Clean up error message if it's the standard JS Error object string
+            let errorMsg = error.message || String(error);
+            if (errorMsg.includes("GoogleGenAI")) errorMsg = "Connection Error";
+            
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `⚠️ Error: ${errorMsg}. Please check API Key in settings.` 
+                text: errorMsg 
             }]);
         } finally {
             setIsLoading(false);
