@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useRef, ReactNode, useState, PropsWithChildren, useMemo, useCallback } from 'react';
-import { AppState, Lang, Theme, ColorTheme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay } from '../types';
+import { AppState, Lang, Theme, ColorTheme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay, TutorialState } from '../types';
 import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { usePersistedState } from '../hooks/usePersistedState';
@@ -27,6 +27,10 @@ interface AppContextType extends AppState {
     setRpFeedback: (val: AppState['rpFeedback'] | ((prev: AppState['rpFeedback']) => AppState['rpFeedback'])) => void;
     setHasSeenOnboarding: (val: boolean) => void;
     
+    // Tutorial Methods
+    markTutorialSeen: (section: keyof TutorialState) => void;
+    resetTutorials: () => void;
+    
     isAppLoading: boolean;
 }
 
@@ -45,6 +49,14 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
     const [rpEnabled, setRpEnabled] = useLocalStorage('il_cfg_rp', true);
     const [rpTargetRIR, setRpTargetRIR] = useLocalStorage('il_cfg_rp_rir', 2);
     const [keepScreenOn, setKeepScreenOn] = useLocalStorage('il_cfg_screen', false);
+
+    // Tutorial State
+    const [tutorialProgress, setTutorialProgress] = useLocalStorage<TutorialState>('il_tutorial_v1', {
+        home: false,
+        workout: false,
+        history: false,
+        stats: false
+    });
 
     // --- Heavy Data (IndexedDB) ---
     const [program, setProgram, programLoading] = usePersistedState<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE, 1000);
@@ -113,6 +125,15 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         if (newConfig.keepScreenOn !== undefined) setKeepScreenOn(newConfig.keepScreenOn);
     }, [setShowRIR, setRpEnabled, setRpTargetRIR, setKeepScreenOn]);
 
+    const markTutorialSeen = useCallback((section: keyof TutorialState) => {
+        setTutorialProgress(prev => ({ ...prev, [section]: true }));
+    }, [setTutorialProgress]);
+
+    const resetTutorials = useCallback(() => {
+        setTutorialProgress({ home: false, workout: false, history: false, stats: false });
+        alert("Tutorials reset!");
+    }, [setTutorialProgress]);
+
     const config = useMemo(() => ({ showRIR, rpEnabled, rpTargetRIR, keepScreenOn }), [showRIR, rpEnabled, rpTargetRIR, keepScreenOn]);
 
     const contextValue = useMemo(() => ({
@@ -125,6 +146,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         config, setConfig,
         rpFeedback, setRpFeedback,
         hasSeenOnboarding, setHasSeenOnboarding,
+        tutorialProgress, markTutorialSeen, resetTutorials,
         isAppLoading
     }), [
         lang, setLang, theme, setTheme, colorTheme, setColorTheme,
@@ -136,6 +158,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         config, setConfig,
         rpFeedback, setRpFeedback,
         hasSeenOnboarding, setHasSeenOnboarding,
+        tutorialProgress, markTutorialSeen, resetTutorials,
         isAppLoading
     ]);
 

@@ -15,6 +15,7 @@ import { getTranslated, getMesoStageConfig, getLastLogForExercise } from '../uti
 import { useWorkoutController } from '../hooks/useWorkoutController';
 import { SortableExerciseCard } from '../components/workout/SortableExerciseCard';
 import { triggerHaptic } from '../utils/audio';
+import { TutorialOverlay } from '../components/ui/TutorialOverlay'; // Import Tutorial
 
 // DnD Imports
 import {
@@ -42,7 +43,7 @@ interface WorkoutViewProps {
 
 // Container Component
 export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAddSet, onDeleteSet }) => {
-    const { activeSession, activeMeso, lang, config, exercises, logs } = useApp();
+    const { activeSession, activeMeso, lang, config, exercises, logs, tutorialProgress, markTutorialSeen } = useApp();
     const t = TRANSLATIONS[lang];
     
     // Use the Custom Controller Hook
@@ -203,6 +204,12 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     // Only show if config.showRIR is true OR if it is a deload (which is structural)
     const showStageInfo = stageConfig && (config.showRIR || stageConfig.label === 'recovery');
 
+    // Tutorial Steps for Workout
+    const workoutTutorialSteps = [
+        { targetId: 'tut-exercise-list', title: t.tutorial.workout[0].title, text: t.tutorial.workout[0].text, position: 'bottom' as const },
+        { targetId: 'tut-finish-btn', title: t.tutorial.workout[3].title, text: t.tutorial.workout[3].text, position: 'top' as const }
+    ];
+
     return (
         <div className="fixed inset-0 z-40 flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans" onClick={() => ctrl.setOpenMenuId(null)}>
             
@@ -233,7 +240,11 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                         <Icon name={viewMode === 'focus' ? 'Layout' : 'Eye'} size={18} />
                     </button>
                     
-                    <button onClick={(e) => { e.stopPropagation(); ctrl.setShowFinishModal(true); }} className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg shadow-red-900/20 transition-transform active:scale-95 flex items-center justify-center">
+                    <button 
+                        id="tut-finish-btn"
+                        onClick={(e) => { e.stopPropagation(); ctrl.setShowFinishModal(true); }} 
+                        className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg shadow-red-900/20 transition-transform active:scale-95 flex items-center justify-center"
+                    >
                         <Icon name="Check" size={20} />
                     </button>
                 </div>
@@ -258,7 +269,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
                 {viewMode === 'list' ? (
                     // LIST MODE (With DnD)
-                    <div className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
+                    <div id="tut-exercise-list" className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
                         <DndContext 
                             sensors={sensors}
                             collisionDetection={closestCenter}
@@ -361,19 +372,19 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                              onClick={(e) => { e.stopPropagation(); ctrl.setShowPlateCalc({ weight: 20 }); }}
                                              className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl font-bold text-sm text-zinc-600 dark:text-zinc-300 flex items-center justify-center gap-2"
                                         >
-                                            <Icon name="Dumbbell" size={16} /> Calc
+                                            <Icon name="Dumbbell" size={16} /> {t.calc}
                                         </button>
                                          <button 
                                              onClick={(e) => { e.stopPropagation(); ctrl.setWarmupExId(focusedExercise.instanceId); }}
                                              className="flex-1 py-3 bg-orange-50 dark:bg-orange-900/10 rounded-xl font-bold text-sm text-orange-600 dark:text-orange-400 flex items-center justify-center gap-2"
                                         >
-                                            <Icon name="Zap" size={16} /> Warmup
+                                            <Icon name="Zap" size={16} /> {t.warmup}
                                         </button>
                                     </div>
                                 </div>
                              ) : (
                                  <div className="flex flex-col items-center justify-center h-full text-zinc-400">
-                                     <p>No exercises yet.</p>
+                                     <p>{t.emptySession}</p>
                                      <Button onClick={() => ctrl.setAddingExercise(true)} className="mt-4">{t.addExercise}</Button>
                                  </div>
                              )}
@@ -381,6 +392,12 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                     </div>
                 )}
             </div>
+
+            <TutorialOverlay 
+                steps={workoutTutorialSteps}
+                isActive={!tutorialProgress.workout}
+                onComplete={() => markTutorialSeen('workout')}
+            />
 
             {/* --- Modals (Rendered conditionally) --- */}
             
@@ -392,6 +409,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 />
             )}
 
+            {/* ... other modals ... */}
             {ctrl.changingSetType && (
                 <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={() => ctrl.setChangingSetType(null)}>
                     {/* Simplified Type Selector UI - Keeping functionality identical but cleaner */}

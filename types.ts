@@ -112,6 +112,13 @@ export interface FeedbackEntry {
     adjustment: number;
 }
 
+export interface TutorialState {
+    home: boolean;
+    workout: boolean;
+    history: boolean;
+    stats: boolean;
+}
+
 export interface AppState {
     program: ProgramDay[];
     activeMeso: MesoCycle | null;
@@ -126,4 +133,5 @@ export interface AppState {
     };
     rpFeedback: Record<string, Record<string, Record<string, FeedbackEntry>>>; 
     hasSeenOnboarding: boolean;
+    tutorialProgress: TutorialState;
 }

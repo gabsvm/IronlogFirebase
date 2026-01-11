@@ -8,6 +8,7 @@ import { SymmetryRadar } from '../components/stats/SymmetryRadar';
 import { getTranslated } from '../utils';
 import { Icon } from '../components/ui/Icon';
 import { useStatsWorker } from '../hooks/useStatsWorker';
+import { TutorialOverlay } from '../components/ui/TutorialOverlay';
 import { 
     Chart as ChartJS, 
     RadialLinearScale, 
@@ -48,7 +49,7 @@ const getVolumeZone = (sets: number) => {
 };
 
 export const StatsView: React.FC = () => {
-    const { logs, lang, activeMeso, exercises, theme } = useApp();
+    const { logs, lang, activeMeso, exercises, theme, tutorialProgress, markTutorialSeen } = useApp();
     const t = TRANSLATIONS[lang];
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
@@ -180,19 +181,29 @@ export const StatsView: React.FC = () => {
     const totalSets = (Object.values(setTypeDist) as number[]).reduce((a, b) => a + b, 0);
     const hasData = totalSets > 0;
 
+    const statsTutorialSteps = [
+        { targetId: 'tut-progress-chart', title: t.tutorial.stats[0].title, text: t.tutorial.stats[0].text, position: 'bottom' as const },
+        { targetId: 'tut-radar-chart', title: t.tutorial.stats[1].title, text: t.tutorial.stats[1].text, position: 'top' as const },
+        { targetId: 'tut-vol-bar', title: t.tutorial.stats[2].title, text: t.tutorial.stats[2].text, position: 'top' as const },
+        { targetId: 'tut-vol-legend', title: t.tutorial.stats[3].title, text: t.tutorial.stats[3].text, position: 'bottom' as const },
+        { targetId: 'tut-vol-legend', title: t.tutorial.stats[4].title, text: t.tutorial.stats[4].text, position: 'bottom' as const },
+        { targetId: 'tut-vol-legend', title: t.tutorial.stats[5].title, text: t.tutorial.stats[5].text, position: 'bottom' as const },
+        { targetId: 'tut-vol-legend', title: t.tutorial.stats[6].title, text: t.tutorial.stats[6].text, position: 'bottom' as const }
+    ];
+
     return (
-        <div className="p-4 space-y-6 pb-24">
+        <div className="p-4 space-y-6 pb-24 relative">
             <h2 className="text-2xl font-black text-zinc-900 dark:text-white px-2">Analytics</h2>
             
             {/* --- Progress Chart Section --- */}
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-white/5 shadow-sm">
+            <div id="tut-progress-chart" className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-white/5 shadow-sm">
                 <div className="flex flex-col gap-4 mb-6">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                              <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-500 flex items-center justify-center">
                                 <Icon name="TrendingUp" size={16} />
                             </div>
-                            <h3 className="font-bold text-zinc-900 dark:text-white">Progress Tracker</h3>
+                            <h3 className="font-bold text-zinc-900 dark:text-white">{t.statsProgress}</h3>
                         </div>
                         
                         <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg">
@@ -236,7 +247,7 @@ export const StatsView: React.FC = () => {
                     >
                         <span className="truncate">
                             {loadingOverview 
-                                ? "Loading exercises..." 
+                                ? t.loading 
                                 : currentEx ? getTranslated(currentEx.name, lang) : t.selectEx}
                         </span>
                         <Icon name="CornerDownRight" size={16} className="text-zinc-400" />
@@ -255,9 +266,9 @@ export const StatsView: React.FC = () => {
             {/* --- Symmetry Radar & Doughnut --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Symmetry Radar */}
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-white/5 shadow-sm overflow-hidden flex flex-col h-full min-h-[320px]">
+                <div id="tut-radar-chart" className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-white/5 shadow-sm overflow-hidden flex flex-col h-full min-h-[320px]">
                     <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <Icon name="Activity" size={14} /> Muscular Balance
+                        <Icon name="Activity" size={14} /> {t.statsBalance}
                     </h3>
                     <div className="flex-1 relative flex items-center justify-center">
                         <div className="w-full h-64">
@@ -269,7 +280,7 @@ export const StatsView: React.FC = () => {
                 {/* Set Type Distribution */}
                 <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-white/5 shadow-sm flex flex-col h-full min-h-[320px]">
                     <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <Icon name="Layers" size={14} /> Intensity Distribution
+                        <Icon name="Layers" size={14} /> {t.statsIntensity}
                     </h3>
                     <div className="flex-1 flex flex-col items-center justify-center relative">
                         {hasData ? (
@@ -288,7 +299,7 @@ export const StatsView: React.FC = () => {
                                     <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter">
                                         {totalSets}
                                     </span>
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Sets</span>
+                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t.statsSets}</span>
                                 </div>
                             </div>
                         ) : (
@@ -296,7 +307,7 @@ export const StatsView: React.FC = () => {
                                 <div className="w-32 h-32 rounded-full border-[12px] border-zinc-100 dark:border-zinc-800 flex items-center justify-center">
                                      <Icon name="CloudOff" size={24} className="text-zinc-300 dark:text-zinc-600" />
                                 </div>
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">No Data</span>
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t.statsNoData}</span>
                             </div>
                         )}
                     </div>
@@ -304,14 +315,14 @@ export const StatsView: React.FC = () => {
             </div>
 
             {/* --- Volume Bar Chart Section --- */}
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-white/5 shadow-sm">
+            <div id="tut-vol-bar" className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-white/5 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
                         <Icon name="BarChart2" size={14} />
                         {t.volPerCycle}
                     </h3>
                     {/* Legend */}
-                    <div className="flex gap-2">
+                    <div id="tut-vol-legend" className="flex gap-2">
                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-400"></div><span className="text-[9px] text-zinc-400 font-bold">MV</span></div>
                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div><span className="text-[9px] text-zinc-400 font-bold">MEV</span></div>
                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[9px] text-zinc-400 font-bold">MAV</span></div>
@@ -430,6 +441,12 @@ export const StatsView: React.FC = () => {
                     </div>
                 </div>
             )}
+            
+            <TutorialOverlay 
+                steps={statsTutorialSteps}
+                isActive={!tutorialProgress.stats}
+                onComplete={() => markTutorialSeen('stats')}
+            />
         </div>
     );
 };

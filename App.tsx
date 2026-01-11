@@ -41,7 +41,8 @@ const AppContent = () => {
         activeSession, activeMeso, setActiveSession, 
         program, exercises, lang, setLang, logs, setLogs,
         theme, setTheme, colorTheme, setColorTheme, setExercises, setProgram, setActiveMeso,
-        config, setConfig, hasSeenOnboarding, setHasSeenOnboarding
+        config, setConfig, hasSeenOnboarding, setHasSeenOnboarding,
+        resetTutorials
     } = useApp();
     
     // Use new Timer Context
@@ -542,6 +543,14 @@ const AppContent = () => {
                                             </button>
                                         </div>
                                     </div>
+                                    
+                                    {/* Tutorial Reset */}
+                                    <button 
+                                        onClick={() => { resetTutorials(); setShowSettings(false); }}
+                                        className="w-full py-3 mt-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="Info" size={16} /> {t.tutorial.reset}
+                                    </button>
                                 </div>
                             </div>
 

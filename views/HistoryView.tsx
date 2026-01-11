@@ -6,6 +6,7 @@ import { formatDate, formatHoursMinutes, getTranslated } from '../utils';
 import { Icon } from '../components/ui/Icon';
 import { Log } from '../types';
 import { Virtuoso } from 'react-virtuoso';
+import { TutorialOverlay } from '../components/ui/TutorialOverlay';
 
 // Helper to parse duration string "mm:ss" or number to string format
 const formatDurationDisplay = (val: string | number) => {
@@ -21,9 +22,10 @@ interface HistoryCardProps {
     onToggle: (id: number) => void;
     lang: 'en' | 'es';
     t: any;
+    id?: string;
 }
 
-const HistoryCard = memo(({ log, isExpanded, onToggle, lang, t }: HistoryCardProps) => {
+const HistoryCard = memo(({ log, isExpanded, onToggle, lang, t, id }: HistoryCardProps) => {
     
     // Process "Best Sets" for preview
     const bestSets = (log.exercises || []).map(ex => {
@@ -64,6 +66,7 @@ const HistoryCard = memo(({ log, isExpanded, onToggle, lang, t }: HistoryCardPro
 
     return (
         <div 
+            id={id}
             onClick={() => onToggle(log.id)}
             className={`bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer mb-4 mx-4
                 ${isExpanded ? 'border-red-500/50 shadow-lg shadow-red-500/5' : 'border-zinc-200 dark:border-white/5 shadow-sm'}
@@ -162,7 +165,7 @@ const HistoryCard = memo(({ log, isExpanded, onToggle, lang, t }: HistoryCardPro
 });
 
 export const HistoryView: React.FC = () => {
-    const { logs, lang } = useApp();
+    const { logs, lang, tutorialProgress, markTutorialSeen } = useApp();
     const t = TRANSLATIONS[lang];
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [search, setSearch] = useState('');
@@ -178,11 +181,16 @@ export const HistoryView: React.FC = () => {
         });
     }, [safeLogs, search, lang]);
 
+    const historyTutorialSteps = [
+        { targetId: 'tut-history-search', title: t.tutorial.history[1].title, text: t.tutorial.history[1].text, position: 'bottom' as const },
+        { targetId: 'tut-first-card', title: t.tutorial.history[0].title, text: t.tutorial.history[0].text, position: 'bottom' as const }
+    ];
+
     // Header component for Virtuoso
     const Header = () => (
         <div className="px-6 pt-6 pb-4 space-y-4 bg-gray-50 dark:bg-zinc-950">
             <h2 className="text-2xl font-black text-zinc-900 dark:text-white">History</h2>
-            <div className="relative">
+            <div id="tut-history-search" className="relative">
                 <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                 <input 
                     type="text" 
@@ -211,7 +219,7 @@ export const HistoryView: React.FC = () => {
     }
 
     return (
-        <div className="h-full w-full bg-gray-50 dark:bg-zinc-950 flex flex-col">
+        <div className="h-full w-full bg-gray-50 dark:bg-zinc-950 flex flex-col relative">
             {filteredLogs.length === 0 ? (
                 <>
                     <Header />
@@ -224,6 +232,7 @@ export const HistoryView: React.FC = () => {
                     components={{ Header, Footer }}
                     itemContent={(index, log) => (
                         <HistoryCard 
+                            id={index === 0 ? "tut-first-card" : undefined}
                             log={log} 
                             isExpanded={expandedId === log.id}
                             onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
@@ -233,6 +242,12 @@ export const HistoryView: React.FC = () => {
                     )}
                 />
             )}
+            
+            <TutorialOverlay 
+                steps={historyTutorialSteps}
+                isActive={!tutorialProgress.history}
+                onComplete={() => markTutorialSeen('history')}
+            />
         </div>
     );
 };

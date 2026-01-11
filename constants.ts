@@ -554,6 +554,10 @@ export const TRANSLATIONS = {
         schedule: "Schedule",
         weekCompleteTitle: "Week Complete!",
         weekCompleteDesc: "Great job. Rest up or start next week.",
+        unnamedCycle: "Unnamed Cycle",
+        loading: "Loading...",
+        emptySession: "No exercises yet.",
+        calc: "Calc",
 
         // Cardio Specific
         cardioTime: "Time (min)",
@@ -574,7 +578,46 @@ export const TRANSLATIONS = {
         instructions: "Instructions",
         watchVideo: "Watch on YouTube",
         noVideo: "No video available",
-        guide: "Guide"
+        guide: "Guide",
+        videoIssues: "Video Issues?",
+        executionTipTitle: "Execution Tip",
+        executionTipText: "Focus on a full range of motion. If the video fails to load due to restrictions, use the button above to watch directly on YouTube.",
+        statsProgress: "Progress Tracker",
+        statsBalance: "Muscular Balance",
+        statsIntensity: "Intensity Distribution",
+        statsSets: "Sets",
+        statsNoData: "No Data",
+
+        // Tutorials (Expanded)
+        tutorial: {
+            next: "Next",
+            finish: "Got it!",
+            reset: "Reset Tutorials",
+            home: [
+                { title: "Your Next Workout", text: "This card shows your immediate next session. Tap the card to enter the 'Workout Mode' and start logging." },
+                { title: "Mesocycle Management", text: "A 'Mesocycle' is a block of training (usually 4-8 weeks). Here you can edit the plan or rename it. When a cycle ends, you start a new one to keep progressing." },
+                { title: "App Navigation", text: "Switch between your Active Plan (Home), History Log (Past workouts), and Analytics (Stats)." }
+            ],
+            workout: [
+                { title: "Exercise List", text: "This is your plan for today. You can drag exercises to reorder them if equipment is busy." },
+                { title: "Logging Sets", text: "Log your Weight and Reps here. Tap the checkmark to complete a set. The timer will start automatically." },
+                { title: "What is RIR?", text: "RIR = Reps In Reserve. It means 'how many more reps could I have done with good form?'. For growth, aim for 1-3 RIR (close to failure, but not failing)." },
+                { title: "Finish Workout", text: "When you are done, tap here. This saves your data and updates your volume stats for the week." }
+            ],
+            history: [
+                { title: "Log Archive", text: "This is your training diary. Tap any workout card to see exactly what you did, including weights, reps, and notes." },
+                { title: "Search & Filter", text: "Looking for a specific Personal Record? Search by exercise name here." }
+            ],
+            stats: [
+                { title: "Progress Tracker", text: "Visualize your estimated 1RM (strength) or Volume accumulation over time. Consistent upward trends mean muscle growth." },
+                { title: "Muscular Balance", text: "This radar chart shows which muscles you are training the most. Use it to find lagging body parts." },
+                { title: "Volume Landmarks", text: "This is the most important chart for Hypertrophy. It compares your weekly sets against scientific benchmarks." },
+                { title: "MV (Maintenance)", text: "Yellow (MV): Maintenance Volume. Doing this much keeps the muscle you have, but won't grow much new muscle." },
+                { title: "MEV (Minimum)", text: "Green (MEV): Minimum Effective Volume. This is the starting point for growth. You must do at least this much to gain muscle." },
+                { title: "MAV (Optimal)", text: "Blue (MAV): Maximum Adaptive Volume. The 'Sweet Spot'. Training in this zone yields the fastest gains." },
+                { title: "MRV (Max Recoverable)", text: "Red (MRV): Maximum Recoverable Volume. If you exceed this, you are overtraining and risking injury. Back off if you hit this." }
+            ]
+        }
     },
     es: { 
         startMeso: "Nuevo Mesociclo", finishWorkout: "Terminar", finishConfirm: "¿Terminar entreno?", cancel: "Cancelar", delete: "Eliminar", skip: "Omitir Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Cambiar Ejercicio", changeMuscle: "Cambiar Músculo", chooseMuscle: "Elegir Músculo", addSetBelow: "Añadir Serie", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Series", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Historial", settings: "Ajustes", volume: "Volumen Semanal", workouts: "Entrenos Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase de Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Atrás", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No se encontraron ejercicios", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Meso", totalWorkouts: "Entrenos Totales", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona ejercicio a vincular...", superset: "SUPERSERIE", workoutComplete: "ENTRENO COMPLETADO", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "¿Sobrescribir datos?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Borrar Slot", offline: "Modo Local", mesoAvg: "Vol. Promedio Meso", routineGuide: "Guía de Rutina", executionInfo: "Ejecución y Objetivos",
@@ -619,6 +662,10 @@ export const TRANSLATIONS = {
         schedule: "Calendario",
         weekCompleteTitle: "¡Semana Completada!",
         weekCompleteDesc: "Buen trabajo. Descansa o empieza la siguiente.",
+        unnamedCycle: "Ciclo Sin Nombre",
+        loading: "Cargando...",
+        emptySession: "Aún no hay ejercicios.",
+        calc: "Calc",
 
         // Cardio Specific
         cardioTime: "Tiempo (min)",
@@ -639,6 +686,45 @@ export const TRANSLATIONS = {
         instructions: "Instrucciones",
         watchVideo: "Abrir en YouTube",
         noVideo: "Sin video disponible",
-        guide: "Guía"
+        guide: "Guía",
+        videoIssues: "¿Problemas de Video?",
+        executionTipTitle: "Consejo de Ejecución",
+        executionTipText: "Concéntrate en un rango de movimiento completo. Si el video falla por restricciones, usa el botón de arriba para verlo en YouTube.",
+        statsProgress: "Seguimiento de Progreso",
+        statsBalance: "Equilibrio Muscular",
+        statsIntensity: "Distribución de Intensidad",
+        statsSets: "Series",
+        statsNoData: "Sin Datos",
+
+        // Tutorials (Fully Translated & Educational)
+        tutorial: {
+            next: "Siguiente",
+            finish: "¡Entendido!",
+            reset: "Reiniciar Tutoriales",
+            home: [
+                { title: "Tu Próximo Entreno", text: "Esta tarjeta muestra tu sesión inmediata. Tócala para entrar al 'Modo Entreno' y empezar a registrar." },
+                { title: "Gestión de Mesociclo", text: "Un 'Mesociclo' es un bloque de entrenamiento (4-8 semanas). Aquí puedes editar el plan o renombrarlo. Al acabar el ciclo, inicias uno nuevo para seguir progresando." },
+                { title: "Navegación", text: "Cambia entre tu Plan Activo (Inicio), Historial (Entrenos pasados) y Análisis (Estadísticas)." }
+            ],
+            workout: [
+                { title: "Lista de Ejercicios", text: "Este es tu plan para hoy. Puedes arrastrar los ejercicios para reordenarlos si el equipo está ocupado." },
+                { title: "Registrar Series", text: "Introduce Peso y Reps. Toca el check para completar la serie. El temporizador iniciará automáticamente." },
+                { title: "¿Qué es el RIR?", text: "RIR = Reps en Reserva. Significa '¿cuántas reps más podría haber hecho con buena técnica?'. Para crecer, busca un RIR de 1-3 (cerca del fallo, pero sin fallar)." },
+                { title: "Terminar Entreno", text: "Al acabar, toca aquí. Esto guarda tus datos y actualiza tus estadísticas de volumen semanal." }
+            ],
+            history: [
+                { title: "Archivo de Entrenos", text: "Este es tu diario. Toca cualquier tarjeta para expandir y ver exactamente qué hiciste, incluyendo pesos, reps y notas." },
+                { title: "Buscar y Filtrar", text: "¿Buscas un Récord Personal específico? Busca por nombre de ejercicio aquí." }
+            ],
+            stats: [
+                { title: "Seguimiento de Progreso", text: "Visualiza tu 1RM estimado (fuerza) o acumulación de Volumen. Tendencias ascendentes significan crecimiento muscular." },
+                { title: "Equilibrio Muscular", text: "Este gráfico de radar muestra qué músculos entrenas más. Úsalo para encontrar partes rezagadas." },
+                { title: "Hitos de Volumen", text: "Este es el gráfico más importante. Compara tus series semanales con referencias científicas." },
+                { title: "MV (Mantenimiento)", text: "Amarillo (MV): Volumen de Mantenimiento. Hacer esto mantiene el músculo que tienes, pero no crea nuevo." },
+                { title: "MEV (Mínimo)", text: "Verde (MEV): Volumen Mínimo Efectivo. Punto de partida para crecer. Debes hacer al menos esto para ganar músculo." },
+                { title: "MAV (Óptimo)", text: "Azul (MAV): Volumen Máximo Adaptativo. El 'Punto Dulce'. Entrenar en esta zona da las mejores ganancias." },
+                { title: "MRV (Máximo Recup.)", text: "Rojo (MRV): Volumen Máximo Recuperable. Si pasas de aquí, estás sobreentrenando y arriesgas lesión. Baja el ritmo si llegas aquí." }
+            ]
+        }
     }
 };

@@ -8,6 +8,7 @@ import { getTranslated, formatDate } from '../utils';
 import { MesoType, FeedbackEntry } from '../types';
 import { ActivityHeatmap } from '../components/stats/ActivityHeatmap';
 import { Logo } from '../components/ui/Logo';
+import { TutorialOverlay } from '../components/ui/TutorialOverlay'; // Import Tutorial
 
 // Lazy load the AI Chat component to save bundle size
 const IronCoachChat = React.lazy(() => import('../components/ai/IronCoachChat').then(module => ({ default: module.IronCoachChat })));
@@ -19,7 +20,7 @@ interface HomeViewProps {
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram, onSkipSession }) => {
-    const { activeMeso, program, setActiveMeso, lang, logs, config, rpFeedback, setProgram, exercises } = useApp();
+    const { activeMeso, program, setActiveMeso, lang, logs, config, rpFeedback, setProgram, exercises, tutorialProgress, markTutorialSeen } = useApp();
     const t = TRANSLATIONS[lang] || TRANSLATIONS['en']; // Safe fallback
     
     // Safer Muscle Translator
@@ -85,7 +86,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
             targetWeeks: targetWeeks, 
             isDeload: false,
             mesoType: newMesoType,
-            name: String(t.phases[newMesoType] || 'New Cycle')
+            name: String(t.phases[newMesoType] || t.unnamedCycle)
         });
         setShowStartWizard(false);
     };
@@ -255,7 +256,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                 <div>
                     <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-3 tracking-tighter">IronLog <span className="text-red-600">PRO</span></h2>
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed max-w-[280px] mx-auto">
-                        {String(t.onb?.s1_desc || "Loading...")}
+                        {String(t.onb?.s1_desc || t.loading)}
                     </p>
                 </div>
 
@@ -334,6 +335,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
 
     const nextDayDef = nextWorkoutIdx !== -1 ? safeProgram[nextWorkoutIdx] : null;
 
+    // Tutorial Steps for Home
+    const homeTutorialSteps = [
+        { targetId: 'tut-up-next', title: t.tutorial.home[0].title, text: t.tutorial.home[0].text, position: 'bottom' as const },
+        { targetId: 'tut-settings-btn', title: t.tutorial.home[1].title, text: t.tutorial.home[1].text, position: 'bottom' as const },
+        { targetId: 'tut-nav-bar', title: t.tutorial.home[2].title, text: t.tutorial.home[2].text, position: 'top' as const }
+    ];
+
     return (
         <div className="p-4 space-y-6 pb-safe bg-grid-pattern min-h-full relative">
             <div className="flex justify-between items-start pt-2">
@@ -356,6 +364,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                         <Icon name="FileText" size={18} />
                     </button>
                     <button 
+                        id="tut-settings-btn" // Tutorial ID
                         onClick={() => setShowMesoSettings(true)}
                         className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-800 shadow-sm border border-zinc-100 dark:border-white/5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all"
                     >
@@ -378,6 +387,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
 
             {nextDayDef ? (
                 <div 
+                    id="tut-up-next" // Tutorial ID
                     onClick={() => startSession(nextWorkoutIdx)}
                     className="relative w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-3xl p-6 shadow-2xl shadow-zinc-900/20 dark:shadow-white/5 overflow-hidden group cursor-pointer active:scale-[0.98] transition-all duration-300"
                 >
@@ -489,6 +499,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
                 </button>
             </div>
 
+            <TutorialOverlay 
+                steps={homeTutorialSteps}
+                isActive={!tutorialProgress.home}
+                onComplete={() => markTutorialSeen('home')}
+            />
+
             {showAIChat && (
                 <Suspense fallback={
                     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-end justify-center sm:items-center">
@@ -502,6 +518,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
             )}
 
              {showRoutineGuide && activeMeso && (
+                 /* ... existing modal code ... */
                  <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setShowRoutineGuide(false)}>
                     <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl p-0 shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center p-6 border-b border-zinc-100 dark:border-white/5 shrink-0 bg-zinc-50/50 dark:bg-white/[0.02]">
@@ -550,6 +567,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
              )}
 
             {skipConfirmationId !== null && (
+                /* ... existing modal code ... */
                 <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setSkipConfirmationId(null)}>
                     <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
                         <div className="text-center mb-6">
@@ -572,6 +590,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
             )}
 
             {showCompleteModal && (
+                /* ... existing modal code ... */
                 <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10">
                         <div className="text-center mb-6">
@@ -611,6 +630,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
             )}
 
              {showMesoSettings && activeMeso && (
+                 /* ... existing modal code ... */
                  <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={() => setShowMesoSettings(false)}>
                     <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6 border-b border-zinc-100 dark:border-white/5 pb-4">

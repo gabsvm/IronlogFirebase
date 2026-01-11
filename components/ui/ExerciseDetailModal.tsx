@@ -120,10 +120,10 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({ exerci
                                 )}
                             </div>
 
-                            {/* Video Actions Bar - Always visible fallback */}
+                            {/* Video Actions Bar */}
                             <div className="flex items-center justify-between px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-white/5">
                                 <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
-                                    Video Issues?
+                                    {t.videoIssues}
                                 </div>
                                 <a 
                                     href={youtubeUrl} 
@@ -159,9 +159,9 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({ exerci
                                             <Icon name="Info" size={18} className="text-blue-600 dark:text-blue-400" />
                                         </div>
                                         <div className="text-sm text-blue-900 dark:text-blue-100">
-                                            <p className="font-bold mb-1">Execution Tip</p>
+                                            <p className="font-bold mb-1">{t.executionTipTitle}</p>
                                             <p className="opacity-80 text-xs leading-relaxed">
-                                                Focus on a full range of motion. If the video fails to load due to restrictions, use the button above to watch directly on YouTube.
+                                                {t.executionTipText}
                                             </p>
                                         </div>
                                     </div>
@@ -172,7 +172,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({ exerci
                         <div className="p-6">
                             <div className="bg-zinc-50 dark:bg-white/5 rounded-2xl p-4 border border-zinc-100 dark:border-white/5">
                                 <div className="mb-4">
-                                    <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Performance Trend</h4>
+                                    <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{t.statsProgress}</h4>
                                     <p className="text-xs text-zinc-500">Estimated 1RM / Max Performance</p>
                                 </div>
                                 <ProgressChart 
@@ -183,7 +183,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({ exerci
                             </div>
                             {chartData.length === 0 && !chartLoading && (
                                 <div className="text-center py-8 text-zinc-400 text-xs italic">
-                                    No history logged for this exercise yet.
+                                    {t.statsNoData}
                                 </div>
                             )}
                         </div>
