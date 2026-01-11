@@ -82,8 +82,10 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             // @ts-ignore
             const apiKey = process.env.API_KEY;
             
+            // Debug Log (will show in browser console)
             if (!apiKey) {
-                throw new Error("Missing API Key configuration.");
+                console.error("IronCoach Error: API Key is undefined. Check vite.config.ts define block.");
+                throw new Error("API Key is missing in configuration");
             }
 
             // Dynamic import to prevent crash on initial load if SDK fails
@@ -254,7 +256,7 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `⚠️ Error: ${errorMsg}. Please check connection or API Key.` 
+                text: `⚠️ Error: ${errorMsg}. Please check API Key in settings.` 
             }]);
         } finally {
             setIsLoading(false);
