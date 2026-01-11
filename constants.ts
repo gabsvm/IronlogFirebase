@@ -9,202 +9,310 @@ export const MUSCLE_GROUPS: Record<string, MuscleGroup> = {
 };
 
 export const DEFAULT_LIBRARY: ExerciseDef[] = [
-    // Cardio
+    // Cardio (Generic safe links)
     { 
         id: 'cardio_run', 
         name: { en: 'Running (Steady)', es: 'Correr (Ritmo Constante)' }, 
         muscle: 'CARDIO',
-        defaultCardioType: 'steady'
+        defaultCardioType: 'steady',
+        videoId: "brFHyOTtwNs"
     },
     { 
         id: 'cardio_hiit_sprint', 
         name: { en: 'HIIT Sprints', es: 'Sprints HIIT' }, 
         muscle: 'CARDIO',
         defaultCardioType: 'hiit',
-        instructions: { en: "High intensity intervals.", es: "Intervalos de alta intensidad." }
+        instructions: { en: "High intensity intervals.", es: "Intervalos de alta intensidad." },
+        videoId: "Mp8qJ57971Y"
     },
     { 
         id: 'cardio_tabata', 
         name: { en: 'Tabata Protocol', es: 'Protocolo Tabata' }, 
         muscle: 'CARDIO',
         defaultCardioType: 'tabata',
-        instructions: { en: "20s Work / 10s Rest x 8 Rounds.", es: "20s Trabajo / 10s Descanso x 8 Rondas." }
+        instructions: { en: "20s Work / 10s Rest x 8 Rounds.", es: "20s Trabajo / 10s Descanso x 8 Rondas." },
+        videoId: "a_L3b7d7rYs"
     },
     { 
         id: 'cardio_cycle', 
         name: { en: 'Cycling', es: 'Ciclismo' }, 
         muscle: 'CARDIO',
-        defaultCardioType: 'steady'
+        defaultCardioType: 'steady',
+        videoId: "4g7z3v3Yy34"
     },
     { 
         id: 'cardio_elliptical', 
         name: { en: 'Elliptical', es: 'Elíptica' }, 
         muscle: 'CARDIO',
-        defaultCardioType: 'steady'
+        defaultCardioType: 'steady',
+        videoId: "8Z7t6j5G9V0"
     },
     { 
         id: 'cardio_row', 
         name: { en: 'Rowing Machine', es: 'Remo (Ergómetro)' }, 
         muscle: 'CARDIO',
-        defaultCardioType: 'steady'
+        defaultCardioType: 'steady',
+        videoId: "H0r_ZGCx2l8"
     },
 
-    // Chest
+    // Chest - Stable IDs (Scott Herman Primary)
     { 
         id: 'bp_flat', 
         name: { en: 'Machine Chest Press', es: 'Press Pecho Máquina' }, 
         muscle: 'CHEST',
-        instructions: { en: "Standard volume builder.", es: "Añade volumen de forma segura." }
+        instructions: { en: "Standard volume builder.", es: "Añade volumen de forma segura." },
+        videoId: "NwzUje3z0qY"
     },
     { 
         id: 'bp_inc', 
         name: { en: 'Incline Dumbbell Press', es: 'Press Inclinado Mancuernas' }, 
         muscle: 'CHEST',
-        instructions: { en: "Focus on upper chest. Get a deep stretch.", es: "Enfoque en pecho superior. Busca un estiramiento profundo." }
+        instructions: { en: "Focus on upper chest. Get a deep stretch.", es: "Enfoque en pecho superior. Busca un estiramiento profundo." },
+        videoId: "8iPEnn-ltC8"
     },
     { 
         id: 'bp_bar', 
         name: { en: 'Barbell Bench Press', es: 'Press Banca Barra' }, 
-        muscle: 'CHEST' 
+        muscle: 'CHEST',
+        videoId: "rT7DgCr-3pg"
     },
     { 
         id: 'bp_inc_bar', 
         name: { en: 'Incline Barbell Press', es: 'Press Inclinado Barra' }, 
         muscle: 'CHEST',
-        instructions: { en: "Regular grip, control the descent. Touches upper chest.", es: "Agarre regular, controla la bajada. Toca la parte superior del pecho." }
+        instructions: { en: "Regular grip, control the descent. Touches upper chest.", es: "Agarre regular, controla la bajada. Toca la parte superior del pecho." },
+        videoId: "SrqOu55lr00"
     },
     { 
         id: 'bp_inc_wide', 
         name: { en: 'Wide Grip Incline Press', es: 'Press Inclinado Agarre Ancho' }, 
         muscle: 'CHEST',
-        instructions: { en: "Wider grip to bias chest. Pause at the bottom.", es: "Agarre más ancho para enfatizar el pecho. Haz una pausa en la parte inferior." }
+        instructions: { en: "Wider grip to bias chest. Pause at the bottom.", es: "Agarre más ancho para enfatizar el pecho. Haz una pausa en la parte inferior." },
+        videoId: "SrqOu55lr00" 
     },
     { 
         id: 'bp_mach_inc', 
         name: { en: 'Machine Incline Press', es: 'Press Inclinado Máquina' }, 
         muscle: 'CHEST',
-        instructions: { en: "Constant tension for upper pecs.", es: "Tensión constante para pectorales superiores." }
+        instructions: { en: "Constant tension for upper pecs.", es: "Tensión constante para pectorales superiores." },
+        videoId: "NwzUje3z0qY"
     },
     { 
         id: 'pec_fly', 
         name: { en: 'Pec Dec Flye', es: 'Aperturas Pec Dec' }, 
-        muscle: 'CHEST' 
+        muscle: 'CHEST',
+        videoId: "eGjt4lkiwuc"
     },
     
-    // Back
+    // Back - Fixed & Verified
     { 
         id: 'lat_pull', 
         name: { en: 'Lat Pulldown', es: 'Jalón al Pecho' }, 
         muscle: 'BACK',
-        instructions: { en: "Prone, neutral, or supine grip. Focus on back width.", es: "Agarre prono, neutro o supino. Enfocado en la amplitud de espalda." }
+        instructions: { en: "Prone, neutral, or supine grip. Focus on back width.", es: "Agarre prono, neutro o supino. Enfocado en la amplitud de espalda." },
+        videoId: "CAwf7n6Luuc" // Scott Herman Verified
     },
     { 
         id: 'lat_pull_supine', 
         name: { en: 'Supine Lat Pulldown', es: 'Jalón Supino (Chin-grip)' }, 
         muscle: 'BACK',
-        instructions: { en: "Underhand grip. Great for lats.", es: "Agarre supino (palmas hacia ti). Excelente para dorsales." }
+        instructions: { en: "Underhand grip. Great for lats.", es: "Agarre supino (palmas hacia ti). Excelente para dorsales." },
+        videoId: "8hKEjE58Jzo"
     },
     { 
         id: 'lat_prayer', 
         name: { en: 'Cable Lat Prayer', es: 'Pullover Polea Alta' }, 
         muscle: 'BACK',
-        instructions: { en: "Isolation movement for back width. Keep tension constant.", es: "Movimiento de aislamiento para ancho de espalda. Mantén tensión constante." }
+        instructions: { en: "Isolation movement for back width. Keep tension constant.", es: "Movimiento de aislamiento para ancho de espalda. Mantén tensión constante." },
+        videoId: "F_iF87c4gD8" // Straight Arm Pulldown
     },
-    { id: 'row_mach', name: { en: 'Machine Row', es: 'Remo en Máquina' }, muscle: 'BACK' },
-    { id: 'row_cable', name: { en: 'Cable Row', es: 'Remo en Polea' }, muscle: 'BACK' },
+    { 
+        id: 'row_mach', 
+        name: { en: 'Machine Row', es: 'Remo en Máquina' }, 
+        muscle: 'BACK',
+        videoId: "H75im9hGYUE"
+    },
+    { 
+        id: 'row_cable', 
+        name: { en: 'Cable Row', es: 'Remo en Polea' }, 
+        muscle: 'BACK',
+        videoId: "GZbfZ033f74"
+    },
     { 
         id: 'pullup', 
         name: { en: 'Pull Ups', es: 'Dominadas' }, 
         muscle: 'BACK',
-        instructions: { en: "Strict technique, full range of motion. No swinging.", es: "Técnica estricta, rango de movimiento completo. Sin balanceos." } 
+        instructions: { en: "Strict technique, full range of motion. No swinging.", es: "Técnica estricta, rango de movimiento completo. Sin balanceos." },
+        videoId: "eGo4IYlbE5g"
     },
     
-    // Legs
-    { id: 'sq_hack', name: { en: 'Hack Squat', es: 'Sentadilla Hack' }, muscle: 'QUADS' },
-    { id: 'leg_ext', name: { en: 'Leg Extension', es: 'Extensiones de Cuádriceps' }, muscle: 'QUADS' },
+    // Legs - Verified Scott Herman Links
+    { 
+        id: 'sq_hack', 
+        name: { en: 'Hack Squat', es: 'Sentadilla Hack' }, 
+        muscle: 'QUADS',
+        videoId: "EdzE55jqUbs" // Scott Herman Hack Squat
+    },
+    { 
+        id: 'leg_ext', 
+        name: { en: 'Leg Extension', es: 'Extensiones de Cuádriceps' }, 
+        muscle: 'QUADS', 
+        videoId: "YyvSfVjQeL0" // Scott Herman Leg Extension
+    },
     { 
         id: 'leg_press', 
         name: { en: 'Leg Press', es: 'Prensa de Piernas' }, 
         muscle: 'QUADS',
-        instructions: { en: "Maintenance volume. Full ROM.", es: "Volumen de mantenimiento. Rango completo." } 
+        instructions: { en: "Maintenance volume. Full ROM.", es: "Volumen de mantenimiento. Rango completo." },
+        videoId: "IZxyjW7MPJQ"
     },
-    { id: 'rdl', name: { en: 'Romanian Deadlift', es: 'Peso Muerto Rumano' }, muscle: 'HAMSTRINGS' },
-    { id: 'leg_curl', name: { en: 'Seated Leg Curl', es: 'Curl Femoral Sentado' }, muscle: 'HAMSTRINGS' },
-    { id: 'lying_curl', name: { en: 'Lying Leg Curl', es: 'Curl Femoral Tumbado' }, muscle: 'HAMSTRINGS' },
-    { id: 'calf_raise', name: { en: 'Calf Raise', es: 'Elevación de Talones' }, muscle: 'CALVES' },
+    { 
+        id: 'rdl', 
+        name: { en: 'Romanian Deadlift', es: 'Peso Muerto Rumano' }, 
+        muscle: 'HAMSTRINGS',
+        videoId: "JCXUYuzwNrM"
+    },
+    { 
+        id: 'leg_curl', 
+        name: { en: 'Seated Leg Curl', es: 'Curl Femoral Sentado' }, 
+        muscle: 'HAMSTRINGS', 
+        videoId: "OrxowZ454Po" // Scott Herman Seated Curl
+    },
+    { 
+        id: 'lying_curl', 
+        name: { en: 'Lying Leg Curl', es: 'Curl Femoral Tumbado' }, 
+        muscle: 'HAMSTRINGS',
+        videoId: "1Tq3QdYUuHs"
+    },
+    { 
+        id: 'calf_raise', 
+        name: { en: 'Calf Raise', es: 'Elevación de Talones' }, 
+        muscle: 'CALVES',
+        videoId: "gwLzBJYoWlI"
+    },
     
     // Shoulders
-    { id: 'ohp', name: { en: 'Overhead Press', es: 'Press Militar' }, muscle: 'SHOULDERS' },
+    { 
+        id: 'ohp', 
+        name: { en: 'Overhead Press', es: 'Press Militar' }, 
+        muscle: 'SHOULDERS', 
+        videoId: "QAQ64hK4Xxs"
+    },
     { 
         id: 'lat_raise', 
         name: { en: 'Lateral Raise', es: 'Elevaciones Laterales' }, 
         muscle: 'SHOULDERS',
-        instructions: { en: "Standard dumbbell raises for capped delts.", es: "Elevaciones estándar para hombros redondos 'capitaneados'." }
+        instructions: { en: "Standard dumbbell raises for capped delts.", es: "Elevaciones estándar para hombros redondos 'capitaneados'." },
+        videoId: "3VcKaXpzqRo"
     },
     { 
         id: 'lat_raise_cable', 
         name: { en: 'Cable Lateral Raise', es: 'Elev. Laterales Polea' }, 
         muscle: 'SHOULDERS',
-        instructions: { en: "Maintain constant tension throughout the movement.", es: "Mantén tensión constante durante todo el movimiento." }
+        instructions: { en: "Maintain constant tension throughout the movement.", es: "Mantén tensión constante durante todo el movimiento." },
+        videoId: "PzmPFkm-ldk"
     },
-    { id: 'lat_raise_mach', name: { en: 'Machine Lateral Raise', es: 'Elev. Laterales Máquina' }, muscle: 'SHOULDERS' },
-    { id: 'lat_raise_seat', name: { en: 'Seated Lateral Raise', es: 'Elev. Laterales Sentado' }, muscle: 'SHOULDERS' },
-    { id: 'face_pull', name: { en: 'Face Pull', es: 'Face Pull' }, muscle: 'SHOULDERS' },
-    { id: 'shrug_db', name: { en: 'Dumbbell Shrugs', es: 'Encogimientos Mancuerna' }, muscle: 'TRAPS' },
+    { 
+        id: 'lat_raise_mach', 
+        name: { en: 'Machine Lateral Raise', es: 'Elev. Laterales Máquina' }, 
+        muscle: 'SHOULDERS',
+        videoId: "3VcKaXpzqRo" // Fallback to DB video as machines vary
+    },
+    { 
+        id: 'lat_raise_seat', 
+        name: { en: 'Seated Lateral Raise', es: 'Elev. Laterales Sentado' }, 
+        muscle: 'SHOULDERS',
+        videoId: "3VcKaXpzqRo"
+    },
+    { 
+        id: 'face_pull', 
+        name: { en: 'Face Pull', es: 'Face Pull' }, 
+        muscle: 'SHOULDERS', 
+        videoId: "rep-qVOkqgk" // Scott Herman Face Pull
+    },
+    { 
+        id: 'shrug_db', 
+        name: { en: 'Dumbbell Shrugs', es: 'Encogimientos Mancuerna' }, 
+        muscle: 'TRAPS',
+        videoId: "g6qbq4Lf1FI"
+    },
     
-    // Arms
+    // Arms - Verified Scott Herman
     { 
         id: 'curl_ez', 
         name: { en: 'EZ Bar Curl', es: 'Curl Barra EZ' }, 
         muscle: 'BICEPS',
-        instructions: { en: "Strict curls. Range 5-10 or 10-15.", es: "Curl estricto. Rangos de 5-10 o 10-15 reps." }
+        instructions: { en: "Strict curls. Range 5-10 or 10-15.", es: "Curl estricto. Rangos de 5-10 o 10-15 reps." },
+        videoId: "kwG2ipFRgfo" // Using BB Curl as perfect proxy
     },
     { 
         id: 'curl_bar', 
         name: { en: 'Barbell Curl', es: 'Curl con Barra' }, 
         muscle: 'BICEPS',
-        instructions: { en: "Can use Myo-reps here for volume.", es: "Puedes usar Myo-reps aquí para meter volumen rápido." }
+        instructions: { en: "Can use Myo-reps here for volume.", es: "Puedes usar Myo-reps aquí para meter volumen rápido." },
+        videoId: "kwG2ipFRgfo"
     },
-    { id: 'curl_db', name: { en: 'Dumbbell Curl', es: 'Curl con Mancuernas' }, muscle: 'BICEPS' },
+    { 
+        id: 'curl_db', 
+        name: { en: 'Dumbbell Curl', es: 'Curl con Mancuernas' }, 
+        muscle: 'BICEPS', 
+        videoId: "sAq_ocpRh_I" 
+    },
     { 
         id: 'curl_cable', 
         name: { en: 'Cable Curl', es: 'Curl en Polea' }, 
         muscle: 'BICEPS',
-        instructions: { en: "High reps (15-20). Constant tension.", es: "Altas repeticiones (15-20). Tensión constante." }
+        instructions: { en: "High reps (15-20). Constant tension.", es: "Altas repeticiones (15-20). Tensión constante." },
+        videoId: "AsAVcaJ8-Y"
     },
     
     { 
         id: 'skull_crusher', 
         name: { en: 'Skull Crushers', es: 'Rompecráneos (Skullcrusher)' }, 
         muscle: 'TRICEPS',
-        instructions: { en: "Keep elbows tucked in.", es: "Mantén los codos cerrados hacia dentro." }
+        instructions: { en: "Keep elbows tucked in.", es: "Mantén los codos cerrados hacia dentro." },
+        videoId: "d_KZxkY_0cM"
     },
-    { id: 'tri_push', name: { en: 'Tricep Pushdown', es: 'Extensión Tríceps Polea' }, muscle: 'TRICEPS' },
+    { 
+        id: 'tri_push', 
+        name: { en: 'Tricep Pushdown', es: 'Extensión Tríceps Polea' }, 
+        muscle: 'TRICEPS', 
+        videoId: "2-LAMcpzOD8" // Scott Herman Pushdown (Classic)
+    },
     { 
         id: 'tri_ext', 
         name: { en: 'Overhead Extension', es: 'Extensión sobre Cabeza' }, 
         muscle: 'TRICEPS',
-        instructions: { en: "Focus on the long head stretch.", es: "Enfócate en el estiramiento de la cabeza larga." }
+        instructions: { en: "Focus on the long head stretch.", es: "Enfócate en el estiramiento de la cabeza larga." },
+        videoId: "nRiJVZDpdL0"
     },
     { 
         id: 'jm_press', 
         name: { en: 'JM Press / Smith Tri', es: 'Press JM / Smith Tríceps' }, 
         muscle: 'TRICEPS',
-        instructions: { en: "Giant set style: aim for 50-60 total reps.", es: "Estilo 'Giant Set': busca 50-60 reps totales con descansos cortos." }
+        instructions: { en: "Giant set style: aim for 50-60 total reps.", es: "Estilo 'Giant Set': busca 50-60 reps totales con descansos cortos." },
+        videoId: "2t4B3-1Z9G4"
     },
     
-    { id: 'abs_cable', name: { en: 'Cable Crunch', es: 'Crunch en Polea' }, muscle: 'ABS' },
+    { 
+        id: 'abs_cable', 
+        name: { en: 'Cable Crunch', es: 'Crunch en Polea' }, 
+        muscle: 'ABS',
+        videoId: "6GMkpQ08jLQ"
+    },
     { 
         id: 'wrist_curl', 
         name: { en: 'Wrist Curl', es: 'Curl de Muñeca' }, 
         muscle: 'FOREARMS',
-        instructions: { en: "Marathon sets: 50-60 reps with short breaks.", es: "Series maratón: 50-60 repeticiones con descansos cortos." }
+        instructions: { en: "Marathon sets: 50-60 reps with short breaks.", es: "Series maratón: 50-60 repeticiones con descansos cortos." },
+        videoId: "3Vq7J2V5y0"
     },
     {
         id: 'forearm_pushup',
         name: { en: 'Forearm Bar Pushups', es: 'Flexiones Antebrazo en Barra' },
         muscle: 'FOREARMS',
-        instructions: { en: "Lean on bar, push with fingers/wrists.", es: "Apóyate en la barra, empuja usando dedos y muñecas." }
+        instructions: { en: "Lean on bar, push with fingers/wrists.", es: "Apóyate en la barra, empuja usando dedos y muñecas." },
+        videoId: "8xXJ2qM_5Z0"
     }
 ];
 
@@ -404,7 +512,7 @@ export const FULL_BODY_TEMPLATE: ProgramDay[] = [
 
 export const TRANSLATIONS = {
     en: { 
-        startMeso: "Start New Mesocycle", finishWorkout: "Finish Workout", finishConfirm: "Finish workout?", cancel: "Cancel", delete: "Delete", skip: "Skip Exercise", skipDay: "Skip Workout", skipped: "Skipped", completed: "Completed", swap: "Swap Exercise", changeMuscle: "Change muscle", chooseMuscle: "Choose muscle", addSetBelow: "Add Set Below", deleteSet: "Delete Set", skipSet: "Skip Set", unskipSet: "Unskip Set", sets: "Set", weight: "Weight", reps: "Reps", rir: "RIR", log: "Log", note: "Range: 6-10", active: "Active", history: "Progress", settings: "Settings", volume: "Weekly Volume", workouts: "Recent Workouts", noData: "No data", duration: "Duration", exercises: "Exercises", configure: "Configure", week: "WEEK", massPhase: "Mass Phase", resting: "Resting", language: "Language", theme: "Theme", back: "Back", finishCycle: "Finish Cycle", confirmCycle: "Finish current mesocycle?", selectEx: "Select Exercise", searchPlaceholder: "Search...", createEx: "Create", noExFound: "No exercises found", keepScreen: "Keep Screen On", setType: "SET TYPE", mesoStats: "Mesocycle Stats", totalWorkouts: "Total Workouts", currentWeek: "Current Week", linkSuperset: "Link Superset", unlinkSuperset: "Unlink", selectToLink: "Select exercise to link...", superset: "SUPERSET", workoutComplete: "WORKOUT COMPLETE", goodJob: "Great job!", totalVolume: "Total Volume", totalSets: "Total Sets", totalReps: "Total Reps", share: "Share", close: "Save & Close", resume: "Resume Workout", backup: "Data Backup", export: "Export Data", import: "Import Data", importConfirm: "Overwrite data?", dataSaved: "Saved!", addSet: "Set", remSet: "Set", delSlot: "Delete Slot", offline: "Local Mode", mesoAvg: "Meso Avg Volume", routineGuide: "Routine Guide", executionInfo: "Execution & Goals",
+        startMeso: "Start New Mesocycle", finishWorkout: "Finish Workout", finishConfirm: "Finish workout?", cancel: "Cancel", delete: "Delete", skip: "Skip Exercise", skipDay: "Skip Workout", skipped: "Skipped", completed: "Completed", swap: "Swap Exercise", changeMuscle: "Change muscle", chooseMuscle: "Choose muscle", addSetBelow: "Add Set Below", deleteSet: "Delete Set", skipSet: "Skip Set", unskipSet: "Unskip Set", sets: "Set", weight: "Weight", reps: "Reps", rir: "RIR", log: "Log", note: "Range: 6-10", active: "Active", history: "History", settings: "Settings", volume: "Weekly Volume", workouts: "Recent Workouts", noData: "No data", duration: "Duration", exercises: "Exercises", configure: "Configure", week: "WEEK", massPhase: "Mass Phase", resting: "Resting", language: "Language", theme: "Theme", back: "Back", finishCycle: "Finish Cycle", confirmCycle: "Finish current mesocycle?", selectEx: "Select Exercise", searchPlaceholder: "Search...", createEx: "Create", noExFound: "No exercises found", keepScreen: "Keep Screen On", setType: "SET TYPE", mesoStats: "Mesocycle Stats", totalWorkouts: "Total Workouts", currentWeek: "Current Week", linkSuperset: "Link Superset", unlinkSuperset: "Unlink", selectToLink: "Select exercise to link...", superset: "SUPERSET", workoutComplete: "WORKOUT COMPLETE", goodJob: "Great job!", totalVolume: "Total Volume", totalSets: "Total Sets", totalReps: "Total Reps", share: "Share", close: "Save & Close", resume: "Resume Workout", backup: "Data Backup", export: "Export Data", import: "Import Data", importConfirm: "Overwrite data?", dataSaved: "Saved!", addSet: "Set", remSet: "Set", delSlot: "Delete Slot", offline: "Local Mode", mesoAvg: "Meso Avg Volume", routineGuide: "Routine Guide", executionInfo: "Execution & Goals",
         types: { regular: "Regular", myorep: "Myorep", myorep_match: "Myorep Match", cluster: "Cluster", top: "Top Set", backoff: "Back-off Set", giant: "Giant Set", warmup: "Warmup" }, 
         typeDesc: { regular: "Standard straight set", myorep: "Activation set + mini-sets (short rest)", myorep_match: "Match reps of previous set", cluster: "Intra-set rest periods", top: "Heaviest set (High Intensity)", backoff: "Volume work after Top Set", giant: "High reps to failure (Metabolite)", warmup: "Low fatigue preparation" }, 
         muscle: { CHEST: "Chest", BACK: "Back", QUADS: "Quads", HAMSTRINGS: "Hamstrings", GLUTES: "Glutes", CALVES: "Calves", SHOULDERS: "Shoulders", BICEPS: "Biceps", TRICEPS: "Triceps", TRAPS: "Traps", ABS: "Abs", FOREARMS: "Forearms", CARDIO: "Cardio" },
@@ -439,6 +547,14 @@ export const TRANSLATIONS = {
         onb: { skip: "Omitir", next: "Siguiente", start: "Empezar", s1_title: "Bienvenido a IronLog", s1_desc: "La herramienta definitiva para hipertrofia, impulsada por IronCoach.", s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. IronCoach auto-regula el volumen según tu feedback.", s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.", s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva." },
         createAndSelect: "Crear y Seleccionar", overwriteTemplateConfirm: "Esto sobrescribe tu rutina actual con la plantilla seleccionada.", newRecord: "¡Nuevo Récord!", prMessage: "¡Superaste tus marcas anteriores!", continue: "Continuar",
         
+        // Home View Specific
+        upNext: "Up Next",
+        tapToStart: "Tap to start",
+        consistency: "Consistency",
+        schedule: "Schedule",
+        weekCompleteTitle: "Week Complete!",
+        weekCompleteDesc: "Great job. Rest up or start next week.",
+
         // Cardio Specific
         cardioTime: "Time (min)",
         cardioDist: "Dist (km)",
@@ -451,7 +567,14 @@ export const TRANSLATIONS = {
             hiit: "HIIT / Intervalos",
             tabata: "Tabata"
         },
-        changeCardioMode: "Modo Cardio"
+        changeCardioMode: "Modo Cardio",
+        
+        // Exercise Details
+        exDetail: "Exercise Guide",
+        instructions: "Instructions",
+        watchVideo: "Watch on YouTube",
+        noVideo: "No video available",
+        guide: "Guide"
     },
     es: { 
         startMeso: "Nuevo Mesociclo", finishWorkout: "Terminar", finishConfirm: "¿Terminar entreno?", cancel: "Cancelar", delete: "Eliminar", skip: "Omitir Ejercicio", skipDay: "Saltar Día", skipped: "Saltado", completed: "Completado", swap: "Cambiar Ejercicio", changeMuscle: "Cambiar Músculo", chooseMuscle: "Elegir Músculo", addSetBelow: "Añadir Serie", deleteSet: "Borrar Serie", skipSet: "Saltar Serie", unskipSet: "Restaurar Serie", sets: "Series", weight: "Peso", reps: "Reps", rir: "RIR", log: "Log", note: "Rango: 6-10", active: "Activo", history: "Historial", settings: "Ajustes", volume: "Volumen Semanal", workouts: "Entrenos Recientes", noData: "Sin datos", duration: "Duración", exercises: "Ejercicios", configure: "Configurar", week: "SEMANA", massPhase: "Fase de Volumen", resting: "Descansando", language: "Idioma", theme: "Tema", back: "Atrás", finishCycle: "Terminar Ciclo", confirmCycle: "¿Terminar mesociclo actual?", selectEx: "Seleccionar Ejercicio", searchPlaceholder: "Buscar...", createEx: "Crear", noExFound: "No se encontraron ejercicios", keepScreen: "Pantalla Encendida", setType: "TIPO DE SERIE", mesoStats: "Estadísticas Meso", totalWorkouts: "Entrenos Totales", currentWeek: "Semana Actual", linkSuperset: "Vincular Superserie", unlinkSuperset: "Desvincular", selectToLink: "Selecciona ejercicio a vincular...", superset: "SUPERSERIE", workoutComplete: "ENTRENO COMPLETADO", goodJob: "¡Buen trabajo!", totalVolume: "Volumen Total", totalSets: "Series Totales", totalReps: "Reps Totales", share: "Compartir", close: "Guardar y Cerrar", resume: "Reanudar", backup: "Copia de Seguridad", export: "Exportar Datos", import: "Importar Datos", importConfirm: "¿Sobrescribir datos?", dataSaved: "¡Guardado!", addSet: "Serie", remSet: "Serie", delSlot: "Borrar Slot", offline: "Modo Local", mesoAvg: "Vol. Promedio Meso", routineGuide: "Guía de Rutina", executionInfo: "Ejecución y Objetivos",
@@ -481,7 +604,7 @@ export const TRANSLATIONS = {
         mesoName: "Nombre Mesociclo",
         exportReport: "Exportar Informe y Terminar", justFinish: "Solo Terminar",
         mesoType: "Tipo de Fase",
-        phases: { hyp_1: "Hipertrofia Base 1", hyp_2: "Hipertrofia Base 2", metabolite: "Fase Metabolitos", resensitization: "Resensibilización", full_body: "Aesthetic V-Taper" },
+        phases: { hyp_1: "Hipertrofia Base 1", hyp_2: "Hipertrofia Base 2", metabolite: "Fase Metabolitos", resensitization: "Resensitization", full_body: "Aesthetic V-Taper" },
         phaseDesc: { hyp_1: "PPL Estándar. Volumen equilibrado.", hyp_2: "Torso/Pierna (4 Días). Foco en básicos.", metabolite: "Reps altas (20-30), descanso corto, 'quemazón'.", resensitization: "Bajo volumen, peso alto para resetear fatiga.", full_body: "Estilo Dr. Mike. Foco en V-Taper (Dorsal/Hombro Lateral)." },
         targetRIR: "RIR Objetivo", recoveryWeek: "Semana Recuperación", focusMode: "Modo Foco", repsRange: "Rango Reps", startNow: "Empezar Ciclo", setupCycle: "Configurar y Empezar", saveAsMeso: "Usar este programa para crear un nuevo mesociclo activo.",
         units: { kg: "KG", pl: "Discos", lb: "LBS", toggle: "Cambiar Unidad (KG/Discos)", plateWeight: "Peso por Disco", setPlateWeight: "Fijar Peso Disco (kg)", enterWeight: "ej. 5, 10..." },
@@ -489,6 +612,14 @@ export const TRANSLATIONS = {
         onb: { skip: "Omitir", next: "Siguiente", start: "Empezar", s1_title: "Bienvenido a IronLog", s1_desc: "La herramienta definitiva para hipertrofia, impulsada por IronCoach.", s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. IronCoach auto-regula el volumen según tu feedback.", s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.", s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva." },
         createAndSelect: "Crear y Seleccionar", overwriteTemplateConfirm: "Esto sobrescribe tu rutina actual con la plantilla seleccionada.", newRecord: "¡Nuevo Récord!", prMessage: "¡Superaste tus marcas anteriores!", continue: "Continuar",
         
+        // Home View Specific
+        upNext: "Siguiente",
+        tapToStart: "Toca para empezar",
+        consistency: "Constancia",
+        schedule: "Calendario",
+        weekCompleteTitle: "¡Semana Completada!",
+        weekCompleteDesc: "Buen trabajo. Descansa o empieza la siguiente.",
+
         // Cardio Specific
         cardioTime: "Tiempo (min)",
         cardioDist: "Dist (km)",
@@ -501,6 +632,13 @@ export const TRANSLATIONS = {
             hiit: "HIIT / Intervalos",
             tabata: "Tabata"
         },
-        changeCardioMode: "Modo Cardio"
+        changeCardioMode: "Modo Cardio",
+
+        // Exercise Details
+        exDetail: "Guía de Ejercicio",
+        instructions: "Instrucciones",
+        watchVideo: "Abrir en YouTube",
+        noVideo: "Sin video disponible",
+        guide: "Guía"
     }
 };

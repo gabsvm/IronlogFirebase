@@ -27,9 +27,12 @@ export const getTranslated = (val: string | { en: string; es: string } | null | 
     if (!val) return 'Unknown';
     if (typeof val === 'string') return val;
     if (typeof val === 'object') {
-        return val[lang] || val['en'] || 'Unknown';
+        const res = val[lang] || val['en'];
+        // Critical safety check: Ensure the result is primitive
+        if (typeof res === 'object') return JSON.stringify(res); 
+        return String(res || 'Unknown');
     }
-    return 'Unknown';
+    return String(val);
 };
 
 export const getLastLogForExercise = (exerciseId: string, logs: Log[]): WorkoutSet[] | null => {
@@ -104,40 +107,18 @@ export const getMesoStageConfig = (type: MesoType, week: number, isDeload: boole
 
 /**
  * RP-Style Algorithm for volume adjustment (Updated for MPT 2.0 Conservative Logic)
- * 
- * Soreness Inputs (mapped from UI 1-3):
- * 1 (None/Healed Early) -> Equivalent to Rating 1 or 2
- * 2 (Recovered on Time) -> Equivalent to Rating 0
- * 3 (Still Sore)        -> Equivalent to Rating -1 or -2
- * 
- * Performance Inputs (mapped from UI 1-3):
- * 1 (Bad)   -> Used to confirm negative rating
- * 2 (Good)  -> Normal
- * 3 (Great) -> Used to distinguish Rating 1 vs 2 (e.g., No pump vs Good pump)
  */
 export const calculateVolumeAdjustment = (soreness: number, performance: number): number => {
     // 1. NEGATIVE RATING (-1 / -2)
-    // If user is still sore (UI Soreness 3), we MUST reduce.
     if (soreness === 3) return -1;
 
     // 2. BASELINE RATING (0) - THE SWEET SPOT
-    // If user recovered "On Time" (UI Soreness 2), we MAINTAIN.
-    // This stops the aggressive accumulation. You are at MEV/MAV.
     if (soreness === 2) return 0;
 
     // 3. POSITIVE RATING (+1 / +2)
-    // If user recovered "Early" (UI Soreness 1)... we check performance/pump.
     if (soreness === 1) {
-        // UI Perf 3 (Great/Too Easy/No Pump feeling): 
-        // Logic: "No soreness at all, felt like nothing" -> +2 sets
         if (performance === 3) return 2;
-
-        // UI Perf 2 (Good/Target Pump):
-        // Logic: "No soreness, but felt the work" -> +1 set
         if (performance === 2) return 1;
-
-        // UI Perf 1 (Bad):
-        // Recovered early but workout sucked? Weird case. Usually maintain or +0.
         return 0;
     }
 

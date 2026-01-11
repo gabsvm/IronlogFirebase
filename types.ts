@@ -17,6 +17,7 @@ export interface ExerciseDef {
   muscle: MuscleGroup;
   instructions?: { en: string; es: string };
   defaultCardioType?: CardioType;
+  videoId?: string; // YouTube Video ID
 }
 
 export type SetType = 'regular' | 'myorep' | 'myorep_match' | 'cluster' | 'top' | 'backoff' | 'giant' | 'warmup';

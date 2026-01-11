@@ -20,6 +20,7 @@ interface SortableExerciseCardProps {
     stageConfig: any;
     onAddSet: (id: number) => void;
     onDeleteSet: (exId: number, setId: number) => void;
+    onOpenDetail?: (ex: SessionExercise) => void; 
     viewMode?: 'list' | 'focus';
 }
 
@@ -34,6 +35,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
     stageConfig,
     onAddSet,
     onDeleteSet,
+    onOpenDetail,
     viewMode = 'list'
 }) => {
     const { logs } = useApp();
@@ -58,7 +60,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
     const sets = ex.sets || [];
     const ssStyle = supersetStyle;
     const unit = ex.weightUnit || 'kg';
-    const unitLabel = unit === 'pl' ? t.units.pl : t.units.kg;
+    const unitLabel = unit === 'pl' ? String(t.units?.pl) : String(t.units?.kg);
     
     // Check if it is a cardio exercise
     const isCardio = ex.muscle === 'CARDIO';
@@ -71,7 +73,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
         for (const log of logs) {
              if (log.skipped) continue;
              const found = log.exercises?.find(e => e.id === ex.id);
-             if (found && found.note) return found.note;
+             if (found && found.note) return String(found.note);
         }
         return null;
     }, [logs, ex.id]);
@@ -163,17 +165,17 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             )}
 
                             {ssStyle && <span className={`${ssStyle.badge} text-[9px] font-bold px-1.5 py-0.5 rounded`}>SS</span>}
-                            <MuscleTag label={ex.slotLabel || ex.muscle || 'CHEST'} />
+                            <MuscleTag label={String(ex.slotLabel || ex.muscle || 'CHEST')} />
                             
                             {/* Reps/Mode Target Badge */}
                             {isCardio ? (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
-                                    {t.cardioModes[cardioMode]}
+                                    {String(t.cardioModes?.[cardioMode] || cardioMode)}
                                 </span>
                             ) : (
                                 ex.targetReps && (
                                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-                                        {ex.targetReps} Reps
+                                        {String(ex.targetReps)} Reps
                                     </span>
                                 )
                             )}
@@ -183,13 +185,25 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                                     onClick={(e) => { e.stopPropagation(); ctrl.setConfigPlateExId(ex.instanceId); }}
                                     className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[9px] font-bold px-2 py-0.5 rounded hover:bg-blue-200"
                                 >
-                                    {ex.plateWeight ? `1 PL = ${ex.plateWeight}kg` : t.units.setPlateWeight}
+                                    {ex.plateWeight ? `1 PL = ${ex.plateWeight}kg` : String(t.units?.setPlateWeight)}
                                 </button>
                             )}
                         </div>
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight tracking-tight pl-1">
-                            {getTranslated(ex.name, lang)}
-                        </h3>
+                        {/* Title - Clickable for details */}
+                        <div className="flex items-center gap-2">
+                            <h3 
+                                onClick={(e) => { e.stopPropagation(); if(onOpenDetail) onOpenDetail(ex); }}
+                                className="text-xl font-bold text-zinc-900 dark:text-white leading-tight tracking-tight pl-1 cursor-pointer hover:text-red-500 transition-colors"
+                            >
+                                {String(getTranslated(ex.name, lang))}
+                            </h3>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); if(onOpenDetail) onOpenDetail(ex); }}
+                                className="text-zinc-300 dark:text-zinc-600 hover:text-red-500 transition-colors"
+                            >
+                                <Icon name="Info" size={16} />
+                            </button>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {/* Quick Warmup Button (Hide for Cardio) */}
@@ -207,17 +221,22 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             {/* Dropdown Menu */}
                             {ctrl.openMenuId === ex.instanceId && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                    <button onClick={(e) => { e.stopPropagation(); if(onOpenDetail) onOpenDetail(ex); ctrl.setOpenMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                        <Icon name="Info" size={16} /> {String(t.exDetail)}
+                                    </button>
+                                    <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
+
                                     {isCardio && (
                                         <>
-                                            <div className="px-4 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{t.changeCardioMode}</div>
+                                            <div className="px-4 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{String(t.changeCardioMode)}</div>
                                             <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('steady'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'steady' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
-                                                {cardioMode === 'steady' && <Icon name="Check" size={14} />} {t.cardioModes.steady}
+                                                {cardioMode === 'steady' && <Icon name="Check" size={14} />} {String(t.cardioModes?.steady)}
                                             </button>
                                             <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('hiit'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'hiit' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
-                                                {cardioMode === 'hiit' && <Icon name="Check" size={14} />} {t.cardioModes.hiit}
+                                                {cardioMode === 'hiit' && <Icon name="Check" size={14} />} {String(t.cardioModes?.hiit)}
                                             </button>
                                             <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('tabata'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'tabata' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
-                                                {cardioMode === 'tabata' && <Icon name="Check" size={14} />} {t.cardioModes.tabata}
+                                                {cardioMode === 'tabata' && <Icon name="Check" size={14} />} {String(t.cardioModes?.tabata)}
                                             </button>
                                             <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                         </>
@@ -239,16 +258,16 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                                             });
                                             ctrl.setOpenMenuId(null);
                                         }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
-                                            <Icon name="Settings" size={16} /> {t.units.toggle}
+                                            <Icon name="Settings" size={16} /> {String(t.units?.toggle)}
                                         </button>
                                     )}
 
                                     <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                     <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
-                                        <Icon name="RefreshCw" size={16} /> {t.replaceEx}
+                                        <Icon name="RefreshCw" size={16} /> {String(t.replaceEx)}
                                     </button>
                                     <button onClick={(e) => { e.stopPropagation(); ctrl.setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-purple-600 dark:text-purple-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
-                                        <Icon name="Dumbbell" size={16} /> {t.changeMuscle}
+                                        <Icon name="Dumbbell" size={16} /> {String(t.changeMuscle)}
                                     </button>
                                     <button onClick={(e) => { 
                                         e.stopPropagation(); 
@@ -262,17 +281,17 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                                         }
                                         ctrl.setOpenMenuId(null);
                                     }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${ssStyle ? 'text-red-500' : 'text-orange-600'}`}>
-                                        <Icon name={ssStyle ? "Unlink" : "Link"} size={16} /> {ssStyle ? t.unlinkSuperset : t.linkSuperset}
+                                        <Icon name={ssStyle ? "Unlink" : "Link"} size={16} /> {ssStyle ? String(t.unlinkSuperset) : String(t.linkSuperset)}
                                     </button>
                                     <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                     <button onClick={(e) => { 
                                         e.stopPropagation(); 
-                                        if(window.confirm(t.confirmRemoveEx)) {
+                                        if(window.confirm(String(t.confirmRemoveEx))) {
                                             ctrl.updateSession((prev: any) => prev ? { ...prev, exercises: prev.exercises.filter((e: any) => e.instanceId !== ex.instanceId) } : null);
                                             ctrl.setOpenMenuId(null);
                                         }
                                     }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                        <Icon name="Trash2" size={16} /> {t.removeEx}
+                                        <Icon name="Trash2" size={16} /> {String(t.removeEx)}
                                     </button>
                                 </div>
                             )}
@@ -292,7 +311,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
 
                 <input 
                     type="text"
-                    placeholder={t.addNote}
+                    placeholder={String(t.addNote)}
                     value={ex.note || ''}
                     onChange={(e) => ctrl.handleNoteUpdate(ex.instanceId, e.target.value)}
                     className="w-full bg-transparent text-xs text-zinc-500 placeholder-zinc-300 dark:placeholder-zinc-700 outline-none border-b border-transparent focus:border-red-500/50 transition-colors pb-1 ml-1"
@@ -306,24 +325,24 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                     isInterval ? (
                         // HIIT / Tabata Headers
                         <>
-                            <div className="col-span-4 pl-2 text-left text-green-600 dark:text-green-400">{t.cardioWork}</div>
-                            <div className="col-span-4 text-blue-500 dark:text-blue-400">{t.cardioRest}</div>
-                            <div className="col-span-2">{t.cardioRounds}</div>
+                            <div className="col-span-4 pl-2 text-left text-green-600 dark:text-green-400">{String(t.cardioWork)}</div>
+                            <div className="col-span-4 text-blue-500 dark:text-blue-400">{String(t.cardioRest)}</div>
+                            <div className="col-span-2">{String(t.cardioRounds)}</div>
                         </>
                     ) : (
                         // Steady State Headers
                         <>
-                            <div className="col-span-4 text-left pl-4">{t.cardioTime}</div>
-                            <div className="col-span-4">{t.cardioDist}</div>
-                            <div className="col-span-2">{t.cardioSpeed}</div>
+                            <div className="col-span-4 text-left pl-4">{String(t.cardioTime)}</div>
+                            <div className="col-span-4">{String(t.cardioDist)}</div>
+                            <div className="col-span-2">{String(t.cardioSpeed)}</div>
                         </>
                     )
                 ) : (
                     // Weightlifting Headers
                     <>
-                        <div className="col-span-4 text-left pl-4">{t.weight} ({unit === 'pl' ? 'PL' : 'KG'})</div>
-                        <div className="col-span-4">{t.reps}</div>
-                        {config.showRIR && <div className="col-span-2">{t.rir}</div>}
+                        <div className="col-span-4 text-left pl-4">{String(t.weight)} ({unit === 'pl' ? 'PL' : 'KG'})</div>
+                        <div className="col-span-4">{String(t.reps)}</div>
+                        {config.showRIR && <div className="col-span-2">{String(t.rir)}</div>}
                         {!config.showRIR && <div className="col-span-2"></div>}
                     </>
                 )}
@@ -355,10 +374,10 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
             {/* Footer Actions */}
             <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 grid grid-cols-2 divide-x divide-zinc-200 dark:divide-white/10 shrink-0">
                 <button onClick={() => sets.length > 0 && onDeleteSet(ex.instanceId, sets[sets.length - 1].id)} disabled={sets.length <= 1} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-red-500 disabled:opacity-30">
-                    <Icon name="Minus" size={14} /> {t.removeSetBtn}
+                    <Icon name="Minus" size={14} /> {String(t.removeSetBtn)}
                 </button>
                 <button onClick={() => onAddSet(ex.instanceId)} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
-                    <Icon name="Plus" size={14} /> {t.addSetBtn}
+                    <Icon name="Plus" size={14} /> {String(t.addSetBtn)}
                 </button>
             </div>
         </div>

@@ -9,6 +9,7 @@ import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
 import { PlateCalculatorModal } from '../components/ui/PlateCalculatorModal'; 
 import { PRCelebrationOverlay } from '../components/ui/PRCelebrationOverlay'; 
+import { ExerciseDetailModal } from '../components/ui/ExerciseDetailModal'; // New Import
 import { ExerciseDef, SessionExercise, SetType } from '../types';
 import { getTranslated, getMesoStageConfig, getLastLogForExercise } from '../utils';
 import { useWorkoutController } from '../hooks/useWorkoutController';
@@ -285,6 +286,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                             stageConfig={stageConfig}
                                             onAddSet={onAddSet}
                                             onDeleteSet={onDeleteSet}
+                                            onOpenDetail={(ex) => ctrl.setDetailExercise(ex)} // Pass handler
                                             viewMode="list"
                                         />
                                     );
@@ -349,6 +351,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                         stageConfig={stageConfig}
                                         onAddSet={onAddSet}
                                         onDeleteSet={onDeleteSet}
+                                        onOpenDetail={(ex) => ctrl.setDetailExercise(ex)} // Pass handler
                                         viewMode="focus"
                                     />
                                     
@@ -380,6 +383,15 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
             </div>
 
             {/* --- Modals (Rendered conditionally) --- */}
+            
+            {/* Exercise Detail Modal */}
+            {ctrl.detailExercise && (
+                <ExerciseDetailModal 
+                    exercise={ctrl.detailExercise} 
+                    onClose={() => ctrl.setDetailExercise(null)} 
+                />
+            )}
+
             {ctrl.changingSetType && (
                 <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={() => ctrl.setChangingSetType(null)}>
                     {/* Simplified Type Selector UI - Keeping functionality identical but cleaner */}

@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { MuscleGroup, ExerciseDef } from '../types';
 import { getTranslated } from '../utils';
 import { Virtuoso } from 'react-virtuoso';
+import { ExerciseDetailModal } from '../components/ui/ExerciseDetailModal'; // New Import
 
 interface ExercisesViewProps {
     onBack: () => void;
@@ -17,6 +18,9 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
     const t = TRANSLATIONS[lang];
     const [mode, setMode] = useState<'list' | 'create'>('list');
     
+    // Detail Modal State
+    const [detailEx, setDetailEx] = useState<ExerciseDef | null>(null);
+
     // Create State
     const [newName, setNewName] = useState('');
     const [newMuscle, setNewMuscle] = useState<MuscleGroup>('CHEST');
@@ -47,7 +51,10 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
 
     const Row = (index: number, ex: ExerciseDef) => (
         <div className="px-4 py-1">
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-white/5 flex justify-between items-center shadow-sm">
+            <button 
+                onClick={() => setDetailEx(ex)} // Open details
+                className="w-full bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-white/5 flex justify-between items-center shadow-sm text-left active:scale-[0.99] transition-transform"
+            >
                 <div>
                     <div className="font-bold text-zinc-900 dark:text-white text-sm">
                         {getTranslated(ex.name, lang)}
@@ -56,13 +63,18 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
                         {TRANSLATIONS[lang].muscle[ex.muscle]}
                     </span>
                 </div>
-                <button 
-                    onClick={() => handleDelete(ex.id)}
-                    className="p-2 text-zinc-300 hover:text-red-500 transition-colors"
-                >
-                    <Icon name="Trash2" size={18} />
-                </button>
-            </div>
+                <div className="flex items-center gap-2">
+                     <div className="p-2 text-zinc-300">
+                        <Icon name="ChevronRight" size={18} />
+                    </div>
+                    <div
+                        onClick={(e) => { e.stopPropagation(); handleDelete(ex.id); }}
+                        className="p-2 text-zinc-300 hover:text-red-500 transition-colors"
+                    >
+                        <Icon name="Trash2" size={18} />
+                    </div>
+                </div>
+            </button>
         </div>
     );
 
@@ -132,6 +144,14 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onBack }) => {
                         <Button onClick={handleCreate} disabled={!newName.trim()} fullWidth>{t.save}</Button>
                     </div>
                 </div>
+            )}
+
+            {/* Exercise Detail Modal */}
+            {detailEx && (
+                <ExerciseDetailModal 
+                    exercise={detailEx}
+                    onClose={() => setDetailEx(null)}
+                />
             )}
         </div>
     );

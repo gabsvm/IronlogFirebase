@@ -211,4 +211,15 @@ input, textarea {
     .card-gradient {
         @apply bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-900/50;
     }
+    .bg-grid-pattern {
+        background-size: 40px 40px;
+        background-image: 
+            linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    }
+    .light .bg-grid-pattern {
+        background-image: 
+            linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+    }
 }

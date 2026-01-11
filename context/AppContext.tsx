@@ -83,11 +83,15 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
             if (keepScreenOn && 'wakeLock' in navigator) {
                 try {
                     wakeLockRef.current = await navigator.wakeLock.request('screen');
-                } catch (err) {
-                    console.error('Wake Lock failed:', err);
+                } catch (err: any) {
+                    // Suppress known errors (Policy or User denial) to avoid console noise
+                    const isPolicyError = err.name === 'NotAllowedError' || err.message?.includes('policy');
+                    if (!isPolicyError) {
+                        console.warn('Wake Lock failed:', err);
+                    }
                 }
             } else if (!keepScreenOn && wakeLockRef.current) {
-                wakeLockRef.current.release().catch(e => console.error(e));
+                wakeLockRef.current.release().catch(() => {});
                 wakeLockRef.current = null;
             }
         };
@@ -98,7 +102,7 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            if (wakeLockRef.current) wakeLockRef.current.release();
+            if (wakeLockRef.current) wakeLockRef.current.release().catch(() => {});
         };
     }, [keepScreenOn]);
 

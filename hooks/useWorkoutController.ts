@@ -25,6 +25,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     const [plateWeightInput, setPlateWeightInput] = useState('');
     const [changingSetType, setChangingSetType] = useState<{ exId: number, setId: number, currentType: SetType } | null>(null);
     const [showPlateCalc, setShowPlateCalc] = useState<{ weight: number } | null>(null);
+    const [detailExercise, setDetailExercise] = useState<SessionExercise | null>(null); // New State
     
     // PR Logic
     const [hasNewPR, setHasNewPR] = useState(false);
@@ -247,6 +248,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         changingSetType, setChangingSetType,
         showPlateCalc, setShowPlateCalc,
         showPRSuccess, dismissPRSuccess,
+        detailExercise, setDetailExercise, // Exposed
         handleSetUpdate,
         handleNoteUpdate,
         toggleSetComplete,
