@@ -163,7 +163,7 @@ const AppContent = () => {
     const handleExport = () => {
         const data = {
             program, exercises, logs, activeMeso, activeSession,
-            version: '2.1.3'
+            version: '2.5.0'
         };
         const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
@@ -588,7 +588,7 @@ const AppContent = () => {
                         </div>
 
                         <div className="text-center pt-6 border-t border-zinc-100 dark:border-white/5">
-                            <p className="text-xs font-medium text-zinc-400">IronLog Pro v2.2.0</p>
+                            <p className="text-xs font-medium text-zinc-400">IronLog Pro v2.5.0</p>
                         </div>
                     </div>
                 </div>

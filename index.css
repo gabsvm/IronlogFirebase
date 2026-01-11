@@ -114,6 +114,15 @@ body {
     background: transparent;
 }
 
+/* 
+   PERFORMANCE: Content Visibility 
+   Allows the browser to skip rendering work for off-screen content.
+*/
+.scroll-container {
+    content-visibility: auto;
+    contain-intrinsic-size: 1000px; /* Estimation for stability */
+}
+
 /* Safe Area Utilities for Native */
 .pt-safe {
     padding-top: env(safe-area-inset-top, 20px);
@@ -143,6 +152,7 @@ input, textarea {
 }
 .animate-slideUp {
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity; /* Hint for compositor */
 }
 
 @keyframes pulse-subtle {

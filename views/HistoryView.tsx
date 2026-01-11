@@ -1,5 +1,5 @@
 
-import React, { useState, memo, useMemo } from 'react';
+import React, { useState, memo, useMemo, useDeferredValue } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
 import { formatDate, formatHoursMinutes, getTranslated } from '../utils';
@@ -169,17 +169,19 @@ export const HistoryView: React.FC = () => {
     const t = TRANSLATIONS[lang];
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [search, setSearch] = useState('');
+    // Defer the search term update to prioritize input responsiveness
+    const deferredSearch = useDeferredValue(search);
 
     const safeLogs = Array.isArray(logs) ? logs : [];
 
     const filteredLogs = useMemo(() => {
-        if (!search.trim()) return safeLogs;
-        const q = search.toLowerCase();
+        if (!deferredSearch.trim()) return safeLogs;
+        const q = deferredSearch.toLowerCase();
         return safeLogs.filter(log => {
             if (log.name.toLowerCase().includes(q)) return true;
             return log.exercises?.some(ex => getTranslated(ex.name, lang).toLowerCase().includes(q));
         });
-    }, [safeLogs, search, lang]);
+    }, [safeLogs, deferredSearch, lang]);
 
     const historyTutorialSteps = [
         { targetId: 'tut-history-search', title: t.tutorial.history[1].title, text: t.tutorial.history[1].text, position: 'bottom' as const },
@@ -194,7 +196,7 @@ export const HistoryView: React.FC = () => {
                 <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                 <input 
                     type="text" 
-                    placeholder="Search workouts or exercises..."
+                    placeholder="Search workouts..."
                     className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl py-3 pl-9 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 text-zinc-900 dark:text-white"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -203,7 +205,6 @@ export const HistoryView: React.FC = () => {
         </div>
     );
 
-    // Padding footer to avoid bottom nav overlap
     const Footer = () => <div className="h-24"></div>;
 
     if (safeLogs.length === 0) {

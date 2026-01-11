@@ -1,21 +1,31 @@
 
 import React, { useMemo } from 'react';
-import * as LucideIcons from 'lucide-react';
+// Import ONLY used icons to allow Tree Shaking (Drastic bundle size reduction)
+import {
+    Cpu, Activity, Star, Square, Pause, Menu, Layout, FileText, BarChart2, Edit, Plus, Check, 
+    SkipForward, ArrowRight, TrendingUp, RefreshCw, Settings, DownloadCloud, Minus, Dumbbell, 
+    ChevronLeft, Eye, Link, Unlink, Sun, Moon, Info, Download, Upload, CloudOff, Clock, Search, 
+    GripVertical, MoreVertical, ExternalLink, VideoOff, Layers, Zap, Calendar, Home, User, LogOut,
+    Trash2, X, CornerDownRight, Share2, AlertTriangle, Play, ChevronRight, Bot
+} from 'lucide-react';
 
-// Explicitly mapping specific icons that might have naming collisions or preference
-// Otherwise we fallback to the dynamic lookup from the namespace
-const ALIASES: Record<string, string> = {
-    Bot: 'Cpu',           // Fallback if Bot doesn't exist
-    BrainCircuit: 'Activity', 
-    Sparkles: 'Star',
-    Square: 'Square',     // Ensure Square maps to Square
-    Pause: 'Pause'
+// Static Map of icons used in the app
+const ICON_MAP: Record<string, React.ElementType> = {
+    Bot, Cpu, Activity, Star, Square, Pause, Menu, Layout, FileText, BarChart2, Edit, Plus, Check,
+    SkipForward, ArrowRight, TrendingUp, RefreshCw, Settings, DownloadCloud, Minus, Dumbbell,
+    ChevronLeft, Eye, Link, Unlink, Sun, Moon, Info, Download, Upload, CloudOff, Clock, Search,
+    GripVertical, MoreVertical, ExternalLink, VideoOff, Layers, Zap, Calendar, Home, User, LogOut,
+    Trash2, X, CornerDownRight, Share2, AlertTriangle, Play, ChevronRight,
+    // Aliases for backward compatibility or logical mapping
+    BrainCircuit: Activity,
+    Sparkles: Star,
+    Running: Activity 
 };
 
-export type IconName = keyof typeof LucideIcons | keyof typeof ALIASES;
+export type IconName = keyof typeof ICON_MAP;
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
-    name: string; // Relaxed type to prevent TS errors on dynamic names
+    name: string;
     size?: number | string;
     strokeWidth?: number | string;
 }
@@ -23,28 +33,26 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
 export const Icon: React.FC<IconProps> = ({ name, size = 20, className, ...props }) => {
     
     const LucideIcon = useMemo(() => {
-        // 1. Check direct match in namespace
-        let comp = (LucideIcons as any)[name];
+        // Direct lookup is O(1) and safe
+        const icon = ICON_MAP[name];
         
-        // 2. Check aliases if direct match fails
-        if (!comp && ALIASES[name]) {
-            comp = (LucideIcons as any)[ALIASES[name]];
-        }
-
-        // 3. Case-insensitive fallback (e.g., 'chevronLeft' vs 'ChevronLeft')
-        if (!comp) {
+        // Fallback for case-insensitive matches (less performant but robust)
+        if (!icon) {
             const lowerName = name.toLowerCase();
-            const key = Object.keys(LucideIcons).find(k => k.toLowerCase() === lowerName);
-            if (key) comp = (LucideIcons as any)[key];
+            const key = Object.keys(ICON_MAP).find(k => k.toLowerCase() === lowerName);
+            if (key) return ICON_MAP[key];
         }
-
-        return comp;
+        
+        return icon;
     }, [name]);
 
     if (!LucideIcon) {
-        console.warn(`Icon "${name}" not found in Lucide library.`);
-        // Render a placeholder box so layout doesn't collapse
-        return <div style={{ width: size, height: size, background: 'currentColor', opacity: 0.2, borderRadius: 4 }} className={className} />;
+        // Development warning only
+        if (process.env.NODE_ENV === 'development') {
+            console.warn(`Icon "${name}" not found in static map. Add it to Icon.tsx to fix.`);
+        }
+        // Graceful fallback to avoid crash layout shifts
+        return <div style={{ width: size, height: size, background: 'currentColor', opacity: 0.1, borderRadius: 4 }} className={className} />;
     }
 
     return <LucideIcon size={size as number} className={className} {...(props as any)} />;
