@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTimerContext } from '../context/TimerContext';
 import { SessionExercise, ExerciseDef, SetType, Log } from '../types';
@@ -10,7 +10,9 @@ import { getLastLogForExercise } from '../utils';
 export const useWorkoutController = (onFinishCallback: () => void) => {
     const { activeSession, activeMeso, setActiveSession, exercises, rpFeedback, setRpFeedback, config, logs } = useApp();
     const { setRestTimer } = useTimerContext();
-    const [sessionElapsed, setSessionElapsed] = useState(0);
+    
+    // REMOVED: sessionElapsed state and useEffect. 
+    // This stops the hook from triggering a re-render every second.
 
     // Local UI State
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
@@ -25,24 +27,11 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     const [plateWeightInput, setPlateWeightInput] = useState('');
     const [changingSetType, setChangingSetType] = useState<{ exId: number, setId: number, currentType: SetType } | null>(null);
     const [showPlateCalc, setShowPlateCalc] = useState<{ weight: number } | null>(null);
-    const [detailExercise, setDetailExercise] = useState<SessionExercise | null>(null); // New State
+    const [detailExercise, setDetailExercise] = useState<SessionExercise | null>(null);
     
     // PR Logic
     const [hasNewPR, setHasNewPR] = useState(false);
     const [showPRSuccess, setShowPRSuccess] = useState(false);
-
-    // Timer Logic
-    useEffect(() => {
-        let i: any;
-        if (activeSession?.startTime) {
-            const tick = () => setSessionElapsed(Math.floor((Date.now() - activeSession.startTime!) / 1000));
-            tick();
-            i = setInterval(tick, 1000);
-        } else {
-            setSessionElapsed(0);
-        }
-        return () => clearInterval(i);
-    }, [activeSession?.startTime]);
 
     const sessionExercises = useMemo(() => 
         (activeSession?.exercises || []).filter((e): e is SessionExercise => !!e), 
@@ -76,20 +65,27 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     }, [setActiveSession]);
 
     const toggleSetComplete = useCallback((exInstanceId: number, setId: number) => {
-        const ex = sessionExercises.find(e => e.instanceId === exInstanceId);
-        const set = ex?.sets?.find(s => s.id === setId);
-        if (!set || set.skipped) return;
-
-        const completing = !set.completed;
+        // Need to access latest state, so we use the functional update inside setActiveSession
+        // effectively, but we need to know *what* to update for haptics/timer first.
+        // To avoid stale closures without adding `sessionExercises` to dependency (which changes often),
+        // we can assume the operation is valid.
         
-        if (completing) {
-            triggerHaptic('success');
-        } else {
-            triggerHaptic('light');
-        }
-
         setActiveSession(prev => {
             if(!prev) return null;
+            
+            const ex = prev.exercises.find(e => e.instanceId === exInstanceId);
+            const set = ex?.sets?.find(s => s.id === setId);
+            if (!set || set.skipped) return prev;
+
+            const completing = !set.completed;
+            
+            // Side Effects (Haptic/Timer) - We do this *inside* the update to ensure we have latest state
+            // or we accept a small risk of stale state for the side effect trigger.
+            // For safety and performance, we'll trigger side effects outside but optimistically.
+            
+            // Note: In React 18, state updates are batched. Side effects in render/set are tricky.
+            // We'll rely on the fact that if the user clicked, they saw the current state.
+            
             let startTime = prev.startTime;
             if (completing && !startTime) startTime = Date.now();
             
@@ -102,13 +98,26 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
                 } : e)
             }
         });
-
-        if (completing) {
-            const isMetabolite = activeMeso?.mesoType === 'metabolite';
-            let dur = isMetabolite ? 60 : 120;
-            if (set.type === 'myorep' || set.type === 'giant') dur = 30;
-            setRestTimer({ active: true, duration: dur, timeLeft: dur, endAt: Date.now() + (dur * 1000) });
+        
+        // Trigger Haptic & Timer optimistically
+        // We can't easily know if it was completing or uncompleting without reading state, 
+        // but typically users tap to complete. 
+        // To be precise, we'd need to find the set in `sessionExercises` before calling setter.
+        const ex = sessionExercises.find(e => e.instanceId === exInstanceId);
+        const set = ex?.sets.find(s => s.id === setId);
+        if(set) {
+            const willComplete = !set.completed;
+            if(willComplete) {
+                triggerHaptic('success');
+                const isMetabolite = activeMeso?.mesoType === 'metabolite';
+                let dur = isMetabolite ? 60 : 120;
+                if (set.type === 'myorep' || set.type === 'giant') dur = 30;
+                setRestTimer({ active: true, duration: dur, timeLeft: dur, endAt: Date.now() + (dur * 1000) });
+            } else {
+                triggerHaptic('light');
+            }
         }
+
     }, [activeMeso, sessionExercises, setActiveSession, setRestTimer]);
 
     const detectPRs = useCallback((): boolean => {
@@ -149,31 +158,20 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
 
     const fireConfetti = useCallback(async () => {
         try {
-            // Dynamic import to prevent crash if library is missing
             const confettiModule = await import('canvas-confetti');
-            // Cast to any to avoid TS2349: This expression is not callable
             const confetti = (confettiModule.default || confettiModule) as any;
             
             const count = 200;
-            const defaults = {
-                origin: { y: 0.7 },
-                zIndex: 9999 
-            };
+            const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
             function fire(particleRatio: number, opts: any) {
-                confetti({
-                    ...defaults,
-                    ...opts,
-                    particleCount: Math.floor(count * particleRatio)
-                });
+                confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) });
             }
             fire(0.25, { spread: 26, startVelocity: 55 });
             fire(0.2, { spread: 60 });
             fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
             fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
             fire(0.1, { spread: 120, startVelocity: 45 });
-        } catch (e) {
-            console.warn("Confetti failed to load", e);
-        }
+        } catch (e) { console.warn("Confetti failed", e); }
     }, []);
 
     const handleConfirmFinish = useCallback(() => {
@@ -233,7 +231,6 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
 
 
     return {
-        sessionElapsed,
         sessionExercises,
         openMenuId, setOpenMenuId,
         showFinishModal, setShowFinishModal,
@@ -248,7 +245,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         changingSetType, setChangingSetType,
         showPlateCalc, setShowPlateCalc,
         showPRSuccess, dismissPRSuccess,
-        detailExercise, setDetailExercise, // Exposed
+        detailExercise, setDetailExercise,
         handleSetUpdate,
         handleNoteUpdate,
         toggleSetComplete,

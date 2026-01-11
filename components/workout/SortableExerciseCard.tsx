@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SessionExercise, WorkoutSet, CardioType } from '../../types';
+import { SessionExercise, WorkoutSet, CardioType, SetType } from '../../types';
 import { Icon } from '../ui/Icon';
 import { MuscleTag } from './MuscleTag';
 import { SetRow } from './SetRow';
@@ -11,33 +11,59 @@ import { useApp } from '../../context/AppContext';
 
 interface SortableExerciseCardProps {
     exercise: SessionExercise;
-    ctrl: any; 
+    // Pass stable handlers instead of the entire `ctrl` object
+    onSetUpdate: (exId: number, setId: number, field: string, value: any) => void;
+    onSetComplete: (exId: number, setId: number) => void;
+    onSetTypeChange: (exId: number, setId: number, type: SetType) => void;
+    onAddSet: (id: number) => void;
+    onDeleteSet: (exId: number, setId: number) => void;
+    onOpenDetail?: (ex: SessionExercise) => void;
+    
+    // Handlers for menu actions
+    onLink: (id: number | null) => void;
+    onReplace: (id: number | null) => void;
+    onEditMuscle: (id: number | null) => void;
+    onConfigPlate: (id: number | null) => void;
+    onUpdateSession: (cb: any) => void;
+    
+    // UI State passed down
+    openMenuId: number | null;
+    setOpenMenuId: (id: number | null) => void;
+    linkingId: number | null;
+    
     t: any;
     lang: 'en' | 'es';
     supersetStyle: any;
     isLinkingTarget: boolean;
     config: any;
     stageConfig: any;
-    onAddSet: (id: number) => void;
-    onDeleteSet: (exId: number, setId: number) => void;
-    onOpenDetail?: (ex: SessionExercise) => void; 
     viewMode?: 'list' | 'focus';
 }
 
-export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({ 
+export const SortableExerciseCard = React.memo(({ 
     exercise: ex, 
-    ctrl, 
+    onSetUpdate,
+    onSetComplete,
+    onSetTypeChange,
+    onAddSet,
+    onDeleteSet,
+    onOpenDetail,
+    onLink,
+    onReplace,
+    onEditMuscle,
+    onConfigPlate,
+    onUpdateSession,
+    openMenuId,
+    setOpenMenuId,
+    linkingId,
     t, 
     lang, 
     supersetStyle, 
     isLinkingTarget, 
     config, 
     stageConfig,
-    onAddSet,
-    onDeleteSet,
-    onOpenDetail,
     viewMode = 'list'
-}) => {
+}: SortableExerciseCardProps) => {
     const { logs } = useApp();
     
     const {
@@ -62,15 +88,16 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
     const unit = ex.weightUnit || 'kg';
     const unitLabel = unit === 'pl' ? String(t.units?.pl) : String(t.units?.kg);
     
-    // Check if it is a cardio exercise
     const isCardio = ex.muscle === 'CARDIO';
     const cardioMode: CardioType = ex.cardioType || ex.defaultCardioType || 'steady';
     const isInterval = cardioMode === 'hiit' || cardioMode === 'tabata';
 
-    // 1. Get Last Note for Context
+    // 1. Get Last Note for Context (Memoized efficiently)
     const lastNote = useMemo(() => {
         if (!logs) return null;
-        for (const log of logs) {
+        // Optimization: Iterate backwards to find latest match quickly
+        for (let i = 0; i < logs.length; i++) {
+             const log = logs[i];
              if (log.skipped) continue;
              const found = log.exercises?.find(e => e.id === ex.id);
              if (found && found.note) return String(found.note);
@@ -78,7 +105,6 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
         return null;
     }, [logs, ex.id]);
 
-    // 2. Smart Warmup Injection Logic
     const handleInjectWarmup = () => {
         const firstRegularSet = sets.find(s => s.type === 'regular');
         const targetWeight = Number(firstRegularSet?.weight) || Number(firstRegularSet?.hintWeight) || 0;
@@ -101,7 +127,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
             completed: false
         }));
 
-        ctrl.updateSession((prev: any) => !prev ? null : {
+        onUpdateSession((prev: any) => !prev ? null : {
             ...prev,
             exercises: prev.exercises.map((e: any) => 
                 e.instanceId === ex.instanceId 
@@ -109,12 +135,11 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 : e
             )
         });
-        ctrl.setOpenMenuId(null);
+        setOpenMenuId(null);
     };
 
-    // 3. Switch Cardio Mode
     const handleCardioModeChange = (mode: CardioType) => {
-        ctrl.updateSession((prev: any) => !prev ? null : {
+        onUpdateSession((prev: any) => !prev ? null : {
             ...prev,
             exercises: prev.exercises.map((e: any) => 
                 e.instanceId === ex.instanceId 
@@ -122,7 +147,14 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 : e
             )
         });
-        ctrl.setOpenMenuId(null);
+        setOpenMenuId(null);
+    };
+
+    const handleNoteUpdate = (val: string) => {
+        onUpdateSession((prev: any) => !prev ? null : {
+            ...prev,
+            exercises: prev.exercises.map((e: any) => e.instanceId === ex.instanceId ? { ...e, note: val } : e)
+        });
     };
 
     return (
@@ -132,28 +164,28 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
             onClick={() => {
                 if (isLinkingTarget) {
                     const ssid = `ss_${Date.now()}`;
-                    ctrl.updateSession((prev: any) => !prev ? null : {
+                    onUpdateSession((prev: any) => !prev ? null : {
                         ...prev,
-                        exercises: prev.exercises.map((e: any) => (e.instanceId === ctrl.linkingId || e.instanceId === ex.instanceId) ? { ...e, supersetId: ssid } : e)
+                        exercises: prev.exercises.map((e: any) => (e.instanceId === linkingId || e.instanceId === ex.instanceId) ? { ...e, supersetId: ssid } : e)
                     });
-                    ctrl.setLinkingId(null);
+                    onLink(null);
                 }
             }}
             className={`
                 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-white/5 overflow-hidden transition-all
                 ${ssStyle ? `border-l-4 ${ssStyle.border}` : ''}
                 ${isLinkingTarget ? 'ring-2 ring-orange-500 cursor-pointer opacity-80 hover:opacity-100' : ''}
-                ${ctrl.linkingId === ex.instanceId ? 'ring-2 ring-orange-500' : ''}
+                ${linkingId === ex.instanceId ? 'ring-2 ring-orange-500' : ''}
                 ${isDragging ? 'shadow-2xl ring-2 ring-red-500/20 scale-[1.02]' : ''}
                 ${viewMode === 'focus' ? 'h-full flex-1' : ''} 
             `}
         >
-            {/* Exercise Header */}
+            {/* Header */}
             <div className="p-4 flex flex-col gap-2 border-b border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.02]">
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            {/* Drag Handle - Only show in LIST mode */}
+                            {/* Drag Handle */}
                             {viewMode === 'list' && (
                                 <div 
                                     className="touch-none cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-200 p-3 -ml-3 mr-1" 
@@ -167,7 +199,6 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             {ssStyle && <span className={`${ssStyle.badge} text-[9px] font-bold px-1.5 py-0.5 rounded`}>SS</span>}
                             <MuscleTag label={String(ex.slotLabel || ex.muscle || 'CHEST')} />
                             
-                            {/* Reps/Mode Target Badge */}
                             {isCardio ? (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
                                     {String(t.cardioModes?.[cardioMode] || cardioMode)}
@@ -182,14 +213,14 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
 
                             {!isCardio && unit === 'pl' && (
                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); ctrl.setConfigPlateExId(ex.instanceId); }}
+                                    onClick={(e) => { e.stopPropagation(); onConfigPlate(ex.instanceId); }}
                                     className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[9px] font-bold px-2 py-0.5 rounded hover:bg-blue-200"
                                 >
                                     {ex.plateWeight ? `1 PL = ${ex.plateWeight}kg` : String(t.units?.setPlateWeight)}
                                 </button>
                             )}
                         </div>
-                        {/* Title - Clickable for details */}
+                        
                         <div className="flex items-center gap-2">
                             <h3 
                                 onClick={(e) => { e.stopPropagation(); if(onOpenDetail) onOpenDetail(ex); }}
@@ -205,8 +236,8 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                             </button>
                         </div>
                     </div>
+                    
                     <div className="flex items-center gap-2">
-                        {/* Quick Warmup Button (Hide for Cardio) */}
                         {!isCardio && (
                             <button onClick={(e) => { e.stopPropagation(); handleInjectWarmup(); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-orange-500 hover:scale-110 transition-transform" title="Auto Warmup">
                                 <Icon name="Zap" size={16} />
@@ -214,30 +245,25 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                         )}
 
                         <div className="relative">
-                            <button onClick={(e) => { e.stopPropagation(); ctrl.setOpenMenuId(ctrl.openMenuId === ex.instanceId ? null : ex.instanceId); }} className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                            <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === ex.instanceId ? null : ex.instanceId); }} className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                                 <Icon name="MoreVertical" size={20} />
                             </button>
                             
                             {/* Dropdown Menu */}
-                            {ctrl.openMenuId === ex.instanceId && (
+                            {openMenuId === ex.instanceId && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-100 dark:border-white/5 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                    <button onClick={(e) => { e.stopPropagation(); if(onOpenDetail) onOpenDetail(ex); ctrl.setOpenMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); if(onOpenDetail) onOpenDetail(ex); setOpenMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="Info" size={16} /> {String(t.exDetail)}
                                     </button>
                                     <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
 
                                     {isCardio && (
                                         <>
-                                            <div className="px-4 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{String(t.changeCardioMode)}</div>
-                                            <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('steady'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'steady' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
-                                                {cardioMode === 'steady' && <Icon name="Check" size={14} />} {String(t.cardioModes?.steady)}
-                                            </button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('hiit'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'hiit' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
-                                                {cardioMode === 'hiit' && <Icon name="Check" size={14} />} {String(t.cardioModes?.hiit)}
-                                            </button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleCardioModeChange('tabata'); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === 'tabata' ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
-                                                {cardioMode === 'tabata' && <Icon name="Check" size={14} />} {String(t.cardioModes?.tabata)}
-                                            </button>
+                                            {['steady', 'hiit', 'tabata'].map(m => (
+                                                <button key={m} onClick={(e) => { e.stopPropagation(); handleCardioModeChange(m as CardioType); }} className={`w-full text-left px-4 py-2 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${cardioMode === m ? 'text-blue-600' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                                                    {cardioMode === m && <Icon name="Check" size={14} />} {String(t.cardioModes?.[m])}
+                                                </button>
+                                            ))}
                                             <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
                                         </>
                                     )}
@@ -252,34 +278,34 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                                         <button onClick={(e) => { 
                                             e.stopPropagation();
                                             const newUnit = unit === 'kg' ? 'pl' : 'kg';
-                                            ctrl.updateSession((prev: any) => !prev ? null : {
+                                            onUpdateSession((prev: any) => !prev ? null : {
                                                 ...prev,
                                                 exercises: prev.exercises.map((e: any) => e.instanceId === ex.instanceId ? { ...e, weightUnit: newUnit } : e)
                                             });
-                                            ctrl.setOpenMenuId(null);
+                                            setOpenMenuId(null);
                                         }} className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                             <Icon name="Settings" size={16} /> {String(t.units?.toggle)}
                                         </button>
                                     )}
 
                                     <div className="h-px bg-zinc-100 dark:bg-white/5 my-1"></div>
-                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setReplacingExId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); onReplace(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="RefreshCw" size={16} /> {String(t.replaceEx)}
                                     </button>
-                                    <button onClick={(e) => { e.stopPropagation(); ctrl.setEditingMuscleId(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-purple-600 dark:text-purple-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); onEditMuscle(ex.instanceId); }} className="w-full text-left px-4 py-3 text-sm font-bold text-purple-600 dark:text-purple-400 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2">
                                         <Icon name="Dumbbell" size={16} /> {String(t.changeMuscle)}
                                     </button>
                                     <button onClick={(e) => { 
                                         e.stopPropagation(); 
                                         if (ex.supersetId) {
-                                             ctrl.updateSession((prev: any) => !prev ? null : {
+                                             onUpdateSession((prev: any) => !prev ? null : {
                                                  ...prev,
                                                  exercises: (prev.exercises || []).map((e: any) => e.instanceId === ex.instanceId ? { ...e, supersetId: undefined } : e)
                                              });
                                         } else {
-                                            ctrl.setLinkingId(ex.instanceId);
+                                            onLink(ex.instanceId);
                                         }
-                                        ctrl.setOpenMenuId(null);
+                                        setOpenMenuId(null);
                                     }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 ${ssStyle ? 'text-red-500' : 'text-orange-600'}`}>
                                         <Icon name={ssStyle ? "Unlink" : "Link"} size={16} /> {ssStyle ? String(t.unlinkSuperset) : String(t.linkSuperset)}
                                     </button>
@@ -287,8 +313,8 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                                     <button onClick={(e) => { 
                                         e.stopPropagation(); 
                                         if(window.confirm(String(t.confirmRemoveEx))) {
-                                            ctrl.updateSession((prev: any) => prev ? { ...prev, exercises: prev.exercises.filter((e: any) => e.instanceId !== ex.instanceId) } : null);
-                                            ctrl.setOpenMenuId(null);
+                                            onUpdateSession((prev: any) => prev ? { ...prev, exercises: prev.exercises.filter((e: any) => e.instanceId !== ex.instanceId) } : null);
+                                            setOpenMenuId(null);
                                         }
                                     }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2">
                                         <Icon name="Trash2" size={16} /> {String(t.removeEx)}
@@ -299,7 +325,6 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                     </div>
                 </div>
 
-                {/* Historical Note Display */}
                 {lastNote && (
                     <div className="flex items-start gap-2 mb-1 px-1 opacity-70">
                          <Icon name="FileText" size={12} className="mt-0.5 text-zinc-400" />
@@ -313,24 +338,22 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                     type="text"
                     placeholder={String(t.addNote)}
                     value={ex.note || ''}
-                    onChange={(e) => ctrl.handleNoteUpdate(ex.instanceId, e.target.value)}
+                    onChange={(e) => handleNoteUpdate(e.target.value)}
                     className="w-full bg-transparent text-xs text-zinc-500 placeholder-zinc-300 dark:placeholder-zinc-700 outline-none border-b border-transparent focus:border-red-500/50 transition-colors pb-1 ml-1"
                 />
             </div>
 
-            {/* Sets Header - Conditional for Cardio Mode */}
+            {/* Sets Header */}
             <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-zinc-50 dark:bg-black/20 border-b border-zinc-100 dark:border-white/5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
                 <div className="col-span-1">#</div>
                 {isCardio ? (
                     isInterval ? (
-                        // HIIT / Tabata Headers
                         <>
                             <div className="col-span-4 pl-2 text-left text-green-600 dark:text-green-400">{String(t.cardioWork)}</div>
                             <div className="col-span-4 text-blue-500 dark:text-blue-400">{String(t.cardioRest)}</div>
                             <div className="col-span-2">{String(t.cardioRounds)}</div>
                         </>
                     ) : (
-                        // Steady State Headers
                         <>
                             <div className="col-span-4 text-left pl-4">{String(t.cardioTime)}</div>
                             <div className="col-span-4">{String(t.cardioDist)}</div>
@@ -338,7 +361,6 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                         </>
                     )
                 ) : (
-                    // Weightlifting Headers
                     <>
                         <div className="col-span-4 text-left pl-4">{String(t.weight)} ({unit === 'pl' ? 'PL' : 'KG'})</div>
                         <div className="col-span-4">{String(t.reps)}</div>
@@ -349,7 +371,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 <div className="col-span-1"></div>
             </div>
 
-            {/* Sets List - Allow Scrolling in Focus Mode if sets list is long */}
+            {/* Sets List */}
             <div className={`divide-y divide-zinc-100 dark:divide-white/5 ${viewMode === 'focus' ? 'overflow-y-auto flex-1' : ''}`}>
                 {sets.map((set) => (
                     <SetRow
@@ -361,9 +383,9 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                         plateWeight={ex.plateWeight}
                         showRIR={config.showRIR || isCardio} 
                         stageRIR={stageConfig?.rir !== null ? String(stageConfig?.rir) : "-"}
-                        onUpdate={ctrl.handleSetUpdate}
-                        onToggleComplete={ctrl.toggleSetComplete}
-                        onChangeType={(exId, setId, type) => ctrl.setChangingSetType({ exId, setId, currentType: type })}
+                        onUpdate={onSetUpdate}
+                        onToggleComplete={onSetComplete}
+                        onChangeType={(exId, setId, type) => onSetTypeChange(exId, setId, type)}
                         lang={lang}
                         isCardio={isCardio}
                         cardioMode={cardioMode}
@@ -371,7 +393,7 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
                 ))}
             </div>
 
-            {/* Footer Actions */}
+            {/* Footer */}
             <div className="p-2 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/5 grid grid-cols-2 divide-x divide-zinc-200 dark:divide-white/10 shrink-0">
                 <button onClick={() => sets.length > 0 && onDeleteSet(ex.instanceId, sets[sets.length - 1].id)} disabled={sets.length <= 1} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-zinc-400 hover:text-red-500 disabled:opacity-30">
                     <Icon name="Minus" size={14} /> {String(t.removeSetBtn)}
@@ -382,4 +404,4 @@ export const SortableExerciseCard: React.FC<SortableExerciseCardProps> = ({
             </div>
         </div>
     );
-};
+});

@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { TRANSLATIONS } from '../constants';
 import { Icon } from '../components/ui/Icon';
@@ -9,13 +9,14 @@ import { FeedbackModal } from '../components/ui/FeedbackModal';
 import { WarmupModal } from '../components/ui/WarmupModal';
 import { PlateCalculatorModal } from '../components/ui/PlateCalculatorModal'; 
 import { PRCelebrationOverlay } from '../components/ui/PRCelebrationOverlay'; 
-import { ExerciseDetailModal } from '../components/ui/ExerciseDetailModal'; // New Import
+import { ExerciseDetailModal } from '../components/ui/ExerciseDetailModal';
 import { ExerciseDef, SessionExercise, SetType } from '../types';
 import { getTranslated, getMesoStageConfig, getLastLogForExercise } from '../utils';
 import { useWorkoutController } from '../hooks/useWorkoutController';
 import { SortableExerciseCard } from '../components/workout/SortableExerciseCard';
+import { WorkoutTimer } from '../components/workout/WorkoutTimer'; // New Import
 import { triggerHaptic } from '../utils/audio';
-import { TutorialOverlay } from '../components/ui/TutorialOverlay'; // Import Tutorial
+import { TutorialOverlay } from '../components/ui/TutorialOverlay';
 
 // DnD Imports
 import {
@@ -23,7 +24,6 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
-  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -46,7 +46,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     const { activeSession, activeMeso, lang, config, exercises, logs, tutorialProgress, markTutorialSeen } = useApp();
     const t = TRANSLATIONS[lang];
     
-    // Use the Custom Controller Hook
+    // Use the Custom Controller Hook (Now Light-Weight without timer loop)
     const ctrl = useWorkoutController(onFinish);
 
     // View State for Focus Mode
@@ -57,20 +57,18 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
     const stageConfig = activeMeso ? getMesoStageConfig(activeMeso.mesoType || 'hyp_1', activeMeso.week, !!activeMeso.isDeload) : null;
     const sessionExercises = ctrl.sessionExercises as SessionExercise[];
     
-    // DnD Sensors
+    // Correct Sensor Config for Mobile
     const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor),
-        useSensor(TouchSensor, {
+        useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 0,
-                tolerance: 5,
+                distance: 8, // Requires 8px movement to start drag
             },
-        })
+        }),
+        useSensor(KeyboardSensor)
     );
 
     const handleDragStart = (event: DragStartEvent) => {
-        triggerHaptic('light'); // Feedback when picking up an item
+        triggerHaptic('light'); 
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -84,7 +82,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         }
     };
     
-    // Superset Color Logic
     const supersetStyles = useMemo(() => {
         const uniqueIds = Array.from(new Set(sessionExercises.map(e => e.supersetId).filter((id): id is string => typeof id === 'string' && !!id)));
         const palette = [
@@ -98,9 +95,12 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         return map;
     }, [sessionExercises]);
 
+    const handleSetTypeChange = useCallback((exId: number, setId: number, type: SetType) => {
+        ctrl.setChangingSetType({ exId, setId, currentType: type });
+    }, [ctrl.setChangingSetType]);
+
     if (!activeSession) return null;
 
-    // Handlers specific to data manipulation that are simple enough to keep here or passed from props
     const handleUpdatePlateWeight = (exInstanceId: number) => {
         const weight = parseFloat(ctrl.plateWeightInput);
         if (!isNaN(weight) && weight > 0) {
@@ -117,7 +117,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         const newDef = customDef || exercises.find(e => e.id === newExId);
         if (!newDef) return;
 
-        // Fetch history for added exercise
         const safeLogs = Array.isArray(logs) ? logs : [];
         const lastSets = getLastLogForExercise(newExId, safeLogs);
 
@@ -150,7 +149,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
          const newDef = customDef || exercises.find(e => e.id === newExId);
          if (!newDef) return;
 
-         // Fetch history for the NEW exercise
          const safeLogs = Array.isArray(logs) ? logs : [];
          const lastSets = getLastLogForExercise(newExId, safeLogs);
 
@@ -159,7 +157,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
              exercises: (prev.exercises || []).map(ex => {
                  if (ex.instanceId !== ctrl.replacingExId) return ex;
                  
-                 // Map sets to reset values AND update hints with new exercise history
                  const resetSets = (ex.sets || []).map((s, i) => {
                      const historySet = lastSets && lastSets[i] ? lastSets[i] : null;
                      return { 
@@ -184,12 +181,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
 
     const finishedSets = sessionExercises.reduce((acc, ex) => acc + (ex.sets || []).filter(s => s.completed).length, 0);
 
-    // Focus Mode Navigation
     const focusedExercise = sessionExercises[focusedIndex];
     const goToNext = () => setFocusedIndex(prev => Math.min(prev + 1, sessionExercises.length - 1));
     const goToPrev = () => setFocusedIndex(prev => Math.max(prev - 1, 0));
 
-    // Helper to toggle view mode
     const toggleViewMode = () => {
         if ((document as any).startViewTransition) {
             (document as any).startViewTransition(() => {
@@ -200,11 +195,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
         }
     };
 
-    // Determine if we should show RIR info in header
-    // Only show if config.showRIR is true OR if it is a deload (which is structural)
     const showStageInfo = stageConfig && (config.showRIR || stageConfig.label === 'recovery');
 
-    // Tutorial Steps for Workout
     const workoutTutorialSteps = [
         { targetId: 'tut-exercise-list', title: t.tutorial.workout[0].title, text: t.tutorial.workout[0].text, position: 'bottom' as const },
         { targetId: 'tut-finish-btn', title: t.tutorial.workout[3].title, text: t.tutorial.workout[3].text, position: 'top' as const }
@@ -219,8 +211,13 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                     <Icon name="ChevronLeft" size={24} />
                 </button>
                 <div className="text-center">
-                    <div className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-0.5">{t.active}</div>
+                    {/* Timer added here, isolated from main list render cycle */}
+                    <div className="flex justify-center mb-0.5">
+                        <WorkoutTimer startTime={activeSession.startTime} />
+                    </div>
+                    
                     <div className="text-base font-black text-zinc-900 dark:text-zinc-100 leading-none mb-1">{activeSession.name}</div>
+                    
                     {showStageInfo && (
                         <div className="inline-flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                              {stageConfig.label === 'recovery' ? (
@@ -232,7 +229,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* View Toggle */}
                      <button 
                          onClick={(e) => { e.stopPropagation(); toggleViewMode(); }}
                          className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${viewMode === 'focus' ? 'bg-zinc-900 text-white dark:bg-white dark:text-black' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}
@@ -268,7 +264,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 )}
 
                 {viewMode === 'list' ? (
-                    // LIST MODE (With DnD)
                     <div id="tut-exercise-list" className="flex-1 overflow-y-auto scroll-container p-4 pb-32 space-y-6">
                         <DndContext 
                             sensors={sensors}
@@ -288,16 +283,26 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                                         <SortableExerciseCard
                                             key={ex.instanceId}
                                             exercise={ex}
-                                            ctrl={ctrl}
+                                            onSetUpdate={ctrl.handleSetUpdate}
+                                            onSetComplete={ctrl.toggleSetComplete}
+                                            onSetTypeChange={handleSetTypeChange}
+                                            onAddSet={onAddSet}
+                                            onDeleteSet={onDeleteSet}
+                                            onOpenDetail={(ex) => ctrl.setDetailExercise(ex)}
+                                            onLink={ctrl.setLinkingId}
+                                            onReplace={ctrl.setReplacingExId}
+                                            onEditMuscle={ctrl.setEditingMuscleId}
+                                            onConfigPlate={ctrl.setConfigPlateExId}
+                                            onUpdateSession={ctrl.updateSession}
+                                            openMenuId={ctrl.openMenuId}
+                                            setOpenMenuId={ctrl.setOpenMenuId}
+                                            linkingId={ctrl.linkingId}
                                             t={t}
                                             lang={lang}
                                             supersetStyle={ssStyle}
                                             isLinkingTarget={!!isLinkingTarget}
                                             config={config}
                                             stageConfig={stageConfig}
-                                            onAddSet={onAddSet}
-                                            onDeleteSet={onDeleteSet}
-                                            onOpenDetail={(ex) => ctrl.setDetailExercise(ex)} // Pass handler
                                             viewMode="list"
                                         />
                                     );
@@ -314,9 +319,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                         </Button>
                     </div>
                 ) : (
-                    // FOCUS MODE (Carousel Style)
+                    // Focus Mode (Kept same logic, just less frequent renders)
                     <div className="flex-1 flex flex-col p-4 pb-24 h-full relative">
-                         {/* Progress Bar */}
                          <div className="flex items-center gap-2 mb-4 shrink-0">
                             {sessionExercises.map((_, idx) => (
                                 <div 
@@ -326,7 +330,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                             ))}
                         </div>
 
-                        {/* Navigation Buttons (Top) */}
                         <div className="flex justify-between items-center mb-4 shrink-0">
                             <button 
                                 onClick={goToPrev} 
@@ -347,26 +350,34 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                             </button>
                         </div>
 
-                        {/* The Card */}
                         <div className="flex-1 overflow-hidden relative">
                              {focusedExercise ? (
                                 <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300" key={focusedExercise.instanceId}>
                                      <SortableExerciseCard
                                         exercise={focusedExercise}
-                                        ctrl={ctrl}
+                                        onSetUpdate={ctrl.handleSetUpdate}
+                                        onSetComplete={ctrl.toggleSetComplete}
+                                        onSetTypeChange={handleSetTypeChange}
+                                        onAddSet={onAddSet}
+                                        onDeleteSet={onDeleteSet}
+                                        onOpenDetail={(ex) => ctrl.setDetailExercise(ex)}
+                                        onLink={ctrl.setLinkingId}
+                                        onReplace={ctrl.setReplacingExId}
+                                        onEditMuscle={ctrl.setEditingMuscleId}
+                                        onConfigPlate={ctrl.setConfigPlateExId}
+                                        onUpdateSession={ctrl.updateSession}
+                                        openMenuId={ctrl.openMenuId}
+                                        setOpenMenuId={ctrl.setOpenMenuId}
+                                        linkingId={ctrl.linkingId}
                                         t={t}
                                         lang={lang}
                                         supersetStyle={focusedExercise.supersetId ? supersetStyles[focusedExercise.supersetId] : null}
                                         isLinkingTarget={false}
                                         config={config}
                                         stageConfig={stageConfig}
-                                        onAddSet={onAddSet}
-                                        onDeleteSet={onDeleteSet}
-                                        onOpenDetail={(ex) => ctrl.setDetailExercise(ex)} // Pass handler
                                         viewMode="focus"
                                     />
                                     
-                                    {/* Action Shortcuts for Focus Mode */}
                                     <div className="mt-4 flex gap-3 shrink-0">
                                          <button 
                                              onClick={(e) => { e.stopPropagation(); ctrl.setShowPlateCalc({ weight: 20 }); }}
@@ -399,9 +410,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 onComplete={() => markTutorialSeen('workout')}
             />
 
-            {/* --- Modals (Rendered conditionally) --- */}
-            
-            {/* Exercise Detail Modal */}
+            {/* Modals remain the same... */}
             {ctrl.detailExercise && (
                 <ExerciseDetailModal 
                     exercise={ctrl.detailExercise} 
@@ -409,10 +418,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 />
             )}
 
-            {/* ... other modals ... */}
             {ctrl.changingSetType && (
                 <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={() => ctrl.setChangingSetType(null)}>
-                    {/* Simplified Type Selector UI - Keeping functionality identical but cleaner */}
                     <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-4 shadow-2xl space-y-2" onClick={e => e.stopPropagation()}>
                          <h3 className="text-center font-bold dark:text-white mb-2">{t.setType}</h3>
                          <div className="grid grid-cols-1 gap-2">
@@ -430,7 +437,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 </div>
             )}
 
-            {/* Finish Modal */}
             {ctrl.showFinishModal && (
                  <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6" onClick={(e) => e.stopPropagation()}>
                      <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4">
@@ -443,12 +449,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                  </div>
             )}
             
-            {/* PR Celebration Overlay */}
             {ctrl.showPRSuccess && (
                 <PRCelebrationOverlay onDismiss={ctrl.dismissPRSuccess} />
             )}
             
-            {/* Plate Calculator Modal */}
             {ctrl.showPlateCalc && (
                 <PlateCalculatorModal 
                     initialWeight={ctrl.showPlateCalc.weight}
@@ -456,7 +460,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                 />
             )}
 
-            {/* Other Modals (Feedback, Exercise Selectors) pass their specific handlers */}
             {ctrl.showFeedbackModal && activeSession && (
                 <FeedbackModal muscles={sessionExercises.map(e => e?.muscle || 'CHEST')} onCancel={() => ctrl.setShowFeedbackModal(false)} onConfirm={ctrl.handleSaveFeedback} />
             )}

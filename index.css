@@ -114,15 +114,6 @@ body {
     background: transparent;
 }
 
-/* 
-   PERFORMANCE: Content Visibility 
-   Allows the browser to skip rendering work for off-screen content.
-*/
-.scroll-container {
-    content-visibility: auto;
-    contain-intrinsic-size: 1000px; /* Estimation for stability */
-}
-
 /* Safe Area Utilities for Native */
 .pt-safe {
     padding-top: env(safe-area-inset-top, 20px);

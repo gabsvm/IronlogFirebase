@@ -33,7 +33,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
             setReady(false);
         } else {
             // Small delay to allow UI to render/settle before measuring
-            setTimeout(() => setReady(true), 400);
+            setTimeout(() => setReady(true), 500);
         }
     }, [isActive]);
 
@@ -82,116 +82,87 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ steps, onCompl
     const step = steps[currentStepIndex];
     const isLast = currentStepIndex === steps.length - 1;
 
-    // --- SMART POSITIONING ENGINE ---
-    const tooltipStyle: React.CSSProperties = {};
-    let isPositionedAbove = false;
+    // --- SMART POSITIONING ENGINE (DOCKED CARD) ---
+    // Instead of placing next to element, we dock to bottom (default) or top (if element is at bottom)
+    let isDockedTop = false;
     
     if (rect) {
         const viewportHeight = window.innerHeight;
-        const elementCenterY = rect.top + (rect.height / 2);
+        // If the target element is in the bottom 40% of the screen, move card to top to avoid covering it
+        // Or if the element takes up the whole screen (height > 60%), default to bottom
+        const isTargetLow = rect.top > (viewportHeight * 0.6);
+        const isTargetHuge = rect.height > (viewportHeight * 0.7);
         
-        // Decide placement based on which half of the screen the element is in
-        const isInTopHalf = elementCenterY < (viewportHeight / 2);
-
-        // Safety Margins
-        const MARGIN = 20;
-        const SIDE_PADDING = 24;
-
-        if (isInTopHalf) {
-            // Element is in top half -> Place Tooltip BELOW
-            tooltipStyle.top = rect.bottom + MARGIN;
-            tooltipStyle.left = SIDE_PADDING;
-            tooltipStyle.right = SIDE_PADDING;
-            // Prevent going off bottom screen
-            tooltipStyle.maxHeight = `calc(100vh - ${rect.bottom + MARGIN + 20}px)`;
-            isPositionedAbove = false;
-        } else {
-            // Element is in bottom half -> Place Tooltip ABOVE
-            tooltipStyle.bottom = (viewportHeight - rect.top) + MARGIN;
-            tooltipStyle.left = SIDE_PADDING;
-            tooltipStyle.right = SIDE_PADDING;
-            // Prevent going off top screen
-            tooltipStyle.maxHeight = `calc(${rect.top - MARGIN - 20}px)`;
-            isPositionedAbove = true;
-        }
-
-        // Centering constraint for larger screens (tablets/desktop)
-        tooltipStyle.maxWidth = '400px';
-        tooltipStyle.margin = '0 auto'; // Horizontal centering relative to left/right 0 if fixed
-        if (window.innerWidth > 450) {
-            tooltipStyle.left = 0;
-            tooltipStyle.right = 0;
+        if (isTargetLow && !isTargetHuge) {
+            isDockedTop = true;
         }
     }
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] pointer-events-auto font-sans touch-none">
+        <div className="fixed inset-0 z-[9999] pointer-events-auto font-sans touch-none overflow-hidden">
             {/* Backdrop Logic (The "Hole Punch" Effect) */}
             {rect && (
                 <>
                     {/* Top Dim */}
-                    <div className="absolute top-0 left-0 right-0 bg-black/75 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ height: rect.top }} />
+                    <div className="absolute top-0 left-0 right-0 bg-black/80 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ height: rect.top }} />
                     {/* Bottom Dim */}
-                    <div className="absolute left-0 right-0 bottom-0 bg-black/75 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ top: rect.bottom }} />
+                    <div className="absolute left-0 right-0 bottom-0 bg-black/80 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ top: rect.bottom }} />
                     {/* Left Dim */}
-                    <div className="absolute left-0 bg-black/75 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ top: rect.top, bottom: window.innerHeight - rect.bottom, width: rect.left }} />
+                    <div className="absolute left-0 bg-black/80 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ top: rect.top, bottom: window.innerHeight - rect.bottom, width: rect.left }} />
                     {/* Right Dim */}
-                    <div className="absolute right-0 bg-black/75 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ top: rect.top, bottom: window.innerHeight - rect.bottom, left: rect.right }} />
+                    <div className="absolute right-0 bg-black/80 backdrop-blur-[2px] transition-all duration-300 ease-out" style={{ top: rect.top, bottom: window.innerHeight - rect.bottom, left: rect.right }} />
                     
-                    {/* Highlight Border & Glow */}
+                    {/* Highlight Border & Pulsing Ring */}
                     <div 
-                        className="absolute border-2 border-white/50 rounded-xl shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-all duration-300 ease-out pointer-events-none ring-4 ring-white/20"
+                        className="absolute border-2 border-white/50 rounded-xl transition-all duration-300 ease-out pointer-events-none"
                         style={{
                             top: rect.top - 4,
                             left: rect.left - 4,
                             width: rect.width + 8,
                             height: rect.height + 8,
-                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.75)' // Fallback if 4-div method has gaps
                         }}
-                    />
+                    >
+                        {/* Pulsing Outer Ring */}
+                        <div className="absolute inset-0 -m-1 border-2 border-red-500/50 rounded-xl animate-ping opacity-75"></div>
+                    </div>
                 </>
             )}
 
-            {/* Tooltip Card */}
+            {/* Docked Tooltip Card */}
             <div 
                 className={`
-                    absolute bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10 
-                    transition-all duration-500 overflow-y-auto
-                    ${isPositionedAbove ? 'animate-in slide-in-from-bottom-4 fade-in' : 'animate-in slide-in-from-top-4 fade-in'}
+                    absolute left-4 right-4 max-w-md mx-auto
+                    bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-2xl border border-zinc-200 dark:border-white/10 
+                    transition-all duration-500 ease-out
+                    ${isDockedTop ? 'top-24 animate-in slide-in-from-top-4' : 'bottom-8 animate-in slide-in-from-bottom-4'}
                 `}
-                style={tooltipStyle}
             >
-                <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-black text-xl text-zinc-900 dark:text-white tracking-tight">{step.title}</h3>
-                    <span className="text-[10px] font-bold bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 px-2 py-1 rounded-full shrink-0 ml-2">
+                <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-black text-lg text-zinc-900 dark:text-white tracking-tight leading-tight pr-4">{step.title}</h3>
+                    <span className="text-[9px] font-bold bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 px-2 py-1 rounded-full shrink-0">
                         {currentStepIndex + 1} / {steps.length}
                     </span>
                 </div>
                 
-                <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-8 leading-relaxed font-medium">
+                <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-6 leading-relaxed font-medium">
                     {step.text}
                 </p>
 
                 <div className="flex justify-between items-center">
                     <button 
                         onClick={onComplete}
-                        className="text-xs font-bold text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors px-2 py-2"
+                        className="text-xs font-bold text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors px-2 py-2 uppercase tracking-wider"
                     >
-                        {t.skip || "Skip"}
+                        {t.onb.skip}
                     </button>
                     <button 
                         onClick={handleNext}
-                        className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-600/20 transition-transform active:scale-95 flex items-center gap-2"
+                        className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-red-600/20 transition-transform active:scale-95 flex items-center gap-2"
                     >
                         {isLast ? t.tutorial.finish : t.tutorial.next}
                         {!isLast && <Icon name="ArrowRight" size={16} />}
                     </button>
                 </div>
-                
-                {/* Visual Arrow Indicator */}
-                <div 
-                    className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/10 rotate-45 ${isPositionedAbove ? '-bottom-2 border-b border-r' : '-top-2 border-t border-l'}`}
-                />
             </div>
         </div>,
         document.body
