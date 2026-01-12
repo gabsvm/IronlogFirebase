@@ -1,4 +1,3 @@
-
 export type Lang = 'en' | 'es';
 export type Theme = 'light' | 'dark' | 'system';
 export type ColorTheme = 'iron' | 'ocean' | 'forest' | 'royal' | 'sunset' | 'monochrome';
@@ -11,127 +10,97 @@ export type MuscleGroup =
 
 export type CardioType = 'steady' | 'hiit' | 'tabata';
 
-export interface ExerciseDef {
-  id: string;
-  name: string | { en: string; es: string };
-  muscle: MuscleGroup;
-  instructions?: { en: string; es: string };
-  defaultCardioType?: CardioType;
-  videoId?: string; // YouTube Video ID
-}
+export type SetType = 'warmup' | 'regular' | 'drop' | 'failure';
 
-export type SetType = 'regular' | 'myorep' | 'myorep_match' | 'cluster' | 'top' | 'backoff' | 'giant' | 'warmup';
-
-export interface WorkoutSet {
+export interface Set {
   id: number;
-  weight: string | number;
-  reps: string | number;
-  rpe: string | number; // RIR or Intensity for cardio
+  weight: number | string;
+  reps: number | string;
+  rpe?: number | string;
+  rir?: number | string;
   completed: boolean;
   type: SetType;
-  skipped?: boolean;
-  hintWeight?: string | number;
-  hintReps?: string | number;
-  prevWeight?: string | number;
-  prevReps?: string | number;
-  // Cardio fields
-  distance?: string | number; // in km
-  duration?: string | number; // in minutes (steady state)
-  // Interval fields
-  workSeconds?: number;
-  restSeconds?: number;
+  hintWeight?: number | string;
+  hintReps?: number | string;
+  prevWeight?: number | string;
+  prevReps?: number | string;
 }
 
-export type WeightUnit = 'kg' | 'lb' | 'pl';
+export interface ExerciseDef {
+  id: string;
+  name: string;
+  muscle: MuscleGroup;
+  custom?: boolean;
+}
 
-export interface SessionExercise extends ExerciseDef {
+export interface Exercise extends ExerciseDef {
   instanceId: number;
-  slotLabel?: string;
+  slotLabel: string;
   targetReps?: string;
-  note?: string;
-  sets: WorkoutSet[];
-  weightUnit?: WeightUnit;
-  plateWeight?: number;
-  supersetId?: string;
-  isPlaceholder?: boolean;
-  cardioType?: CardioType; // Current mode for this session
+  sets: Set[];
 }
 
 export interface ActiveSession {
   id: number;
   dayIdx: number;
-  name: string;
-  startTime: number | null;
-  endTime?: number;
-  mesoId: number;
+  mesoId: string;
   week: number;
-  exercises: SessionExercise[];
+  name: string;
+  exercises: Exercise[];
+  startTime: number;
+}
+
+export interface Log extends ActiveSession {
+  endTime: number;
+  duration: number; // in seconds
 }
 
 export interface ProgramSlot {
   muscle: MuscleGroup;
-  setTarget: number;
-  reps?: string;
-  exerciseId?: string | null;
+  setTarget?: number;
+  reps?: string; // e.g., "8-12"
 }
 
 export interface ProgramDay {
-  id: string;
-  dayName: { en: string; es: string };
+  dayName: string | { [key in Lang]: string };
   slots: ProgramSlot[];
 }
 
-export type MesoType = 'hyp_1' | 'hyp_2' | 'metabolite' | 'resensitization' | 'full_body';
-
 export interface MesoCycle {
-  id: number;
-  name?: string;
-  mesoType: MesoType;
+  id: string;
+  name: string;
+  startDate: string;
+  plan: { [dayIndex: number]: string[] }; // Map of day index to array of exercise IDs
   week: number;
-  plan: (string | null)[][];
-  targetWeeks?: number;
   isDeload?: boolean;
 }
 
-export interface Log {
-  id: number;
-  dayIdx: number;
-  name: string;
-  startTime: number;
-  endTime: number;
-  duration: number;
-  skipped?: boolean;
-  mesoId: number;
-  week: number;
-  exercises: SessionExercise[];
-}
-
-export interface FeedbackEntry {
-    soreness: number;
-    performance: number;
-    adjustment: number;
+export interface RPFeedback {
+  [exerciseId: string]: 'EASY' | 'GOOD' | 'HARD';
 }
 
 export interface TutorialState {
-    home: boolean;
-    workout: boolean;
-    history: boolean;
-    stats: boolean;
+  home: boolean;
+  workout: boolean;
+  history: boolean;
+  stats: boolean;
+}
+
+export interface AppConfig {
+  showRIR: boolean;
+  rpEnabled: boolean;
+  rpTargetRIR: number;
+  keepScreenOn: boolean;
 }
 
 export interface AppState {
-    program: ProgramDay[];
-    activeMeso: MesoCycle | null;
-    activeSession: ActiveSession | null;
-    exercises: ExerciseDef[];
-    logs: Log[];
-    config: {
-        showRIR: boolean;
-        rpEnabled: boolean;
-        rpTargetRIR: number;
-        keepScreenOn: boolean;
-    };
-    rpFeedback: Record<string, Record<string, Record<string, FeedbackEntry>>>; 
-    hasSeenOnboarding: boolean;
-    tutorialProgress: TutorialState;
+  program: ProgramDay[];
+  activeMeso: MesoCycle | null;
+  activeSession: ActiveSession | null;
+  exercises: ExerciseDef[];
+  logs: Log[];
+  config: AppConfig;
+  rpFeedback: RPFeedback;
+  hasSeenOnboarding: boolean;
+  tutorialProgress: TutorialState;
 }
