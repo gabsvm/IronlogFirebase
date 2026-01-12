@@ -9,6 +9,25 @@ import { MuscleTag } from '../workout/MuscleTag';
 import { Button } from './Button';
 import { ProgressChart } from '../stats/ProgressChart';
 import { useStatsWorker } from '../../hooks/useStatsWorker';
+import { 
+    Chart as ChartJS, 
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Tooltip,
+    Filler
+} from 'chart.js';
+
+// Register components for the Line Chart (ProgressChart) used in this modal
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Tooltip,
+    Filler
+);
 
 interface ExerciseDetailModalProps {
     exercise: ExerciseDef;

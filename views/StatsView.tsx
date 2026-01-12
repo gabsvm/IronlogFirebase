@@ -23,6 +23,21 @@ import {
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
+// --- REGISTER CHARTS GLOBALLY FOR THIS CHUNK ---
+// Moving this outside the component ensures it runs as soon as the module loads,
+// preventing "scale not registered" errors during the initial render pass.
+ChartJS.register(
+    RadialLinearScale, 
+    ArcElement, 
+    Tooltip, 
+    Legend, 
+    PointElement, 
+    LineElement, 
+    Filler,
+    CategoryScale,
+    LinearScale
+);
+
 // --- HELPER: Volume Zones (Dr. Mike / RP Logic) ---
 const getVolumeZone = (sets: number) => {
     if (sets < 6) return { color: 'bg-yellow-400', label: 'Maintenance (MV)', textColor: 'text-yellow-600' };
@@ -36,25 +51,6 @@ export const StatsView: React.FC = () => {
     const t = TRANSLATIONS[lang];
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
-    // Register Charts ONLY when component mounts to save initial TBT
-    useEffect(() => {
-        try {
-            ChartJS.register(
-                RadialLinearScale, 
-                ArcElement, 
-                Tooltip, 
-                Legend, 
-                PointElement, 
-                LineElement, 
-                Filler,
-                CategoryScale,
-                LinearScale
-            );
-        } catch (e) {
-            console.error("Chart reg error", e);
-        }
-    }, []);
-
     // UI State
     const [selectedExId, setSelectedExId] = useState<string | null>(null);
     const [chartMetric, setChartMetric] = useState<'1rm' | 'volume' | 'duration' | 'distance'>('1rm');
