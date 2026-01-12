@@ -2,35 +2,21 @@ import React, { StrictMode, ReactNode, Component } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { AppProvider } from './context/AppContext';
 
 console.log("Starting App Initialization...");
 
-// Register Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
 
-// ERROR BOUNDARY
-interface ErrorBoundaryProps {
-  children?: ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: any;
-}
+interface ErrorBoundaryProps { children?: ReactNode; }
+interface ErrorBoundaryState { hasError: boolean; error: any; }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState;
-  public props: ErrorBoundaryProps;
-
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-    this.props = props;
-  }
+  public state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: any): ErrorBoundaryState {
     return { hasError: true, error };
@@ -93,7 +79,9 @@ if (rootElement) {
     root.render(
       <StrictMode>
         <ErrorBoundary>
+          <AppProvider>
             <App />
+          </AppProvider>
         </ErrorBoundary>
       </StrictMode>
     );

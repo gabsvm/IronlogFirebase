@@ -9,80 +9,72 @@ import { ProgramEditView } from './views/ProgramEditView';
 import { RestTimerOverlay } from './components/ui/RestTimerOverlay';
 import { OnboardingModal } from './components/ui/OnboardingModal';
 import { Icon } from './components/ui/Icon';
-import { TRANSLATIONS } from './constants';
 
-// Lazy Load heavier views
-const HistoryView = React.lazy(() => import('./views/HistoryView').then(module => ({ default: module.HistoryView })));
-const StatsView = React.lazy(() => import('./views/StatsView').then(module => ({ default: module.StatsView })));
-const SettingsView = React.lazy(() => import('./views/SettingsView').then(module => ({ default: module.SettingsView })));
-
+// Lazy load views for better initial load performance
+const HistoryView = React.lazy(() => import('./views/HistoryView').then(m => ({ default: m.HistoryView })));
+const StatsView = React.lazy(() => import('./views/StatsView').then(m => ({ default: m.StatsView })));
+const SettingsView = React.lazy(() => import('./views/SettingsView').then(m => ({ default: m.SettingsView })));
 
 const LoadingSpinner = () => (
-    <div className="h-full flex items-center justify-center text-zinc-400">
-        <Icon name="RefreshCw" size={24} className="animate-spin" />
-    </div>
+    <div className="h-full flex items-center justify-center text-zinc-400"><Icon name="RefreshCw" size={24} className="animate-spin" /></div>
 );
 
-// Define View Hierarchy for Directional Animations
-const VIEW_DEPTH: Record<string, number> = {
-    'home': 1,
-    'history': 1,
-    'stats': 1,
-    'settings': 1, // Added settings as a main view
-    'workout': 2,
-    'exercises': 2,
-    'program': 2
-};
-
-type ViewState = 'home' | 'workout' | 'history' | 'exercises' | 'program' | 'stats' | 'settings';
+type MainView = 'home' | 'history' | 'stats' | 'settings';
+type ModalView = 'workout' | 'exercises' | 'program' | null;
 
 const AppContent = () => {
-    const { activeSession, hasSeenOnboarding, setHasSeenOnboarding } = useApp();
-    const [view, setViewState] = useState<ViewState>('home');
+    const { activeSession, hasSeenOnboarding, setHasSeenOnboarding, startSession, finishWorkout, addSet, deleteSet } = useApp();
+    const [mainView, setMainView] = useState<MainView>('home');
+    const [modalView, setModalView] = useState<ModalView>(null);
 
-    // Simplified view transition logic
-    const setView = (newView: ViewState) => {
-        if (newView === view) return;
-        
-        const currentDepth = VIEW_DEPTH[view] || 1;
-        const nextDepth = VIEW_DEPTH[newView] || 1;
-        let direction = (nextDepth > currentDepth) ? 'forward' : 'back';
-
+    const handleSetView = (view: MainView) => {
         if (document.startViewTransition) {
-            document.startViewTransition(() => setViewState(newView));
+            document.startViewTransition(() => setMainView(view));
         } else {
-            setViewState(newView);
+            setMainView(view);
+        }
+    };
+    
+    const renderMainView = () => {
+        switch (mainView) {
+            case 'home': return <HomeView startSession={startSession} onEditProgram={() => setModalView('program')} onSkipSession={()=>{}} />;
+            case 'history': return <Suspense fallback={<LoadingSpinner />}><HistoryView /></Suspense>;
+            case 'stats': return <Suspense fallback={<LoadingSpinner />}><StatsView /></Suspense>;
+            case 'settings': return <Suspense fallback={<LoadingSpinner />}><SettingsView /></Suspense>;
+            default: return <HomeView startSession={startSession} onEditProgram={() => setModalView('program')} onSkipSession={()=>{}} />;
         }
     };
 
-    // --- Main Render Logic ---
-    const renderView = () => {
-        switch (view) {
-            case 'home':
-                return <HomeView startSession={() => {}} onEditProgram={() => setView('program')} onSkipSession={() => {}} />;
-            case 'history':
-                return <Suspense fallback={<LoadingSpinner />}><HistoryView /></Suspense>;
-            case 'stats':
-                return <Suspense fallback={<LoadingSpinner />}><StatsView /></Suspense>;
-            case 'settings':
-                return <Suspense fallback={<LoadingSpinner />}><SettingsView /></Suspense>;
-            case 'workout':
-                return activeSession ? <WorkoutView onFinish={() => setView('home')} onBack={() => setView('home')} onAddSet={()=>{}} onDeleteSet={()=>{}} /> : <HomeView startSession={() => {}} onEditProgram={() => setView('program')} onSkipSession={() => {}} />;
-            case 'exercises':
-                return <ExercisesView onBack={() => setView('settings')} />;
-            case 'program':
-                 return <ProgramEditView onBack={() => setView('home')} />;
-            default:
-                return <HomeView startSession={() => {}} onEditProgram={() => setView('program')} onSkipSession={() => {}} />;
+    const renderModalView = () => {
+        switch (modalView) {
+            case 'workout': return activeSession ? <WorkoutView onFinish={finishWorkout} onBack={() => setModalView(null)} onAddSet={addSet} onDeleteSet={deleteSet} /> : null;
+            case 'exercises': return <ExercisesView onBack={() => setModalView(null)} />;
+            case 'program': return <ProgramEditView onBack={() => setModalView(null)} />;
+            default: return null;
         }
-    };
+    }
+
+    // Automatically open workout view when a session starts
+    useEffect(() => {
+        if (activeSession) {
+            setModalView('workout');
+        } else {
+            // If session ends, close the workout modal
+            if (modalView === 'workout') {
+                setModalView(null);
+            }
+        }
+    }, [activeSession]);
 
     return (
         <>
-            <Layout view={view} setView={setView} onOpenSettings={() => setView('settings')}>
-                {renderView()}
+            <Layout view={mainView} setView={handleSetView}>
+                {renderMainView()}
             </Layout>
             
+            {/* Modal views render over the main layout */}
+            {renderModalView()}
+
             <RestTimerOverlay />
             
             {!hasSeenOnboarding && (

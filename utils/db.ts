@@ -14,7 +14,6 @@ const getUserDocRef = () => {
 
 /**
  * Synchronizes the entire local IndexedDB database to Firestore.
- * Typically called once on new user registration.
  */
 export const syncIdbToFirestore = async () => {
     const userDocRef = getUserDocRef();
@@ -25,10 +24,12 @@ export const syncIdbToFirestore = async () => {
         const batch = writeBatch(firestore);
         const allEntries = await entries();
         
-        const dataToSync = {};
+        const dataToSync: { [key: string]: any } = {};
         allEntries.forEach(([key, value]) => {
-            // We can add filtering here if some keys should not be synced
-            dataToSync[key] = value;
+            // Firestore keys must be strings. Filter out any non-string keys from idb.
+            if (typeof key === 'string') {
+                dataToSync[key] = value;
+            }
         });
 
         batch.set(userDocRef, { userData: dataToSync }, { merge: true });
@@ -41,8 +42,6 @@ export const syncIdbToFirestore = async () => {
 
 /**
  * Downloads all data from the user's Firestore document and saves it to IndexedDB.
- * This will overwrite local data.
- * Typically called on login.
  */
 export const syncFirestoreToIdb = async () => {
     const userDocRef = getUserDocRef();
@@ -54,7 +53,6 @@ export const syncFirestoreToIdb = async () => {
         if (docSnap.exists()) {
             const firestoreData = docSnap.data()?.userData;
             if (firestoreData) {
-                // Clear local data before writing new data
                 await clearIdb();
                 for (const key in firestoreData) {
                     await set(key, firestoreData[key]);
@@ -62,9 +60,7 @@ export const syncFirestoreToIdb = async () => {
                 console.log("Local DB overwritten from Firestore backup.");
             }
         } else {
-            console.log("No remote backup found for user. Local data will be synced up.");
-            // This is a new user on a new device, but they have an auth record.
-            // Let's sync whatever local data exists (e.g., default templates) up to the cloud.
+            console.log("No remote backup found. Syncing local data up.");
             await syncIdbToFirestore();
         }
     } catch (error) {
@@ -72,9 +68,7 @@ export const syncFirestoreToIdb = async () => {
     }
 };
 
-/**
- * Storage utility that prefers IndexedDB and syncs with Firestore if authenticated.
- */
+
 export const db = {
     get: async <T>(key: string, defaultValue: T): Promise<T> => {
         try {
@@ -86,7 +80,6 @@ export const db = {
                 const parsed = JSON.parse(lsItem);
                 await set(key, parsed);
                 window.localStorage.removeItem(key);
-                console.log(`Migrated ${key} from LocalStorage to IndexedDB`);
                 return parsed;
             }
             return defaultValue;
@@ -113,13 +106,6 @@ export const db = {
     del: async (key: string): Promise<void> => {
         try {
             await del(key);
-            const userDocRef = getUserDocRef();
-            if (userDocRef) {
-                // To delete a field, you need to import FieldValue.
-                // For simplicity, we'll rely on full syncs to handle deletions for now.
-                // const { FieldValue } = await import('firebase/firestore');
-                // await updateDoc(userDocRef, { [`userData.${key}`]: FieldValue.delete() });
-            }
         } catch (err) {
             console.error(`DB Del Error (${key}):`, err);
         }
@@ -134,7 +120,6 @@ export const db = {
         }
     },
 
-    // Expose sync functions
     syncToCloud: syncIdbToFirestore,
     syncFromCloud: syncFirestoreToIdb,
 };
