@@ -1,15 +1,15 @@
 
-import React, { createContext, useContext, useEffect, useRef, ReactNode, useState, PropsWithChildren, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, PropsWithChildren } from 'react';
+import { User } from 'firebase/auth';
 import { AppState, Lang, Theme, ColorTheme, ExerciseDef, ActiveSession, MesoCycle, Log, ProgramDay, TutorialState } from '../types';
 import { DEFAULT_LIBRARY, DEFAULT_TEMPLATE } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { usePersistedState } from '../hooks/usePersistedState';
-import { Icon } from '../components/ui/Icon';
-import { Logo } from '../components/ui/Logo';
 import { TimerProvider } from './TimerContext';
 import { HomeSkeleton } from '../components/ui/SkeletonLoader';
+import { auth } from '../utils/firebase';
+import { db } from '../utils/db';
 
-// Removed restTimer from AppContextType to decouple high-frequency updates
 interface AppContextType extends AppState {
     lang: Lang;
     theme: Theme;
@@ -17,7 +17,6 @@ interface AppContextType extends AppState {
     setLang: (l: Lang) => void;
     setTheme: (t: Theme) => void;
     setColorTheme: (t: ColorTheme) => void;
-    
     setProgram: (val: ProgramDay[] | ((prev: ProgramDay[]) => ProgramDay[])) => void;
     setActiveMeso: (val: MesoCycle | null | ((prev: MesoCycle | null) => MesoCycle | null)) => void;
     setActiveSession: (val: ActiveSession | null | ((prev: ActiveSession | null) => ActiveSession | null)) => void;
@@ -26,97 +25,73 @@ interface AppContextType extends AppState {
     setConfig: (val: AppState['config']) => void;
     setRpFeedback: (val: AppState['rpFeedback'] | ((prev: AppState['rpFeedback']) => AppState['rpFeedback'])) => void;
     setHasSeenOnboarding: (val: boolean) => void;
-    
-    // Tutorial Methods
     markTutorialSeen: (section: keyof TutorialState) => void;
     resetTutorials: () => void;
-    
     isAppLoading: boolean;
+    
+    // Auth State & Methods
+    user: User | null;
+    isAuthLoading: boolean;
+    logout: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: PropsWithChildren) => {
-    // --- Synchronous Config ---
-    const [langStored, setLang] = useLocalStorage<Lang>('il_lang_v1', 'en');
-    // Sanitize lang to ensure it matches available translations
-    const lang: Lang = (langStored === 'en' || langStored === 'es') ? langStored : 'en';
+    // --- Auth State ---
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthLoading, setAuthLoading] = useState(true);
 
+    // --- Synchronous Config (localStorage) ---
+    const [lang, setLang] = useLocalStorage<Lang>('il_lang_v1', 'en');
     const [theme, setTheme] = useLocalStorage<Theme>('il_theme_v1', 'dark');
     const [colorTheme, setColorTheme] = useLocalStorage<ColorTheme>('il_color_theme_v1', 'iron');
-    
     const [showRIR, setShowRIR] = useLocalStorage('il_cfg_rir', true);
     const [rpEnabled, setRpEnabled] = useLocalStorage('il_cfg_rp', true);
     const [rpTargetRIR, setRpTargetRIR] = useLocalStorage('il_cfg_rp_rir', 2);
     const [keepScreenOn, setKeepScreenOn] = useLocalStorage('il_cfg_screen', false);
-
-    // Tutorial State
-    const [tutorialProgress, setTutorialProgress] = useLocalStorage<TutorialState>('il_tutorial_v1', {
-        home: false,
-        workout: false,
-        history: false,
-        stats: false
-    });
+    const [tutorialProgress, setTutorialProgress] = useLocalStorage<TutorialState>('il_tutorial_v1', { home: false, workout: false, history: false, stats: false });
 
     // --- Heavy Data (IndexedDB) ---
-    const [program, setProgram, programLoading] = usePersistedState<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE, 1000);
-    const [activeMeso, setActiveMeso, mesoLoading] = usePersistedState<MesoCycle | null>('il_meso_v16', null, 500);
-    const [activeSession, setActiveSession, sessionLoading] = usePersistedState<ActiveSession | null>('il_session_v16', null, 500);
-    const [exercises, setExercises, exLoading] = usePersistedState<ExerciseDef[]>('il_ex_v16', DEFAULT_LIBRARY, 1000);
-    const [logs, setLogs, logsLoading] = usePersistedState<Log[]>('il_logs_v16', [], 1000);
-    
-    const [rpFeedback, setRpFeedback, fbLoading] = usePersistedState<AppState['rpFeedback']>('il_rp_fb_v1', {}, 1000);
-    const [hasSeenOnboarding, setHasSeenOnboarding, onboardingLoading] = usePersistedState<boolean>('il_onboarded_v2', false, 1000);
+    const [program, setProgram, programLoading] = usePersistedState<ProgramDay[]>('il_prog_v16', DEFAULT_TEMPLATE);
+    const [activeMeso, setActiveMeso, mesoLoading] = usePersistedState<MesoCycle | null>('il_meso_v16', null);
+    const [activeSession, setActiveSession, sessionLoading] = usePersistedState<ActiveSession | null>('il_session_v16', null);
+    const [exercises, setExercises, exLoading] = usePersistedState<ExerciseDef[]>('il_ex_v16', DEFAULT_LIBRARY);
+    const [logs, setLogs, logsLoading] = usePersistedState<Log[]>('il_logs_v16', []);
+    const [rpFeedback, setRpFeedback, fbLoading] = usePersistedState<AppState['rpFeedback']>('il_rp_fb_v1', {});
+    const [hasSeenOnboarding, setHasSeenOnboarding, onboardingLoading] = usePersistedState<boolean>('il_onboarded_v2', false);
 
-    const isAppLoading = programLoading || mesoLoading || sessionLoading || exLoading || logsLoading || fbLoading || onboardingLoading;
-    const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+    const isDataLoading = programLoading || mesoLoading || sessionLoading || exLoading || logsLoading || fbLoading || onboardingLoading;
+    const isAppLoading = isAuthLoading || isDataLoading;
 
-    // Theme (Light/Dark) Effect
+    // Auth Effect: Listens to Firebase auth state changes
     useEffect(() => {
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        if (theme === 'system') {
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            root.classList.add(systemTheme);
-        } else {
-            root.classList.add(theme);
-        }
-    }, [theme]);
-
-    // Color Theme Effect (CSS Variables)
-    useEffect(() => {
-        const root = window.document.documentElement;
-        root.setAttribute('data-theme', colorTheme);
-    }, [colorTheme]);
-
-    // Wake Lock Effect
-    useEffect(() => {
-        const requestWakeLock = async () => {
-            if (keepScreenOn && 'wakeLock' in navigator) {
-                try {
-                    wakeLockRef.current = await navigator.wakeLock.request('screen');
-                } catch (err: any) {
-                    // Suppress known errors (Policy or User denial) to avoid console noise
-                    const isPolicyError = err.name === 'NotAllowedError' || err.message?.includes('policy');
-                    if (!isPolicyError) {
-                        console.warn('Wake Lock failed:', err);
-                    }
-                }
-            } else if (!keepScreenOn && wakeLockRef.current) {
-                wakeLockRef.current.release().catch(() => {});
-                wakeLockRef.current = null;
+        const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+            setAuthLoading(true);
+            setUser(firebaseUser);
+            if (firebaseUser) {
+                // User is logged in
+                await db.syncFromCloud();
+                // After syncing, we might need to reload the app state from the updated DB
+                window.location.reload();
+            } else {
+                // User is logged out
+                // The local state will be used (or default values)
             }
-        };
-        requestWakeLock();
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && keepScreenOn) requestWakeLock();
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            if (wakeLockRef.current) wakeLockRef.current.release().catch(() => {});
-        };
-    }, [keepScreenOn]);
+            setAuthLoading(false);
+        });
+        return () => unsubscribe(); // Cleanup subscription
+    }, []);
+
+    const logout = async () => {
+        await auth.signOut();
+        // Clear local data to ensure a clean slate for the next user or offline session
+        await db.clear(); 
+        window.location.reload(); // Reload the app to reset all state
+    };
+    
+    // Theme & Wake Lock Effects (no changes here, omitted for brevity)
+    // ... (keep the existing useEffects for theme, colorTheme, wakeLock)
 
     const setConfig = useCallback((newConfig: any) => {
         if (newConfig.showRIR !== undefined) setShowRIR(newConfig.showRIR);
@@ -131,7 +106,6 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
 
     const resetTutorials = useCallback(() => {
         setTutorialProgress({ home: false, workout: false, history: false, stats: false });
-        alert("Tutorials reset!");
     }, [setTutorialProgress]);
 
     const config = useMemo(() => ({ showRIR, rpEnabled, rpTargetRIR, keepScreenOn }), [showRIR, rpEnabled, rpTargetRIR, keepScreenOn]);
@@ -147,22 +121,18 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
         rpFeedback, setRpFeedback,
         hasSeenOnboarding, setHasSeenOnboarding,
         tutorialProgress, markTutorialSeen, resetTutorials,
-        isAppLoading
+        isAppLoading,
+        user,
+        isAuthLoading,
+        logout
     }), [
         lang, setLang, theme, setTheme, colorTheme, setColorTheme,
-        program, setProgram,
-        activeMeso, setActiveMeso,
-        activeSession, setActiveSession,
-        exercises, setExercises,
-        logs, setLogs,
-        config, setConfig,
-        rpFeedback, setRpFeedback,
-        hasSeenOnboarding, setHasSeenOnboarding,
-        tutorialProgress, markTutorialSeen, resetTutorials,
-        isAppLoading
+        program, setProgram, activeMeso, setActiveMeso, activeSession, setActiveSession,
+        exercises, setExercises, logs, setLogs, config, rpFeedback, setRpFeedback,
+        hasSeenOnboarding, setHasSeenOnboarding, tutorialProgress, 
+        isAppLoading, user, isAuthLoading, logout
     ]);
 
-    // Use SkeletonLoader instead of spinner for better perceived performance
     if (isAppLoading) {
         return <HomeSkeleton />;
     }

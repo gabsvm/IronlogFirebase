@@ -18,16 +18,13 @@
     "@google/genai": "*",
     "canvas-confetti": "^1.9.2",
     "chart.js": "^4.4.1",
+    "firebase": "^12.7.0",
     "idb-keyval": "^6.2.1",
     "lucide-react": "^0.400.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
     "react-virtuoso": "^4.7.0"
-  },
-  "overrides": {
-    "react": "$react",
-    "react-dom": "$react-dom"
   },
   "devDependencies": {
     "@capacitor/cli": "^5.7.0",
