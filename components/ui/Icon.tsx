@@ -30,7 +30,9 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
     strokeWidth?: number | string;
 }
 
-export const Icon: React.FC<IconProps> = ({ name, size = 20, className, ...props }) => {
+// Optimization: Memoize the Icon component to prevent re-rendering identical SVGs 
+// during parent updates (like timer ticks or drag operations).
+export const Icon: React.FC<IconProps> = React.memo(({ name, size = 20, className, ...props }) => {
     
     const LucideIcon = useMemo(() => {
         // Direct lookup is O(1) and safe
@@ -47,13 +49,9 @@ export const Icon: React.FC<IconProps> = ({ name, size = 20, className, ...props
     }, [name]);
 
     if (!LucideIcon) {
-        // Development warning only
-        if (process.env.NODE_ENV === 'development') {
-            console.warn(`Icon "${name}" not found in static map. Add it to Icon.tsx to fix.`);
-        }
         // Graceful fallback to avoid crash layout shifts
         return <div style={{ width: size, height: size, background: 'currentColor', opacity: 0.1, borderRadius: 4 }} className={className} />;
     }
 
     return <LucideIcon size={size as number} className={className} {...(props as any)} />;
-};
+});

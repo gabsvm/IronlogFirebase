@@ -441,7 +441,21 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({ onFinish, onBack, onAd
                  <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6" onClick={(e) => e.stopPropagation()}>
                      <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4">
                          <h3 className="text-xl font-bold text-center dark:text-white">{finishedSets > 0 ? t.finishWorkout : t.emptyWorkoutTitle}</h3>
-                         <div className="grid grid-cols-2 gap-3">
+                         
+                         {/* Update Template Option */}
+                         {finishedSets > 0 && (
+                             <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-100 dark:border-white/5 flex items-start gap-3 cursor-pointer" onClick={() => ctrl.setUpdateTemplate(!ctrl.updateTemplate)}>
+                                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center mt-0.5 transition-colors ${ctrl.updateTemplate ? 'bg-red-600 border-red-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                                     {ctrl.updateTemplate && <Icon name="Check" size={14} className="text-white" strokeWidth={3} />}
+                                 </div>
+                                 <div className="flex-1">
+                                     <p className="text-sm font-bold text-zinc-900 dark:text-white">{t.updateRoutine}</p>
+                                     <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">{t.updateRoutineDesc}</p>
+                                 </div>
+                             </div>
+                         )}
+
+                         <div className="grid grid-cols-2 gap-3 pt-2">
                              <Button variant="secondary" onClick={() => ctrl.setShowFinishModal(false)}>{t.cancel}</Button>
                              <Button variant="primary" onClick={ctrl.handleConfirmFinish}>{t.finishWorkout}</Button>
                          </div>

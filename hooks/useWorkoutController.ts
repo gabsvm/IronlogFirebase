@@ -8,12 +8,9 @@ import { triggerHaptic } from '../utils/audio';
 import { getLastLogForExercise } from '../utils';
 
 export const useWorkoutController = (onFinishCallback: () => void) => {
-    const { activeSession, activeMeso, setActiveSession, exercises, rpFeedback, setRpFeedback, config, logs } = useApp();
+    const { activeSession, activeMeso, setActiveSession, setActiveMeso, setProgram, exercises, rpFeedback, setRpFeedback, config, logs } = useApp();
     const { setRestTimer } = useTimerContext();
     
-    // REMOVED: sessionElapsed state and useEffect. 
-    // This stops the hook from triggering a re-render every second.
-
     // Local UI State
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     const [showFinishModal, setShowFinishModal] = useState(false);
@@ -28,6 +25,9 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     const [changingSetType, setChangingSetType] = useState<{ exId: number, setId: number, currentType: SetType } | null>(null);
     const [showPlateCalc, setShowPlateCalc] = useState<{ weight: number } | null>(null);
     const [detailExercise, setDetailExercise] = useState<SessionExercise | null>(null);
+    
+    // Feature: Update Template
+    const [updateTemplate, setUpdateTemplate] = useState(false);
     
     // PR Logic
     const [hasNewPR, setHasNewPR] = useState(false);
@@ -65,11 +65,6 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
     }, [setActiveSession]);
 
     const toggleSetComplete = useCallback((exInstanceId: number, setId: number) => {
-        // Need to access latest state, so we use the functional update inside setActiveSession
-        // effectively, but we need to know *what* to update for haptics/timer first.
-        // To avoid stale closures without adding `sessionExercises` to dependency (which changes often),
-        // we can assume the operation is valid.
-        
         setActiveSession(prev => {
             if(!prev) return null;
             
@@ -78,13 +73,6 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
             if (!set || set.skipped) return prev;
 
             const completing = !set.completed;
-            
-            // Side Effects (Haptic/Timer) - We do this *inside* the update to ensure we have latest state
-            // or we accept a small risk of stale state for the side effect trigger.
-            // For safety and performance, we'll trigger side effects outside but optimistically.
-            
-            // Note: In React 18, state updates are batched. Side effects in render/set are tricky.
-            // We'll rely on the fact that if the user clicked, they saw the current state.
             
             let startTime = prev.startTime;
             if (completing && !startTime) startTime = Date.now();
@@ -99,10 +87,6 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
             }
         });
         
-        // Trigger Haptic & Timer optimistically
-        // We can't easily know if it was completing or uncompleting without reading state, 
-        // but typically users tap to complete. 
-        // To be precise, we'd need to find the set in `sessionExercises` before calling setter.
         const ex = sessionExercises.find(e => e.instanceId === exInstanceId);
         const set = ex?.sets.find(s => s.id === setId);
         if(set) {
@@ -178,6 +162,38 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         triggerHaptic('medium');
         setShowFinishModal(false);
         
+        // --- UPDATE TEMPLATE LOGIC ---
+        if (updateTemplate && activeMeso && activeSession) {
+            // 1. Construct new Slots for Program (Base Template)
+            const newSlots = sessionExercises.map(ex => ({
+                muscle: ex.muscle,
+                setTarget: ex.sets.length, // Persist set count
+                exerciseId: ex.id,
+                reps: ex.targetReps // Persist target reps
+            }));
+
+            // 2. Update Global Program
+            setProgram(prev => {
+                const newProg = [...prev];
+                if (newProg[activeSession.dayIdx]) {
+                    newProg[activeSession.dayIdx] = {
+                        ...newProg[activeSession.dayIdx],
+                        slots: newSlots
+                    };
+                }
+                return newProg;
+            });
+
+            // 3. Update Active Meso Plan (IDs only)
+            setActiveMeso(prev => {
+                if (!prev) return null;
+                const newPlan = [...(prev.plan || [])];
+                newPlan[activeSession.dayIdx] = sessionExercises.map(e => e.id);
+                return { ...prev, plan: newPlan };
+            });
+        }
+        // -----------------------------
+
         const isPR = detectPRs();
         setHasNewPR(isPR);
 
@@ -191,7 +207,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
                 onFinishCallback();
             }
         }
-    }, [onFinishCallback, config, detectPRs, fireConfetti]);
+    }, [onFinishCallback, config, detectPRs, fireConfetti, updateTemplate, activeMeso, activeSession, sessionExercises, setProgram, setActiveMeso]);
 
     const handleSaveFeedback = useCallback((feedbackData: Record<string, any>) => {
         if (!activeSession) return;
@@ -254,6 +270,7 @@ export const useWorkoutController = (onFinishCallback: () => void) => {
         reorderSessionExercises,
         updateSession: setActiveSession,
         exercisesLibrary: exercises,
-        activeSession
+        activeSession,
+        updateTemplate, setUpdateTemplate
     };
 };

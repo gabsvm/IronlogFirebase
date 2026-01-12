@@ -243,10 +243,22 @@ export const HomeView: React.FC<HomeViewProps> = ({ startSession, onEditProgram,
             <div className="p-8 flex flex-col items-center justify-center h-full text-center space-y-8 animate-in fade-in zoom-in-95 duration-500 bg-grid-pattern">
                 <div className="relative group cursor-pointer flex justify-center items-center -space-x-8" onClick={() => setShowStartWizard(true)}>
                     <div className="relative z-10 w-32 h-32 rounded-full overflow-hidden border-4 border-zinc-100 dark:border-zinc-800 shadow-xl">
-                        <img src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover grayscale" />
+                        <img 
+                            src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=400&auto=format&fit=crop" 
+                            className="w-full h-full object-cover grayscale" 
+                            alt="Workout 1"
+                            width="128" height="128"
+                            loading="eager"
+                        />
                     </div>
                     <div className="relative z-0 w-36 h-36 rounded-full overflow-hidden border-4 border-zinc-100 dark:border-zinc-800 shadow-2xl">
-                        <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover grayscale" />
+                        <img 
+                            src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=400&auto=format&fit=crop" 
+                            className="w-full h-full object-cover grayscale" 
+                            alt="Workout 2"
+                            width="144" height="144"
+                            loading="eager"
+                        />
                     </div>
                     <div className="absolute -bottom-2 right-10 bg-red-600 text-white p-2 rounded-full shadow-lg z-20">
                         <Icon name="Plus" size={20} />

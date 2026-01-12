@@ -24,14 +24,34 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true,
       target: 'esnext', // Modern browsers for smaller bundle
       minify: 'esbuild',
+      cssCodeSplit: true, // Split CSS by chunk
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react/jsx-runtime'],
-            'vendor-charts': ['chart.js', 'react-chartjs-2'],
-            'vendor-utils': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities', 'canvas-confetti', 'idb-keyval'],
-            'vendor-icons': ['lucide-react'],
-            'vendor-ai': ['@google/genai']
+          manualChunks: (id) => {
+            // Core React Vendor
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
+              return 'vendor-react';
+            }
+            // Heavy Charting Library (Only load on Stats)
+            if (id.includes('node_modules/chart.js') || id.includes('node_modules/react-chartjs-2')) {
+              return 'vendor-charts';
+            }
+            // GenAI SDK (Only load on Chat)
+            if (id.includes('node_modules/@google/genai')) {
+              return 'vendor-ai';
+            }
+            // Drag and Drop (Only load on Workout)
+            if (id.includes('@dnd-kit')) {
+              return 'vendor-dnd';
+            }
+            // Animations
+            if (id.includes('canvas-confetti')) {
+              return 'vendor-effects';
+            }
+            // Icons (Keep core icons fast)
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
           }
         }
       }

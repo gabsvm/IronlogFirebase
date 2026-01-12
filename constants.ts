@@ -544,9 +544,12 @@ export const TRANSLATIONS = {
         targetRIR: "Target RIR", recoveryWeek: "Recovery Week", focusMode: "Focus Mode", repsRange: "Reps Range", startNow: "Start Cycle Now", setupCycle: "Setup & Start Cycle", saveAsMeso: "Use this program to create a new active mesocycle immediately.",
         units: { kg: "KG", pl: "Plates", lb: "LBS", toggle: "Change Unit (KG/Plates)", plateWeight: "Weight per Plate", setPlateWeight: "Set Weight per Plate (kg)", enterWeight: "e.g. 5, 10..." },
         fb: { sorenessLabel: "Soreness / Recovery", performanceLabel: "Pump / Capacity", soreness: { 1: "Healed Early / Fresh", 2: "Healed on Time (Ideal)", 3: "Still Sore / Ouch" }, performance: { 1: "Bad / Grind", 2: "Good / Target", 3: "Great / Too Easy" }, adjust: { add: "+1/2 Sets", sub: "-1 Set", keep: "Keep (Optimal)" } },
-        onb: { skip: "Omitir", next: "Siguiente", start: "Empezar", s1_title: "Bienvenido a IronLog", s1_desc: "La herramienta definitiva para hipertrofia, impulsada por IronCoach.", s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. IronCoach auto-regula el volumen según tu feedback.", s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.", s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva." },
-        createAndSelect: "Crear y Seleccionar", overwriteTemplateConfirm: "Esto sobrescribe tu rutina actual con la plantilla seleccionada.", newRecord: "¡Nuevo Récord!", prMessage: "¡Superaste tus marcas anteriores!", continue: "Continuar",
+        onb: { skip: "Skip", next: "Next", start: "Start", s1_title: "Welcome to IronLog", s1_desc: "The ultimate hypertrophy tool, powered by IronCoach.", s2_title: "Mesocycles", s2_desc: "Organize your training by weeks. IronCoach auto-regulates volume based on your feedback.", s3_title: "Smart Tracking", s3_desc: "Log RIR, use the built-in timer, and calculate warmups instantly.", s4_title: "Progress", s4_desc: "Visualize your volume landmarks (MEV/MRV) and ensure progressive overload." },
+        createAndSelect: "Create and Select", overwriteTemplateConfirm: "This overwrites your current routine with the selected template.", newRecord: "New Record!", prMessage: "You beat your previous bests!", continue: "Continue",
         
+        updateRoutine: "Update Routine Template?",
+        updateRoutineDesc: "Save exercises, order, and sets for future workouts.",
+
         // Home View Specific
         upNext: "Up Next",
         tapToStart: "Tap to start",
@@ -567,11 +570,11 @@ export const TRANSLATIONS = {
         cardioRest: "Rest (s)",
         cardioRounds: "Rounds",
         cardioModes: {
-            steady: "Ritmo Constante",
-            hiit: "HIIT / Intervalos",
+            steady: "Steady State",
+            hiit: "HIIT / Intervals",
             tabata: "Tabata"
         },
-        changeCardioMode: "Modo Cardio",
+        changeCardioMode: "Cardio Mode",
         
         // Exercise Details
         exDetail: "Exercise Guide",
@@ -587,6 +590,23 @@ export const TRANSLATIONS = {
         statsIntensity: "Intensity Distribution",
         statsSets: "Sets",
         statsNoData: "No Data",
+
+        // Plate Calculator
+        plateCalc: {
+            title: "Plate Calc",
+            totalWeight: "Total Weight (KG)",
+            bar: "Bar",
+            empty: "Empty Bar",
+            loadPerSide: "Load per side",
+            cannotLoad: "⚠️ Cannot load exact weight"
+        },
+
+        // AI Chat
+        aiPrompts: [
+            { label: "Create Beginner Routine", prompt: "Create a 3-day full body routine for a beginner." },
+            { label: "Modify Day 1", prompt: "Change Day 1 to focus purely on Chest and Triceps." },
+            { label: "Analyze Progress", prompt: "Analyze my last 3 workouts. Am I progressing?" },
+        ],
 
         // Tutorials (Expanded)
         tutorial: {
@@ -655,6 +675,9 @@ export const TRANSLATIONS = {
         onb: { skip: "Omitir", next: "Siguiente", start: "Empezar", s1_title: "Bienvenido a IronLog", s1_desc: "La herramienta definitiva para hipertrofia, impulsada por IronCoach.", s2_title: "Mesociclos", s2_desc: "Organiza tu entreno por semanas. IronCoach auto-regula el volumen según tu feedback.", s3_title: "Seguimiento Inteligente", s3_desc: "Registra RIR, usa el temporizador integrado y calcula el calentamiento al instante.", s4_title: "Progreso", s4_desc: "Visualiza tus hitos de volumen (MEV/MRV) y asegura la sobrecarga progresiva." },
         createAndSelect: "Crear y Seleccionar", overwriteTemplateConfirm: "Esto sobrescribe tu rutina actual con la plantilla seleccionada.", newRecord: "¡Nuevo Récord!", prMessage: "¡Superaste tus marcas anteriores!", continue: "Continuar",
         
+        updateRoutine: "¿Actualizar Plantilla?",
+        updateRoutineDesc: "Guardar ejercicios, orden y series para futuros entrenos.",
+
         // Home View Specific
         upNext: "Siguiente",
         tapToStart: "Toca para empezar",
@@ -695,6 +718,23 @@ export const TRANSLATIONS = {
         statsIntensity: "Distribución de Intensidad",
         statsSets: "Series",
         statsNoData: "Sin Datos",
+
+        // Plate Calculator
+        plateCalc: {
+            title: "Calc. Discos",
+            totalWeight: "Peso Total (KG)",
+            bar: "Barra",
+            empty: "Barra Vacía",
+            loadPerSide: "Carga por lado",
+            cannotLoad: "⚠️ No se puede cargar exacto"
+        },
+
+        // AI Chat
+        aiPrompts: [
+            { label: "Crear Rutina Principiante", prompt: "Crea una rutina de cuerpo completo de 3 días para principiantes." },
+            { label: "Modificar Día 1", prompt: "Cambia el Día 1 para enfocarlo puramente en Pecho y Tríceps." },
+            { label: "Analizar Progreso", prompt: "Analiza mis últimos 3 entrenamientos. ¿Estoy progresando?" },
+        ],
 
         // Tutorials (Fully Translated & Educational)
         tutorial: {

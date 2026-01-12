@@ -5,6 +5,7 @@ import { Icon } from '../ui/Icon';
 import { ProgramDay, MuscleGroup } from '../../types';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { getTranslated } from '../../utils';
+import { TRANSLATIONS } from '../../constants';
 
 interface Message {
     id: string;
@@ -12,14 +13,9 @@ interface Message {
     text: string;
 }
 
-const QUICK_PROMPTS = [
-    { label: "Create Beginner Routine", prompt: "Create a 3-day full body routine for a beginner." },
-    { label: "Modify Day 1", prompt: "Change Day 1 to focus purely on Chest and Triceps." },
-    { label: "Analyze Progress", prompt: "Analyze my last 3 workouts. Am I progressing?" },
-];
-
 export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { activeMeso, logs, lang, config, setProgram, program, exercises } = useApp();
+    const t = TRANSLATIONS[lang];
     
     const [messages, setMessages] = useLocalStorage<Message[]>('il_chat_history_v1', [
         { id: 'init', role: 'model', text: lang === 'en' ? "I am IronCoach. I can analyze your data, create new routines, or modify your current plan." : "Soy IronCoach. Puedo analizar tus datos, crear rutinas nuevas o modificar tu plan actual." }
@@ -339,10 +335,10 @@ export const IronCoachChat: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Quick Prompts */}
+                {/* Quick Prompts - Now Localized */}
                 {messages.length < 3 && (
                     <div className="px-4 py-2 flex gap-2 overflow-x-auto scroll-container">
-                        {QUICK_PROMPTS.map((qp, i) => (
+                        {t.aiPrompts.map((qp: any, i: number) => (
                             <button 
                                 key={i}
                                 onClick={() => handleSend(qp.prompt)}

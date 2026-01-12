@@ -23,23 +23,6 @@ import {
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
-// Safely register charts
-try {
-    ChartJS.register(
-        RadialLinearScale, 
-        ArcElement, 
-        Tooltip, 
-        Legend, 
-        PointElement, 
-        LineElement, 
-        Filler,
-        CategoryScale,
-        LinearScale
-    );
-} catch (e) {
-    console.error("Failed to register ChartJS components", e);
-}
-
 // --- HELPER: Volume Zones (Dr. Mike / RP Logic) ---
 const getVolumeZone = (sets: number) => {
     if (sets < 6) return { color: 'bg-yellow-400', label: 'Maintenance (MV)', textColor: 'text-yellow-600' };
@@ -53,9 +36,27 @@ export const StatsView: React.FC = () => {
     const t = TRANSLATIONS[lang];
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
+    // Register Charts ONLY when component mounts to save initial TBT
+    useEffect(() => {
+        try {
+            ChartJS.register(
+                RadialLinearScale, 
+                ArcElement, 
+                Tooltip, 
+                Legend, 
+                PointElement, 
+                LineElement, 
+                Filler,
+                CategoryScale,
+                LinearScale
+            );
+        } catch (e) {
+            console.error("Chart reg error", e);
+        }
+    }, []);
+
     // UI State
     const [selectedExId, setSelectedExId] = useState<string | null>(null);
-    // Expand metrics to include Cardio types
     const [chartMetric, setChartMetric] = useState<'1rm' | 'volume' | 'duration' | 'distance'>('1rm');
     const [showPicker, setShowPicker] = useState(false);
     const [pickerSearch, setPickerSearch] = useState('');
@@ -80,12 +81,10 @@ export const StatsView: React.FC = () => {
     // Auto-switch metric when exercise type changes
     useEffect(() => {
         if (isCardio) {
-            // Default to Duration for cardio
             if (chartMetric !== 'duration' && chartMetric !== 'distance') {
                 setChartMetric('duration');
             }
         } else {
-            // Default to 1RM for weights
             if (chartMetric !== '1rm' && chartMetric !== 'volume') {
                 setChartMetric('1rm');
             }
@@ -156,7 +155,6 @@ export const StatsView: React.FC = () => {
     }, [isWorkerReady, selectedExId, chartMetric, safeLogs, calculateChartData]);
 
 
-    // Filter for the picker modal
     const filteredExercises = useMemo(() => {
         return availableExercises.filter(ex => 
             getTranslated(ex!.name, lang).toLowerCase().includes(pickerSearch.toLowerCase())
@@ -165,7 +163,6 @@ export const StatsView: React.FC = () => {
 
     const maxVal = Math.max(...volumeData.map(d => d[1]), 25); 
 
-    // Doughnut Data Configuration
     const doughnutData = {
         labels: Object.keys(setTypeDist).map(k => t.types[k] || k),
         datasets: [{
@@ -184,11 +181,7 @@ export const StatsView: React.FC = () => {
     const statsTutorialSteps = [
         { targetId: 'tut-progress-chart', title: t.tutorial.stats[0].title, text: t.tutorial.stats[0].text, position: 'bottom' as const },
         { targetId: 'tut-radar-chart', title: t.tutorial.stats[1].title, text: t.tutorial.stats[1].text, position: 'top' as const },
-        { targetId: 'tut-vol-bar', title: t.tutorial.stats[2].title, text: t.tutorial.stats[2].text, position: 'top' as const },
-        { targetId: 'tut-vol-legend', title: t.tutorial.stats[3].title, text: t.tutorial.stats[3].text, position: 'bottom' as const },
-        { targetId: 'tut-vol-legend', title: t.tutorial.stats[4].title, text: t.tutorial.stats[4].text, position: 'bottom' as const },
-        { targetId: 'tut-vol-legend', title: t.tutorial.stats[5].title, text: t.tutorial.stats[5].text, position: 'bottom' as const },
-        { targetId: 'tut-vol-legend', title: t.tutorial.stats[6].title, text: t.tutorial.stats[6].text, position: 'bottom' as const }
+        { targetId: 'tut-vol-bar', title: t.tutorial.stats[2].title, text: t.tutorial.stats[2].text, position: 'top' as const }
     ];
 
     return (
@@ -322,7 +315,7 @@ export const StatsView: React.FC = () => {
                         {t.volPerCycle}
                     </h3>
                     {/* Legend */}
-                    <div id="tut-vol-legend" className="flex gap-2">
+                    <div className="flex gap-2">
                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-400"></div><span className="text-[9px] text-zinc-400 font-bold">MV</span></div>
                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div><span className="text-[9px] text-zinc-400 font-bold">MEV</span></div>
                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[9px] text-zinc-400 font-bold">MAV</span></div>
